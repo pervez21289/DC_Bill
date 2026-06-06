@@ -1,0 +1,9 @@
+<Solution>
+  <Project Path="dcbill.client/dcbill.client.esproj">
+    <Build />
+    <Deploy />
+  </Project>
+  <Project Path="DCBill.Server/DCBill.Server.csproj" />
+  <Project Path="LMS.Core/LMS.Core.csproj" />
+  <Project Path="LMS.Repository/LMS.Repository.csproj" />
+</Solution>
