@@ -2,7 +2,7 @@
 import { Box } from "@mui/material";
 import { useDispatch, useSelector } from 'react-redux';
 
-import InvoiceHeader from "./InvoiceHeader";
+import InvoiceHeader from "./InvoiceHeader/index";
 import InvoiceItemsTable from "./InvoiceItemsTable";
 import InvoiceSummary from "./InvoiceSummary";
 import useInvoiceCalculation from "./useInvoiceCalculation";
