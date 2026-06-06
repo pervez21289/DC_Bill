@@ -13,8 +13,8 @@
 } from '@mui/material';
 import { useState } from 'react';
 import { useDispatch, useSelector } from 'react-redux';
-import { updateItem, deleteItem } from './../../store/invoiceItemsSlice';  // Corrected path
-import { addItem } from './../../store/itemMasterSlice';  // Corrected path
+import { updateItem, deleteItem } from './../../store/invoiceItemsSlice';
+import { addItem } from './../../store/itemMasterSlice';
 
 export default function InvoiceItemRow({ index }) {
     const dispatch = useDispatch();
@@ -109,10 +109,22 @@ export default function InvoiceItemRow({ index }) {
 
     if (!item) return null;
 
+    // Common text field styles for compact view
+    const textFieldStyles = {
+        '& .MuiInputBase-root': {
+            fontSize: '0.75rem',
+            minHeight: '32px'
+        },
+        '& .MuiInputBase-input': {
+            py: 0.5,
+            px: 1
+        }
+    };
+
     return (
         <>
-            <TableRow>
-                <TableCell sx={{ minWidth: 250 }}>
+            <TableRow sx={{ '&:hover': { backgroundColor: '#f5f5f5' } }}>
+                <TableCell sx={{ py: 0.5, px: 1 }}>
                     <Autocomplete
                         options={options}
                         getOptionLabel={(option) => {
@@ -125,11 +137,13 @@ export default function InvoiceItemRow({ index }) {
                             ) || null
                         }
                         onChange={handleItemSelect}
+                        size="small"
                         renderOption={(props, option) => (
                             <li {...props} style={{
                                 fontWeight: option.isNew ? 'bold' : 'normal',
                                 color: option.isNew ? '#1976d2' : 'inherit',
-                                backgroundColor: option.isNew ? '#f0f7ff' : 'inherit'
+                                backgroundColor: option.isNew ? '#f0f7ff' : 'inherit',
+                                fontSize: '0.75rem'
                             }}>
                                 {option.isNew ? '➕ ' : ''}{option.itemName}
                             </li>
@@ -139,20 +153,25 @@ export default function InvoiceItemRow({ index }) {
                                 {...params}
                                 size="small"
                                 placeholder="Search or add new item"
+                                sx={textFieldStyles}
                             />
                         )}
                     />
                 </TableCell>
 
-                <TableCell>
+                <TableCell sx={{ py: 0.5, px: 1 }}>
                     <TextField
                         size="small"
                         value={item.hsnCode || ''}
                         disabled
+                        sx={textFieldStyles}
+                        InputProps={{
+                            sx: { fontSize: '0.75rem' }
+                        }}
                     />
                 </TableCell>
 
-                <TableCell>
+                <TableCell sx={{ py: 0.5, px: 1 }}>
                     <TextField
                         size="small"
                         type="number"
@@ -160,10 +179,17 @@ export default function InvoiceItemRow({ index }) {
                         onChange={(e) =>
                             handleChange('qty', e.target.value)
                         }
+                        sx={textFieldStyles}
+                        InputProps={{
+                            sx: { fontSize: '0.75rem' }
+                        }}
+                        inputProps={{
+                            style: { textAlign: 'right' }
+                        }}
                     />
                 </TableCell>
 
-                <TableCell>
+                <TableCell sx={{ py: 0.5, px: 1 }}>
                     <TextField
                         size="small"
                         type="number"
@@ -171,30 +197,58 @@ export default function InvoiceItemRow({ index }) {
                         onChange={(e) =>
                             handleChange('rate', e.target.value)
                         }
+                        sx={textFieldStyles}
+                        InputProps={{
+                            sx: { fontSize: '0.75rem' }
+                        }}
+                        inputProps={{
+                            style: { textAlign: 'right' }
+                        }}
                     />
                 </TableCell>
 
-                <TableCell>
+                <TableCell sx={{ py: 0.5, px: 1 }}>
                     <TextField
                         size="small"
                         value={item.amount || 0}
                         disabled
+                        sx={textFieldStyles}
+                        InputProps={{
+                            sx: { fontSize: '0.75rem', fontWeight: 'bold' }
+                        }}
+                        inputProps={{
+                            style: { textAlign: 'right' }
+                        }}
                     />
                 </TableCell>
 
-                <TableCell>
+                <TableCell sx={{ py: 0.5, px: 1 }}>
                     <TextField
                         size="small"
                         value={`${item.gst || 0}%`}
                         disabled
-                        sx={{ width: 70 }}
+                        sx={{
+                            width: 60,
+                            '& .MuiInputBase-root': {
+                                fontSize: '0.75rem',
+                                minHeight: '32px'
+                            }
+                        }}
+                        InputProps={{
+                            sx: { fontSize: '0.75rem', textAlign: 'center' }
+                        }}
+                        inputProps={{
+                            style: { textAlign: 'center' }
+                        }}
                     />
                 </TableCell>
 
-                <TableCell>
+                <TableCell sx={{ py: 0.5, px: 0.5 }}>
                     <IconButton
                         color="error"
                         onClick={handleDelete}
+                        size="small"
+                        sx={{ padding: 0.5 }}
                     >
                         ❌
                     </IconButton>
@@ -202,26 +256,49 @@ export default function InvoiceItemRow({ index }) {
             </TableRow>
 
             {/* Add New Item Dialog */}
-            <Dialog open={isDialogOpen} onClose={() => setIsDialogOpen(false)} maxWidth="sm" fullWidth>
-                <DialogTitle>Add New Item</DialogTitle>
+            <Dialog
+                open={isDialogOpen}
+                onClose={() => setIsDialogOpen(false)}
+                maxWidth="sm"
+                fullWidth
+                PaperProps={{
+                    sx: {
+                        borderRadius: 1,
+                        minWidth: 400
+                    }
+                }}
+            >
+                <DialogTitle sx={{ fontSize: '1rem', py: 1.5 }}>
+                    Add New Item
+                </DialogTitle>
                 <DialogContent>
-                    <Grid container spacing={2} sx={{ mt: 1 }}>
+                    <Grid container spacing={2} sx={{ mt: 0.5 }}>
                         <Grid item xs={12}>
                             <TextField
                                 fullWidth
                                 label="Item Name"
+                                size="small"
                                 value={newItem.itemName}
                                 onChange={(e) => setNewItem({ ...newItem, itemName: e.target.value })}
                                 required
+                                sx={{
+                                    '& .MuiInputLabel-root': { fontSize: '0.75rem' },
+                                    '& .MuiInputBase-root': { fontSize: '0.75rem' }
+                                }}
                             />
                         </Grid>
                         <Grid item xs={6}>
                             <TextField
                                 fullWidth
                                 label="HSN Code"
+                                size="small"
                                 value={newItem.hsnCode}
                                 onChange={(e) => setNewItem({ ...newItem, hsnCode: e.target.value })}
                                 required
+                                sx={{
+                                    '& .MuiInputLabel-root': { fontSize: '0.75rem' },
+                                    '& .MuiInputBase-root': { fontSize: '0.75rem' }
+                                }}
                             />
                         </Grid>
                         <Grid item xs={6}>
@@ -229,8 +306,13 @@ export default function InvoiceItemRow({ index }) {
                                 fullWidth
                                 label="Rate"
                                 type="number"
+                                size="small"
                                 value={newItem.rate}
                                 onChange={(e) => setNewItem({ ...newItem, rate: e.target.value })}
+                                sx={{
+                                    '& .MuiInputLabel-root': { fontSize: '0.75rem' },
+                                    '& .MuiInputBase-root': { fontSize: '0.75rem' }
+                                }}
                             />
                         </Grid>
                         <Grid item xs={12}>
@@ -238,15 +320,32 @@ export default function InvoiceItemRow({ index }) {
                                 fullWidth
                                 label="GST (%)"
                                 type="number"
+                                size="small"
                                 value={newItem.gst}
                                 onChange={(e) => setNewItem({ ...newItem, gst: e.target.value })}
+                                sx={{
+                                    '& .MuiInputLabel-root': { fontSize: '0.75rem' },
+                                    '& .MuiInputBase-root': { fontSize: '0.75rem' }
+                                }}
                             />
                         </Grid>
                     </Grid>
                 </DialogContent>
-                <DialogActions>
-                    <Button onClick={() => setIsDialogOpen(false)}>Cancel</Button>
-                    <Button onClick={handleAddNewItem} variant="contained" color="primary">
+                <DialogActions sx={{ p: 2 }}>
+                    <Button
+                        onClick={() => setIsDialogOpen(false)}
+                        size="small"
+                        sx={{ fontSize: '0.7rem' }}
+                    >
+                        Cancel
+                    </Button>
+                    <Button
+                        onClick={handleAddNewItem}
+                        variant="contained"
+                        color="primary"
+                        size="small"
+                        sx={{ fontSize: '0.7rem' }}
+                    >
                         Add Item
                     </Button>
                 </DialogActions>

@@ -8,7 +8,7 @@
     TableCell,
 } from "@mui/material";
 import { useDispatch, useSelector } from 'react-redux';
-import { addItem } from './../../store/invoiceItemsSlice';  // Corrected path
+import { addItem } from './../../store/invoiceItemsSlice';
 import InvoiceItemRow from "./InvoiceItemRow";
 
 export default function InvoiceItemsTable() {
@@ -21,16 +21,16 @@ export default function InvoiceItemsTable() {
 
     return (
         <>
-            <Table>
+            <Table size="small" sx={{ '& .MuiTableCell-root': { fontSize: '0.75rem', py: 0.5 } }}>
                 <TableHead>
                     <TableRow>
-                        <TableCell>Item</TableCell>
-                        <TableCell>HSN</TableCell>
-                        <TableCell>Qty</TableCell>
-                        <TableCell>Rate</TableCell>
-                        <TableCell>Amount</TableCell>
-                        <TableCell>GST</TableCell>
-                        <TableCell />
+                        <TableCell sx={{ fontWeight: 'bold', fontSize: '0.75rem' }}>Item</TableCell>
+                        <TableCell sx={{ fontWeight: 'bold', fontSize: '0.75rem' }}>HSN</TableCell>
+                        <TableCell sx={{ fontWeight: 'bold', fontSize: '0.75rem' }}>Qty</TableCell>
+                        <TableCell sx={{ fontWeight: 'bold', fontSize: '0.75rem' }}>Rate</TableCell>
+                        <TableCell sx={{ fontWeight: 'bold', fontSize: '0.75rem' }}>Amount</TableCell>
+                        <TableCell sx={{ fontWeight: 'bold', fontSize: '0.75rem' }}>GST</TableCell>
+                        <TableCell sx={{ fontWeight: 'bold', fontSize: '0.75rem' }} />
                     </TableRow>
                 </TableHead>
 
@@ -44,10 +44,12 @@ export default function InvoiceItemsTable() {
                 </TableBody>
             </Table>
 
-            <Box mt={2}>
+            <Box mt={1}>
                 <Button
                     variant="contained"
                     onClick={addRow}
+                    size="small"
+                    sx={{ fontSize: '0.7rem' }}
                 >
                     Add Item
                 </Button>
