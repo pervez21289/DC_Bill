@@ -23,7 +23,7 @@ export default function DashboardLayout() {
 
   // set media wise responsive drawer
   useEffect(() => {
-    handlerDrawerOpen(!downXL);
+    handlerDrawerOpen(downXL);
   }, [downXL]);
 
   if (menuMasterLoading) return <Loader />;

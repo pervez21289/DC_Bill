@@ -17,7 +17,7 @@ const SamplePage = Loadable(lazy(() => import('pages/extra-pages/sample-page')))
 
 // render - invoice page
 const InvoicePage = Loadable(lazy(() => import('../pages/invoice/InvoicePage')));
-
+const BillingSettings = Loadable(lazy(() => import('../pages/billingsettings/BillingSettings')));
 // ==============================|| MAIN ROUTING ||============================== //
 
 const MainRoutes = {
@@ -38,8 +38,8 @@ const MainRoutes = {
       ]
     },
     {
-      path: 'typography',
-      element: <Typography />
+      path: 'profile',
+      element: <BillingSettings />
     },
     {
       path: 'color',

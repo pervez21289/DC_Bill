@@ -1,81 +1,57 @@
 ﻿using Dapper;
-using Microsoft.Data.SqlClient;
+using LMS.Core.Entities;
+using LMS.Core.Interfaces;
+using LMS.Repo.Repository;
+using Microsoft.Extensions.Configuration;
 using System.Data;
+using System.Threading.Tasks;
 
-public class BillingSettingsRepository : IBillingSettingsRepository
+namespace LMS.Repository.Repo
 {
-    private readonly IConfiguration _configuration;
-
-    public BillingSettingsRepository(IConfiguration configuration)
+    public class BillingSettingsRepository : BaseRepository, IBillingSettingsRepository
     {
-        _configuration = configuration;
-    }
 
-    private IDbConnection Connection =>
-        new SqlConnection(_configuration.GetConnectionString("DefaultConnection"));
+        public async Task<BillingSettings?> GetAsync()
+        {
+            var sql = "USP_GetBillingSettings";
+            return await QueryFirstOrDefaultAsync<BillingSettings>(sql, null, CommandType.StoredProcedure);
+        }
 
-    public async Task<BillingSettings?> GetAsync()
-    {
-        var sql = @"SELECT TOP 1 *
-                    FROM BillingSettings
-                    ORDER BY Id";
+        public async Task<int> CreateAsync(BillingSettings model)
+        {
+            var parameters = new
+            {
+                model.CompanyName,
+                model.GSTIN,
+                model.MobileNumber,
+                model.Address,
+                model.City,
+                model.PinCode,
+                model.State,
+                model.Country
+            };
 
-        using var db = Connection;
+            var sql = "USP_CreateBillingSettings";
+            return await ExecuteScalarAsync<int>(sql, parameters, CommandType.StoredProcedure);
+        }
 
-        return await db.QueryFirstOrDefaultAsync<BillingSettings>(sql);
-    }
+        public async Task<int> UpdateAsync(BillingSettings model)
+        {
+            var parameters = new
+            {
+                model.Id,
+                model.CompanyName,
+                model.GSTIN,
+                model.MobileNumber,
+                model.Address,
+                model.City,
+                model.PinCode,
+                model.State,
+                model.Country
+            };
 
-    public async Task<int> CreateAsync(BillingSettings model)
-    {
-        var sql = @"
-        INSERT INTO BillingSettings
-        (
-            CompanyName,
-            GSTIN,
-            MobileNumber,
-            Address,
-            City,
-            PinCode,
-            State,
-            Country
-        )
-        VALUES
-        (
-            @CompanyName,
-            @GSTIN,
-            @MobileNumber,
-            @Address,
-            @City,
-            @PinCode,
-            @State,
-            @Country
-        );
-
-        SELECT CAST(SCOPE_IDENTITY() AS INT);";
-
-        using var db = Connection;
-
-        return await db.ExecuteScalarAsync<int>(sql, model);
-    }
-
-    public async Task<int> UpdateAsync(BillingSettings model)
-    {
-        var sql = @"
-        UPDATE BillingSettings
-        SET
-            CompanyName = @CompanyName,
-            GSTIN = @GSTIN,
-            MobileNumber = @MobileNumber,
-            Address = @Address,
-            City = @City,
-            PinCode = @PinCode,
-            State = @State,
-            Country = @Country,
-            UpdatedDate = GETDATE()
-        WHERE Id = @Id";
-
-        using var db = Connection;
-
-        return await db.ExecuteAsync(sql, model);
+            var sql = "USP_UpdateBillingSettings";
+            return await ExecuteAsync(sql, parameters, CommandType.StoredProcedure);
+        }
     }
 }

@@ -21,7 +21,8 @@ export function useGetMenuMaster() {
   const memoizedValue = useMemo(
     () => ({
       menuMaster: data,
-      menuMasterLoading: isLoading
+          menuMasterLoading: isLoading,
+          isDrawerOpen: data?.isDashboardDrawerOpened || false
     }),
     [data, isLoading]
   );
@@ -30,8 +31,8 @@ export function useGetMenuMaster() {
 }
 
 export function handlerDrawerOpen(isDashboardDrawerOpened) {
-  // to update local state based on key
-
+    // to update local state based on key
+    debugger;
   mutate(
     endpoints.key + endpoints.master,
     (currentMenuMaster) => {

@@ -9,3 +9,5 @@
 /LMS.Repository/bin
 /LMS.Repository/obj
 /.vs
+/dcbill.client/obj/Debug
+/DCBill.Server/bin
