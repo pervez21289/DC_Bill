@@ -7,24 +7,16 @@
     TableRow,
     TableCell,
 } from "@mui/material";
-
+import { useDispatch, useSelector } from 'react-redux';
+import { addItem } from './../../store/invoiceItemsSlice';  // Corrected path
 import InvoiceItemRow from "./InvoiceItemRow";
 
-export default function InvoiceItemsTable({
-    items,
-    setItems,
-}) {
+export default function InvoiceItemsTable() {
+    const dispatch = useDispatch();
+    const items = useSelector(state => state.invoiceItems.items);
+
     const addRow = () => {
-        setItems([
-            ...items,
-            {
-                itemId: "",
-                hsnCode: "",
-                qty: 0,
-                rate: 0,
-                amount: 0,
-            },
-        ]);
+        dispatch(addItem({}));
     };
 
     return (
@@ -32,37 +24,23 @@ export default function InvoiceItemsTable({
             <Table>
                 <TableHead>
                     <TableRow>
-                        <TableCell>
-                            Item
-                        </TableCell>
-                        <TableCell>
-                            HSN
-                        </TableCell>
-                        <TableCell>
-                            Qty
-                        </TableCell>
-                        <TableCell>
-                            Rate
-                        </TableCell>
-                        <TableCell>
-                            Amount
-                        </TableCell>
+                        <TableCell>Item</TableCell>
+                        <TableCell>HSN</TableCell>
+                        <TableCell>Qty</TableCell>
+                        <TableCell>Rate</TableCell>
+                        <TableCell>Amount</TableCell>
+                        <TableCell>GST</TableCell>
                         <TableCell />
                     </TableRow>
                 </TableHead>
 
                 <TableBody>
-                    {items.map(
-                        (item, index) => (
-                            <InvoiceItemRow
-                                key={index}
-                                index={index}
-                                item={item}
-                                items={items}
-                                setItems={setItems}
-                            />
-                        )
-                    )}
+                    {items.map((_, index) => (
+                        <InvoiceItemRow
+                            key={index}
+                            index={index}
+                        />
+                    ))}
                 </TableBody>
             </Table>
 
