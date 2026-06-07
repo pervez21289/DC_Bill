@@ -1,6 +1,7 @@
 // components/InvoiceGrid/InvoiceGridTable.jsx
 import { DataGrid, gridClasses } from '@mui/x-data-grid';
 import { useInvoiceColumns } from './InvoiceGridColumns';
+import { useSelector } from 'react-redux';
 
 export default function InvoiceGridTable({
     invoices,
@@ -9,7 +10,8 @@ export default function InvoiceGridTable({
     setPaginationModel,
     totalCount
 }) {
-    const columns = useInvoiceColumns();
+    const { data: billingData } = useSelector(state => state.billingSettings);
+    const columns = useInvoiceColumns(billingData);
 
     return (
         <DataGrid

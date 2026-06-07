@@ -1,24 +1,116 @@
-// components/InvoiceGrid/InvoiceGridColumns.jsx
+// components/InvoiceGrid/InvoiceGridColumns.jsx (Simpler Version)
 import { Box, Typography, Chip, IconButton } from '@mui/material';
 import { Visibility as ViewIcon, PictureAsPdf as PdfIcon, Print as PrintIcon } from '@mui/icons-material';
 import { useNavigate } from 'react-router-dom';
+import { pdf } from '@react-pdf/renderer';
+import { InvoicePDF } from './../Pdf/InvoicePDF';
+import { useState } from 'react';
+import { CircularProgress } from '@mui/material';
+import { useDispatch } from 'react-redux';
+import { fetchInvoiceById } from './../../../store/invoiceSlice';
 
-export const useInvoiceColumns = () => {
+// Format helpers
+const formatCurrency = (amount) => {
+    return new Intl.NumberFormat('en-IN', {
+        style: 'currency',
+        currency: 'INR',
+        minimumFractionDigits: 2
+    }).format(amount || 0);
+};
+
+const formatDate = (date) => {
+    return new Date(date).toLocaleDateString('en-GB');
+};
+
+// Function to prepare invoice data for PDF
+const prepareInvoiceData = (invoice, billingData) => {
+    return {
+        gstin: billingData?.gstin,
+        mobile: billingData?.mobileNumber,
+        companyName: billingData?.companyName,
+        address: billingData?.address,
+        city: billingData?.city || "",
+        pinCode: billingData?.pinCode || "",
+        state: billingData?.state || "",
+        invoiceDate: invoice.invoiceDate,
+        invoiceNo: invoice.invoiceNo,
+        partyName: invoice.partyName,
+        partyAddress: invoice.partyAddress || "",
+        partyCity: invoice.partyCity || "",
+        partyPinCode: invoice.partyPinCode || "",
+        partyState: invoice.partyState || "",
+        partyGstin: invoice.partyGSTIN || "",
+        items: invoice.details?.map(item => ({
+            itemName: item.itemName,
+            hsnCode: item.hsnCode,
+            quantity: item.quantity,
+            rate: item.rate,
+            amount: item.amount,
+            gstPercent: item.gstPercent
+        })) || [],
+        subtotal: invoice.subtotal,
+        totalGST: invoice.totalGST,
+        grandTotal: invoice.grandTotal,
+        cgstPercent: 9,
+        sgstPercent: 9,
+        cgstAmount: invoice.totalGST / 2,
+        sgstAmount: invoice.totalGST / 2
+    };
+};
+
+// PDF Button Component
+const PDFButton = ({ row, billingData }) => {
+    const dispatch = useDispatch();
+    const [isLoading, setIsLoading] = useState(false);
+
+    const handleDownloadPDF = async () => {
+        setIsLoading(true);
+        try {
+            const result = await dispatch(fetchInvoiceById(row.id)).unwrap();
+            if (result && result.success) {
+                const invoiceData = prepareInvoiceData(result.data, billingData);
+                const blob = await pdf(<InvoicePDF invoiceData={invoiceData} />).toBlob();
+                const url = URL.createObjectURL(blob);
+                const link = document.createElement('a');
+                link.href = url;
+                link.download = `Invoice_${row.invoiceNo}.pdf`;
+                document.body.appendChild(link);
+                link.click();
+                document.body.removeChild(link);
+                URL.revokeObjectURL(url);
+            }
+        } catch (error) {
+            console.error('Error generating PDF:', error);
+        } finally {
+            setIsLoading(false);
+        }
+    };
+
+    if (isLoading) {
+        return (
+            <IconButton size="small" sx={{ padding: 0.5 }} disabled>
+                <CircularProgress size={16} />
+            </IconButton>
+        );
+    }
+
+    return (
+        <IconButton
+            size="small"
+            onClick={handleDownloadPDF}
+            sx={{ padding: 0.5 }}
+            title="Download PDF"
+        >
+            <PdfIcon sx={{ fontSize: '1rem' }} />
+        </IconButton>
+    );
+};
+
+export const useInvoiceColumns = (billingData = null) => {
     const navigate = useNavigate();
 
-    const formatCurrency = (amount) => {
-        return new Intl.NumberFormat('en-IN', {
-            style: 'currency',
-            currency: 'INR',
-            minimumFractionDigits: 2
-        }).format(amount || 0);
-    };
-
-    const formatDate = (date) => {
-        return new Date(date).toLocaleDateString('en-GB');
-    };
-
     return [
+        // ... rest of the columns remain the same
         {
             field: 'sno',
             headerName: 'S.No',
@@ -130,7 +222,7 @@ export const useInvoiceColumns = () => {
             sortable: false,
             filterable: false,
             renderCell: (params) => (
-                <Box>
+                <Box sx={{ display: 'flex', gap: 0.5, justifyContent: 'center' }}>
                     <IconButton
                         size="small"
                         onClick={() => navigate(`/invoice/${params.row.id}`)}
@@ -139,17 +231,13 @@ export const useInvoiceColumns = () => {
                     >
                         <ViewIcon sx={{ fontSize: '1rem' }} />
                     </IconButton>
+
+                    <PDFButton row={params.row} billingData={billingData} />
+
                     <IconButton
                         size="small"
                         sx={{ padding: 0.5 }}
-                        title="Download PDF"
-                    >
-                        <PdfIcon sx={{ fontSize: '1rem' }} />
-                    </IconButton>
-                    <IconButton
-                        size="small"
-                        sx={{ padding: 0.5 }}
-                        title="Print"
+                        title="Print Invoice"
                     >
                         <PrintIcon sx={{ fontSize: '1rem' }} />
                     </IconButton>

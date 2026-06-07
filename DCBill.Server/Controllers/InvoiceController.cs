@@ -45,6 +45,24 @@ namespace LMS.API.Controllers
             }
         }
 
+        [HttpGet("{id}")]
+        public async Task<ActionResult<ApiResponse<InvoiceMaster>>> GetById(long id)
+        {
+            try
+            {
+                var invoice = await _invoiceRepository.GetByIdAsync(id);
+                if (invoice == null)
+                {
+                    return NotFound(ApiResponse<InvoiceMaster>.Fail("Invoice not found"));
+                }
+                return Ok(ApiResponse<InvoiceMaster>.Ok(invoice));
+            }
+            catch (System.Exception ex)
+            {
+                return BadRequest(ApiResponse<InvoiceMaster>.Fail(ex.Message));
+            }
+        }
+
         [HttpPost]
         public async Task<ActionResult<ApiResponse<int>>> CreateInvoice([FromBody] CreateInvoiceRequest request)
         {
@@ -76,5 +94,7 @@ namespace LMS.API.Controllers
                 return BadRequest(ApiResponse<int>.Fail(ex.Message));
             }
         }
+
+        
     }
 }
