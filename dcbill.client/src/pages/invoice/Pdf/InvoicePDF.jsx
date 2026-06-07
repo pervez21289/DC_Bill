@@ -1,5 +1,5 @@
 ﻿// components/InvoicePDF.jsx
-import { Page, Document, StyleSheet, View, Text, Image } from '@react-pdf/renderer';
+import { Page, Document, StyleSheet, View, Text } from '@react-pdf/renderer';
 
 // Create styles
 const styles = StyleSheet.create({
@@ -34,11 +34,6 @@ const styles = StyleSheet.create({
         fontSize: 9,
         textAlign: 'center',
         marginBottom: 3
-    },
-    cityState: {
-        fontSize: 9,
-        textAlign: 'center',
-        marginBottom: 15
     },
     invoiceDetails: {
         flexDirection: 'row',
@@ -80,13 +75,13 @@ const styles = StyleSheet.create({
         padding: 5,
         fontSize: 9
     },
+    // Fixed column widths - aligned with summary section
     col1: { width: '8%', textAlign: 'center' },
-    col2: { width: '25%' },
+    col2: { width: '32%', textAlign: 'left' },
     col3: { width: '12%', textAlign: 'center' },
     col4: { width: '10%', textAlign: 'center' },
-    col5: { width: '10%', textAlign: 'center' },
-    col6: { width: '15%', textAlign: 'right' },
-    col7: { width: '10%', textAlign: 'center' },
+    col5: { width: '15%', textAlign: 'right' },
+    col6: { width: '23%', textAlign: 'right' },
     summarySection: {
         marginTop: 10,
         width: '60%',
@@ -99,26 +94,19 @@ const styles = StyleSheet.create({
         paddingHorizontal: 5
     },
     summaryLabel: {
-        width: '40%',
+        width: '60%',
         fontWeight: 'bold'
     },
     summaryValue: {
-        width: '30%',
+        width: '40%',
         textAlign: 'right'
-    },
-    totalRow: {
-        flexDirection: 'row',
-        justifyContent: 'space-between',
-        marginTop: 5,
-        paddingTop: 5,
-        borderTop: '1px solid #000',
-        fontWeight: 'bold'
     },
     grandTotalRow: {
         flexDirection: 'row',
         justifyContent: 'space-between',
         marginTop: 5,
         paddingTop: 5,
+        paddingHorizontal: 5,
         borderTop: '1px solid #000',
         borderBottom: '1px solid #000',
         fontWeight: 'bold',
@@ -136,11 +124,6 @@ const styles = StyleSheet.create({
         borderTop: '1px solid #ccc',
         paddingTop: 8
     },
-    signatureSection: {
-        flexDirection: 'row',
-        justifyContent: 'space-between',
-        marginTop: 20
-    },
     eoe: {
         textAlign: 'center',
         fontSize: 8,
@@ -151,13 +134,26 @@ const styles = StyleSheet.create({
 export const InvoicePDF = ({ invoiceData }) => {
     // Format currency
     const formatCurrency = (amount) => {
-        return amount?.toLocaleString('en-IN') || '0';
+        if (!amount) return '0';
+        return amount.toLocaleString('en-IN', {
+            maximumFractionDigits: 2,
+            minimumFractionDigits: 2
+        });
     };
 
     // Format date
     const formatDate = (date) => {
+        if (!date) return '';
         return new Date(date).toLocaleDateString('en-GB');
     };
+
+    // Calculate CGST, SGST, IGST based on invoice data
+    const cgstPercent = invoiceData.cgstPercent || (invoiceData.isInterState ? 0 : (invoiceData.gstPercent || 18) / 2);
+    const sgstPercent = invoiceData.sgstPercent || (invoiceData.isInterState ? 0 : (invoiceData.gstPercent || 18) / 2);
+    const igstPercent = invoiceData.igstPercent || (invoiceData.isInterState ? (invoiceData.gstPercent || 18) : 0);
+    const cgstAmount = invoiceData.cgstAmount || (invoiceData.totalGST / 2);
+    const sgstAmount = invoiceData.sgstAmount || (invoiceData.totalGST / 2);
+    const igstAmount = invoiceData.igstAmount || (invoiceData.isInterState ? invoiceData.totalGST : 0);
 
     return (
         <Document>
@@ -165,17 +161,17 @@ export const InvoicePDF = ({ invoiceData }) => {
                 {/* Header */}
                 <View style={styles.header}>
                     <View style={styles.headerLeft}>
-                        <Text>GSTIN : {invoiceData.gstin || '05AOSPA8862Q2Z2'}</Text>
+                        <Text>GSTIN : {invoiceData.gstin }</Text>
                     </View>
                     <Text style={{ fontWeight: 'bold', fontSize: 12 }}>TAX INVOICE</Text>
                     <View style={styles.headerRight}>
-                        <Text>MOB. : {invoiceData.mobile || '9358001015'}</Text>
+                        <Text>MOB. : {invoiceData.mobile }</Text>
                     </View>
                 </View>
 
                 {/* Company Details */}
-                <Text style={styles.companyName}>{invoiceData.companyName || 'DHANRAJ CITY DEVELOPERS'}</Text>
-                <Text style={styles.address}>{invoiceData.address || 'C-19, Clement Town, Turner Road, Dehradun-248002'}</Text>
+                <Text style={styles.companyName}>{invoiceData.companyName }</Text>
+                <Text style={styles.address}>{invoiceData.address }</Text>
 
                 {/* Invoice Date and No */}
                 <View style={styles.invoiceDetails}>
@@ -232,45 +228,44 @@ export const InvoicePDF = ({ invoiceData }) => {
                 <View style={styles.summarySection}>
                     <View style={styles.summaryRow}>
                         <Text style={styles.summaryLabel}>Total</Text>
-                        <Text></Text>
                         <Text style={styles.summaryValue}>{formatCurrency(invoiceData.subtotal)}</Text>
                     </View>
                     <View style={styles.summaryRow}>
                         <Text style={styles.summaryLabel}>Discount</Text>
-                        <Text></Text>
                         <Text style={styles.summaryValue}>-</Text>
                     </View>
                     <View style={styles.summaryRow}>
                         <Text style={styles.summaryLabel}>Total</Text>
-                        <Text></Text>
                         <Text style={styles.summaryValue}>{formatCurrency(invoiceData.subtotal)}</Text>
                     </View>
 
-                    <View style={styles.summaryRow}>
-                        <Text style={styles.summaryLabel}>CGST ({invoiceData.cgstPercent || 9}%)</Text>
-                        <Text></Text>
-                        <Text style={styles.summaryValue}>{formatCurrency(invoiceData.cgstAmount)}</Text>
-                    </View>
-                    <View style={styles.summaryRow}>
-                        <Text style={styles.summaryLabel}>SGST ({invoiceData.sgstPercent || 9}%)</Text>
-                        <Text></Text>
-                        <Text style={styles.summaryValue}>{formatCurrency(invoiceData.sgstAmount)}</Text>
-                    </View>
-                    <View style={styles.summaryRow}>
-                        <Text style={styles.summaryLabel}>IGST</Text>
-                        <Text></Text>
-                        <Text style={styles.summaryValue}>-</Text>
-                    </View>
+                    {!invoiceData.isInterState && (
+                        <>
+                            <View style={styles.summaryRow}>
+                                <Text style={styles.summaryLabel}>CGST ({cgstPercent}%)</Text>
+                                <Text style={styles.summaryValue}>{formatCurrency(cgstAmount)}</Text>
+                            </View>
+                            <View style={styles.summaryRow}>
+                                <Text style={styles.summaryLabel}>SGST ({sgstPercent}%)</Text>
+                                <Text style={styles.summaryValue}>{formatCurrency(sgstAmount)}</Text>
+                            </View>
+                        </>
+                    )}
+
+                    {invoiceData.isInterState && (
+                        <View style={styles.summaryRow}>
+                            <Text style={styles.summaryLabel}>IGST ({igstPercent}%)</Text>
+                            <Text style={styles.summaryValue}>{formatCurrency(igstAmount)}</Text>
+                        </View>
+                    )}
 
                     <View style={styles.summaryRow}>
                         <Text style={styles.summaryLabel}>Advance</Text>
-                        <Text></Text>
                         <Text style={styles.summaryValue}>-</Text>
                     </View>
 
                     <View style={styles.grandTotalRow}>
                         <Text style={styles.summaryLabel}>GRAND TOTAL</Text>
-                        <Text></Text>
                         <Text style={styles.summaryValue}>{formatCurrency(invoiceData.grandTotal)}</Text>
                     </View>
                 </View>
@@ -281,7 +276,7 @@ export const InvoicePDF = ({ invoiceData }) => {
                     <Text>Authorised Signature</Text>
                 </View>
 
-                <Text style={styles.eoe}>E & O.E.</Text>
+                <Text style={styles.eoe}>E &amp; O.E.</Text>
 
                 {/* Terms and Conditions */}
                 <View style={styles.termsSection}>
