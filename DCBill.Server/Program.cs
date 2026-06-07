@@ -1,4 +1,5 @@
 using LMS.API.Repositories;
+using LMS.API.Repositories.Interfaces;
 using LMS.Core.Interfaces;
 using LMS.Repo.Repository;
 using LMS.Repository.Repo;
@@ -9,6 +10,7 @@ var builder = WebApplication.CreateBuilder(args);
 builder.Services.AddScoped<IBillingSettingsRepository, BillingSettingsRepository>();
 builder.Services.AddScoped<IItemMasterRepository, ItemMasterRepository>();
 builder.Services.AddScoped<IPartyRepository, PartyRepository>();
+builder.Services.AddScoped<IInvoiceRepository, InvoiceRepository>();
 builder.Services.AddSingleton<BaseRepository>();
 builder.Services.AddControllers();
 

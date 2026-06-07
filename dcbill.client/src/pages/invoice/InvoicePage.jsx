@@ -26,6 +26,10 @@ export default function InvoicePage() {
         dispatch(fetchItemMaster());
     }, [dispatch]);
 
+    const handleCloseSnackbar = () => {
+        setSnackbar({ ...snackbar, open: false });
+    };
+
     const handleSaveInvoice = async () => {
         // Validate invoice data
         if (!selectedParty) {
@@ -68,6 +72,7 @@ export default function InvoicePage() {
         setSaving(true);
         try {
             const result = await dispatch(saveInvoice(invoiceData)).unwrap();
+            debugger;
             if (result && result.success) {
                 setSnackbar({ open: true, message: 'Invoice saved successfully!', severity: 'success' });
                 // Clear items after successful save
@@ -89,7 +94,6 @@ export default function InvoicePage() {
     return (
         <Box p={3}>
             <InvoiceHeader />
-
             <InvoiceItemsTable />
 
             <Box
@@ -97,6 +101,22 @@ export default function InvoicePage() {
                     display: "flex",
                     justifyContent: "flex-end",
                     mt: 3,
+                    gap: 2
+                }}
+            >
+                <InvoiceSummary
+                    subtotal={calculations.subtotal}
+                    totalGST={calculations.totalGST}
+                    total={calculations.grandTotal}
+                    itemsCount={calculations.itemsCount}
+                />
+            </Box>
+
+            <Box
+                sx={{
+                    display: "flex",
+                    justifyContent: "flex-end",
+                    mt: 2,
                     gap: 2
                 }}
             >
@@ -120,10 +140,10 @@ export default function InvoicePage() {
             <Snackbar
                 open={snackbar.open}
                 autoHideDuration={6000}
-                onClose={() => setSnackbar({ ...snackbar, open: false })}
+                onClose={handleCloseSnackbar}
                 anchorOrigin={{ vertical: 'top', horizontal: 'right' }}
             >
-                <Alert severity={snackbar.severity} onClose={() => setSnackbar({ ...snackbar, open: false })}>
+                <Alert severity={snackbar.severity} onClose={handleCloseSnackbar}>
                     {snackbar.message}
                 </Alert>
             </Snackbar>

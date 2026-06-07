@@ -1,7 +1,7 @@
 import { Dialog, DialogTitle, DialogContent, DialogActions, Grid, TextField, Button, CircularProgress, Snackbar, Alert } from '@mui/material';
 import { useState } from 'react';
 import { useDispatch } from 'react-redux';
-import { addPartyToMaster, fetchParties } from './../../../store/partySlice';
+import { addPartyToMaster, updatePartyInMaster, fetchParties } from './../../../store/partySlice';
 
 export default function PartyDialog({ open, onClose, isEditing, partyData, setPartyData, onSave }) {
     const [saving, setSaving] = useState(false);
@@ -22,8 +22,37 @@ export default function PartyDialog({ open, onClose, isEditing, partyData, setPa
 
     const handleSave = async () => {
         if (isEditing) {
-            onSave(); // Just call parent's save function
+            // Update existing party
+            if (!partyData.partyName || !partyData.gstin) {
+                showMessage('Please fill Party Name and GSTIN', 'warning');
+                return;
+            }
+
+            setSaving(true);
+            try {
+                const result = await dispatch(updatePartyInMaster({
+                    id: partyData.id,
+                    partyData: partyData
+                })).unwrap();
+
+                if (result && result.success) {
+                    await dispatch(fetchParties());
+                    showMessage('Party updated successfully!', 'success');
+                    setTimeout(() => {
+                        onSave(); // Call parent to refresh
+                        onClose(); // Close dialog
+                    }, 1000);
+                } else {
+                    showMessage(result?.message || 'Failed to update party', 'error');
+                }
+            } catch (error) {
+                console.error('Error updating party:', error);
+                showMessage('Error updating party: ' + (error?.message || 'Please try again'), 'error');
+            } finally {
+                setSaving(false);
+            }
         } else {
+            // Add new party
             if (!partyData.partyName || !partyData.gstin) {
                 showMessage('Please fill Party Name and GSTIN', 'warning');
                 return;
@@ -42,23 +71,20 @@ export default function PartyDialog({ open, onClose, isEditing, partyData, setPa
                     email: partyData.email || ''
                 };
 
-                // Save to API
                 const result = await dispatch(addPartyToMaster(partyDataToSave)).unwrap();
 
                 if (result && result.success) {
-                    // Refresh the list
                     await dispatch(fetchParties());
                     showMessage('Party added successfully!', 'success');
-
-                    // Close dialog after success
                     setTimeout(() => {
-                        onClose(); // Close dialog
                         onSave(); // Call parent to refresh
+                        onClose(); // Close dialog
                     }, 1000);
                 } else {
                     showMessage(result?.message || 'Failed to add party', 'error');
                 }
             } catch (error) {
+                console.error('Error adding party:', error);
                 showMessage('Error adding party: ' + (error?.message || 'Please try again'), 'error');
             } finally {
                 setSaving(false);
@@ -74,77 +100,122 @@ export default function PartyDialog({ open, onClose, isEditing, partyData, setPa
                 </DialogTitle>
                 <DialogContent>
                     <Grid container spacing={2} sx={{ mt: 0.5 }}>
-                        {/* Form fields remain the same */}
                         <Grid item xs={12}>
                             <TextField
-                                fullWidth label="Party Name" size="small"
+                                fullWidth
+                                label="Party Name"
+                                size="small"
                                 value={partyData?.partyName || ''}
                                 onChange={(e) => handleChange('partyName', e.target.value)}
                                 required
-                                sx={{ '& .MuiInputLabel-root': { fontSize: '0.75rem' }, '& .MuiInputBase-root': { fontSize: '0.75rem' } }}
+                                sx={{
+                                    '& .MuiInputLabel-root': { fontSize: '0.75rem' },
+                                    '& .MuiInputBase-root': { fontSize: '0.75rem' }
+                                }}
                             />
                         </Grid>
                         <Grid item xs={12}>
                             <TextField
-                                fullWidth label="Address" size="small"
+                                fullWidth
+                                label="Address"
+                                size="small"
                                 value={partyData?.address || ''}
                                 onChange={(e) => handleChange('address', e.target.value)}
-                                sx={{ '& .MuiInputLabel-root': { fontSize: '0.75rem' }, '& .MuiInputBase-root': { fontSize: '0.75rem' } }}
+                                sx={{
+                                    '& .MuiInputLabel-root': { fontSize: '0.75rem' },
+                                    '& .MuiInputBase-root': { fontSize: '0.75rem' }
+                                }}
                             />
                         </Grid>
                         <Grid item xs={6}>
                             <TextField
-                                fullWidth label="City" size="small"
+                                fullWidth
+                                label="City"
+                                size="small"
                                 value={partyData?.city || ''}
                                 onChange={(e) => handleChange('city', e.target.value)}
-                                sx={{ '& .MuiInputLabel-root': { fontSize: '0.75rem' }, '& .MuiInputBase-root': { fontSize: '0.75rem' } }}
+                                sx={{
+                                    '& .MuiInputLabel-root': { fontSize: '0.75rem' },
+                                    '& .MuiInputBase-root': { fontSize: '0.75rem' }
+                                }}
                             />
                         </Grid>
                         <Grid item xs={6}>
                             <TextField
-                                fullWidth label="State" size="small"
+                                fullWidth
+                                label="State"
+                                size="small"
                                 value={partyData?.state || ''}
                                 onChange={(e) => handleChange('state', e.target.value)}
-                                sx={{ '& .MuiInputLabel-root': { fontSize: '0.75rem' }, '& .MuiInputBase-root': { fontSize: '0.75rem' } }}
+                                sx={{
+                                    '& .MuiInputLabel-root': { fontSize: '0.75rem' },
+                                    '& .MuiInputBase-root': { fontSize: '0.75rem' }
+                                }}
                             />
                         </Grid>
                         <Grid item xs={6}>
                             <TextField
-                                fullWidth label="Pin Code" size="small"
+                                fullWidth
+                                label="Pin Code"
+                                size="small"
                                 value={partyData?.pinCode || ''}
                                 onChange={(e) => handleChange('pinCode', e.target.value)}
-                                sx={{ '& .MuiInputLabel-root': { fontSize: '0.75rem' }, '& .MuiInputBase-root': { fontSize: '0.75rem' } }}
+                                sx={{
+                                    '& .MuiInputLabel-root': { fontSize: '0.75rem' },
+                                    '& .MuiInputBase-root': { fontSize: '0.75rem' }
+                                }}
                             />
                         </Grid>
                         <Grid item xs={6}>
                             <TextField
-                                fullWidth label="Mobile" size="small"
+                                fullWidth
+                                label="Mobile"
+                                size="small"
                                 value={partyData?.mobile || ''}
                                 onChange={(e) => handleChange('mobile', e.target.value)}
-                                sx={{ '& .MuiInputLabel-root': { fontSize: '0.75rem' }, '& .MuiInputBase-root': { fontSize: '0.75rem' } }}
+                                sx={{
+                                    '& .MuiInputLabel-root': { fontSize: '0.75rem' },
+                                    '& .MuiInputBase-root': { fontSize: '0.75rem' }
+                                }}
                             />
                         </Grid>
                         <Grid item xs={12}>
                             <TextField
-                                fullWidth label="GSTIN" size="small"
+                                fullWidth
+                                label="GSTIN"
+                                size="small"
                                 value={partyData?.gstin || ''}
                                 onChange={(e) => handleChange('gstin', e.target.value)}
                                 required
-                                sx={{ '& .MuiInputLabel-root': { fontSize: '0.75rem' }, '& .MuiInputBase-root': { fontSize: '0.75rem' } }}
+                                sx={{
+                                    '& .MuiInputLabel-root': { fontSize: '0.75rem' },
+                                    '& .MuiInputBase-root': { fontSize: '0.75rem' }
+                                }}
                             />
                         </Grid>
                         <Grid item xs={12}>
                             <TextField
-                                fullWidth label="Email" size="small" type="email"
+                                fullWidth
+                                label="Email"
+                                size="small"
+                                type="email"
                                 value={partyData?.email || ''}
                                 onChange={(e) => handleChange('email', e.target.value)}
-                                sx={{ '& .MuiInputLabel-root': { fontSize: '0.75rem' }, '& .MuiInputBase-root': { fontSize: '0.75rem' } }}
+                                sx={{
+                                    '& .MuiInputLabel-root': { fontSize: '0.75rem' },
+                                    '& .MuiInputBase-root': { fontSize: '0.75rem' }
+                                }}
                             />
                         </Grid>
                     </Grid>
                 </DialogContent>
                 <DialogActions sx={{ p: 2 }}>
-                    <Button onClick={onClose} size="small" sx={{ fontSize: '0.7rem' }} disabled={saving}>
+                    <Button
+                        onClick={onClose}
+                        size="small"
+                        sx={{ fontSize: '0.7rem' }}
+                        disabled={saving}
+                    >
                         Cancel
                     </Button>
                     <Button

@@ -18,6 +18,7 @@ const SamplePage = Loadable(lazy(() => import('pages/extra-pages/sample-page')))
 // render - invoice page
 const InvoicePage = Loadable(lazy(() => import('../pages/invoice/InvoicePage')));
 const BillingSettings = Loadable(lazy(() => import('../pages/billingsettings/BillingSettings')));
+const InvoiceGrid = Loadable(lazy(() => import('../pages/invoice/InvoiceGrid')));
 // ==============================|| MAIN ROUTING ||============================== //
 
 const MainRoutes = {
@@ -33,7 +34,7 @@ const MainRoutes = {
       children: [
         {
           path: 'default',
-          element: <DashboardDefault />
+              element: <InvoiceGrid />
         }
       ]
     },

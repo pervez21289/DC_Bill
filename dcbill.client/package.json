@@ -26,9 +26,12 @@
     "@mui/material": "^9.0.1",
     "@mui/system": "9.0.1",
     "@mui/x-charts": "9.2.0",
+    "@mui/x-data-grid": "^9.4.0",
+    "@mui/x-date-pickers": "^9.4.0",
     "@reduxjs/toolkit": "^2.12.0",
     "@vitejs/plugin-react": "6.0.2",
     "axios": "^1.17.0",
+    "date-fns": "^4.4.0",
     "formik": "2.4.9",
     "framer-motion": "12.39.0",
     "lodash-es": "4.18.1",
@@ -44,6 +47,7 @@
     "vite": "8.0.13",
     "vite-jsconfig-paths": "2.0.1",
     "web-vitals": "5.2.0",
+    "xlsx": "^0.18.5",
     "yup": "1.7.1"
   },
   "eslintConfig": {
