@@ -71,9 +71,9 @@ namespace LMS.Repository.Repo
                 request.PartyPinCode,
                 request.PartyGSTIN,
                 request.Subtotal,
-                request.TotalGST,
-                request.GrandTotal,
-                request.Notes
+                request.GSTPercent,
+                request.Notes,
+                
             };
 
             var sql = "USP_CreateInvoice";

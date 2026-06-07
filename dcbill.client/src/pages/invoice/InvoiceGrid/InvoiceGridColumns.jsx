@@ -6,7 +6,7 @@ import { pdf } from '@react-pdf/renderer';
 import { InvoicePDF } from './../Pdf/InvoicePDF';
 import { useState } from 'react';
 import { CircularProgress } from '@mui/material';
-import { useDispatch } from 'react-redux';
+import { useDispatch, useSelector } from 'react-redux';
 import { fetchInvoiceById } from './../../../store/invoiceSlice';
 
 // Format helpers
@@ -24,11 +24,28 @@ const formatDate = (date) => {
 
 // Function to prepare invoice data for PDF
 const prepareInvoiceData = (invoice, billingData) => {
+    if (!invoice) return null;
+
+    // Get company state from billing data
+    const companyState = billingData?.state || '';
+    const partyState = invoice.partyState || '';
+    const isInterState = companyState !== partyState && companyState !== '' && partyState !== '';
+
+    // Calculate GST based on GSTPercent
+    const gstPercent = invoice.gstPercent || 18;
+    const totalGST = invoice.totalGST || (invoice.subtotal * gstPercent) / 100;
+    const cgstPercent = isInterState ? 0 : gstPercent / 2;
+    const sgstPercent = isInterState ? 0 : gstPercent / 2;
+    const igstPercent = isInterState ? gstPercent : 0;
+    const cgstAmount = isInterState ? 0 : totalGST / 2;
+    const sgstAmount = isInterState ? 0 : totalGST / 2;
+    const igstAmount = isInterState ? totalGST : 0;
+
     return {
-        gstin: billingData?.gstin,
-        mobile: billingData?.mobileNumber,
-        companyName: billingData?.companyName,
-        address: billingData?.address,
+        gstin: billingData?.gstin || "05AOSPA8862Q2Z2",
+        mobile: billingData?.mobileNumber || "9358001015",
+        companyName: billingData?.companyName || "DHANRAJ CITY DEVELOPERS",
+        address: billingData?.address || "C-19, Clement Town, Turner Road, Dehradun-248002",
         city: billingData?.city || "",
         pinCode: billingData?.pinCode || "",
         state: billingData?.state || "",
@@ -46,15 +63,18 @@ const prepareInvoiceData = (invoice, billingData) => {
             quantity: item.quantity,
             rate: item.rate,
             amount: item.amount,
-            gstPercent: item.gstPercent
+            gstPercent: gstPercent
         })) || [],
         subtotal: invoice.subtotal,
-        totalGST: invoice.totalGST,
+        totalGST: totalGST,
         grandTotal: invoice.grandTotal,
-        cgstPercent: 9,
-        sgstPercent: 9,
-        cgstAmount: invoice.totalGST / 2,
-        sgstAmount: invoice.totalGST / 2
+        isInterState: isInterState,
+        cgstPercent: cgstPercent,
+        sgstPercent: sgstPercent,
+        igstPercent: igstPercent,
+        cgstAmount: cgstAmount,
+        sgstAmount: sgstAmount,
+        igstAmount: igstAmount
     };
 };
 
@@ -68,16 +88,21 @@ const PDFButton = ({ row, billingData }) => {
         try {
             const result = await dispatch(fetchInvoiceById(row.id)).unwrap();
             if (result && result.success) {
-                const invoiceData = prepareInvoiceData(result.data, billingData);
-                const blob = await pdf(<InvoicePDF invoiceData={invoiceData} />).toBlob();
-                const url = URL.createObjectURL(blob);
-                const link = document.createElement('a');
-                link.href = url;
-                link.download = `Invoice_${row.invoiceNo}.pdf`;
-                document.body.appendChild(link);
-                link.click();
-                document.body.removeChild(link);
-                URL.revokeObjectURL(url);
+                // Get the invoice data from the response
+                const invoice = result.data || result;
+                const invoiceData = prepareInvoiceData(invoice, billingData);
+
+                if (invoiceData) {
+                    const blob = await pdf(<InvoicePDF invoiceData={invoiceData} />).toBlob();
+                    const url = URL.createObjectURL(blob);
+                    const link = document.createElement('a');
+                    link.href = url;
+                    link.download = `Invoice_${row.invoiceNo}.pdf`;
+                    document.body.appendChild(link);
+                    link.click();
+                    document.body.removeChild(link);
+                    URL.revokeObjectURL(url);
+                }
             }
         } catch (error) {
             console.error('Error generating PDF:', error);
@@ -110,7 +135,6 @@ export const useInvoiceColumns = (billingData = null) => {
     const navigate = useNavigate();
 
     return [
-        // ... rest of the columns remain the same
         {
             field: 'sno',
             headerName: 'S.No',

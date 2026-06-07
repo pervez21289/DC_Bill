@@ -25,8 +25,10 @@ export default function InvoicePage() {
     const { selectedParty } = useSelector(state => state.parties);
     const { data: billingData } = useSelector(state => state.billingSettings);
     const calculations = useInvoiceCalculation(items);
+
     const [pdfOpen, setPdfOpen] = useState(false);
     const [saving, setSaving] = useState(false);
+    const [gstPercent, setGstPercent] = useState(18); // Editable GST percent
     const [snackbar, setSnackbar] = useState({ open: false, message: '', severity: 'success' });
 
     useEffect(() => {
@@ -35,6 +37,29 @@ export default function InvoicePage() {
 
     const handleCloseSnackbar = () => {
         setSnackbar({ ...snackbar, open: false });
+    };
+
+    // Get company state from billing settings
+    const companyState = billingData?.state || '';
+    const partyState = selectedParty?.state || '';
+
+    // Determine if inter-state (different states)
+    const isInterState = companyState !== partyState && companyState !== '' && partyState !== '';
+
+    // Calculate GST based on GST percent and transaction type
+    const totalGST = (calculations.subtotal * gstPercent) / 100;
+    const grandTotal = calculations.subtotal + totalGST;
+
+    // Calculate CGST, SGST, IGST based on transaction type
+    const cgstPercent = isInterState ? 0 : gstPercent / 2;
+    const sgstPercent = isInterState ? 0 : gstPercent / 2;
+    const igstPercent = isInterState ? gstPercent : 0;
+    const cgstAmount = isInterState ? 0 : totalGST / 2;
+    const sgstAmount = isInterState ? 0 : totalGST / 2;
+    const igstAmount = isInterState ? totalGST : 0;
+
+    const handleGSTChange = (newGSTPercent) => {
+        setGstPercent(newGSTPercent);
     };
 
     // Prepare invoice data for PDF
@@ -60,15 +85,18 @@ export default function InvoicePage() {
             quantity: item.qty,
             rate: item.rate,
             amount: item.amount,
-            gstPercent: item.gst || 18
+            gstPercent: gstPercent
         })),
         subtotal: calculations.subtotal,
-        totalGST: calculations.totalGST,
-        grandTotal: calculations.grandTotal,
-        cgstPercent: 9,
-        sgstPercent: 9,
-        cgstAmount: calculations.totalGST / 2,
-        sgstAmount: calculations.totalGST / 2
+        totalGST: totalGST,
+        grandTotal: grandTotal,
+        isInterState: isInterState,
+        cgstPercent: cgstPercent,
+        sgstPercent: sgstPercent,
+        igstPercent: igstPercent,
+        cgstAmount: cgstAmount,
+        sgstAmount: sgstAmount,
+        igstAmount: igstAmount
     };
 
     const handleSaveInvoice = async () => {
@@ -83,7 +111,7 @@ export default function InvoicePage() {
             return;
         }
 
-        // Prepare invoice data for API
+        // Prepare invoice data for API (simplified - GST at header level)
         const saveData = {
             invoiceNo: `INV-${Date.now()}`,
             invoiceDate: new Date().toISOString().split('T')[0],
@@ -95,8 +123,9 @@ export default function InvoicePage() {
             partyPinCode: selectedParty.pinCode || '',
             partyGSTIN: selectedParty.gstin || '',
             subtotal: calculations.subtotal,
-            totalGST: calculations.totalGST,
-            grandTotal: calculations.grandTotal,
+            gstPercent: gstPercent,
+            totalGST: totalGST,
+            grandTotal: grandTotal,
             notes: '',
             details: items.map(item => ({
                 itemId: item.itemId,
@@ -104,28 +133,27 @@ export default function InvoicePage() {
                 hsnCode: item.hsnCode,
                 quantity: item.qty,
                 rate: item.rate,
-                amount: item.amount,
-                gstPercent: item.gst || 18,
-                gstAmount: (item.amount * (item.gst || 18)) / 100
+                amount: item.amount
+                // No GST at item level
             }))
         };
 
         setSaving(true);
         try {
             const result = await dispatch(saveInvoice(saveData)).unwrap();
-            debugger;
             if (result && result.success) {
                 setSnackbar({ open: true, message: 'Invoice saved successfully!', severity: 'success' });
                 // Clear items after successful save
                 dispatch(clearItems());
-                // Navigate to invoice list or reset form
+                // Navigate to invoice list
                 setTimeout(() => {
                     navigate('/invoices');
                 }, 2000);
             } else {
-                setSnackbar({ open: true, message: 'Failed to save invoice', severity: 'error' });
+                setSnackbar({ open: true, message: result?.message || 'Failed to save invoice', severity: 'error' });
             }
         } catch (error) {
+            console.error('Save error:', error);
             setSnackbar({ open: true, message: error?.message || 'Error saving invoice', severity: 'error' });
         } finally {
             setSaving(false);
@@ -148,9 +176,12 @@ export default function InvoicePage() {
                 >
                     <InvoiceSummary
                         subtotal={calculations.subtotal}
-                        totalGST={calculations.totalGST}
-                        total={calculations.grandTotal}
+                        totalGST={totalGST}
+                        total={grandTotal}
                         itemsCount={calculations.itemsCount}
+                        gstPercent={gstPercent}
+                        onGSTChange={handleGSTChange}
+                        isInterState={isInterState}
                     />
                 </Box>
 

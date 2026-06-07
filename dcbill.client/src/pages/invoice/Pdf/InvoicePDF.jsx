@@ -213,8 +213,7 @@ export const InvoicePDF = ({ invoiceData }) => {
                         <Text style={[styles.tableCell, styles.col3]}>HSN Code</Text>
                         <Text style={[styles.tableCell, styles.col4]}>Qty.</Text>
                         <Text style={[styles.tableCell, styles.col5]}>Rate</Text>
-                        <Text style={[styles.tableCell, styles.col6]}>Taxable Value Amount</Text>
-                        <Text style={[styles.tableCell, styles.col7]}>GST%</Text>
+                        <Text style={[styles.tableCell, styles.col6]}>Amount</Text>
                     </View>
 
                     {invoiceData.items?.map((item, index) => (
@@ -225,7 +224,6 @@ export const InvoicePDF = ({ invoiceData }) => {
                             <Text style={[styles.tableCell, styles.col4]}>{item.quantity}</Text>
                             <Text style={[styles.tableCell, styles.col5]}>{formatCurrency(item.rate)}</Text>
                             <Text style={[styles.tableCell, styles.col6]}>{formatCurrency(item.amount)}</Text>
-                            <Text style={[styles.tableCell, styles.col7]}>{item.gstPercent}%</Text>
                         </View>
                     ))}
                 </View>
