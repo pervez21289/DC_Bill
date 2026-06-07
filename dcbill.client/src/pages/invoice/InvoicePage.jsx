@@ -122,7 +122,7 @@ export default function InvoicePage() {
             >
                 <Button
                     variant="outlined"
-                    onClick={() => navigate('/invoices')}
+                    onClick={() => navigate('/')}
                     sx={{ fontSize: '0.75rem' }}
                 >
                     Cancel

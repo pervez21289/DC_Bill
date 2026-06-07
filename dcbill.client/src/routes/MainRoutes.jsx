@@ -27,7 +27,7 @@ const MainRoutes = {
   children: [
     {
       path: '/',
-          element: <InvoicePage />
+          element: <InvoiceGrid />
     },
     {
       path: 'dashboard',
@@ -37,7 +37,11 @@ const MainRoutes = {
               element: <InvoiceGrid />
         }
       ]
-    },
+      },
+      {
+          path: 'Invoice',
+          element: <InvoicePage />
+      },
     {
       path: 'profile',
       element: <BillingSettings />

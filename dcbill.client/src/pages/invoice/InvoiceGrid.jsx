@@ -22,12 +22,12 @@ import {
     Visibility as ViewIcon,
     PictureAsPdf as PdfIcon,
     Print as PrintIcon,
-    FilterList as FilterIcon,
-    DateRange as DateRangeIcon,
+    Add as AddIcon,
     Download as DownloadIcon
 } from '@mui/icons-material';
 import { DataGrid, gridClasses } from '@mui/x-data-grid';
 import { useDispatch, useSelector } from 'react-redux';
+import { useNavigate } from 'react-router-dom';
 import { fetchInvoices } from './../../store/invoiceSlice';
 import { DatePicker } from '@mui/x-date-pickers/DatePicker';
 import { LocalizationProvider } from '@mui/x-date-pickers/LocalizationProvider';
@@ -36,6 +36,7 @@ import * as XLSX from 'xlsx';
 
 export default function InvoiceGrid() {
     const dispatch = useDispatch();
+    const navigate = useNavigate();
     const { invoices, loading, totalCount } = useSelector(state => state.invoice);
 
     const [paginationModel, setPaginationModel] = useState({
@@ -46,9 +47,7 @@ export default function InvoiceGrid() {
     const [startDate, setStartDate] = useState(null);
     const [endDate, setEndDate] = useState(null);
     const [debouncedSearch, setDebouncedSearch] = useState('');
-    const [anchorEl, setAnchorEl] = useState(null);
     const [exportAnchorEl, setExportAnchorEl] = useState(null);
-    const open = Boolean(anchorEl);
     const exportOpen = Boolean(exportAnchorEl);
 
     // Debounce search term
@@ -84,6 +83,10 @@ export default function InvoiceGrid() {
         setPaginationModel({ ...paginationModel, page: 0 });
     };
 
+    const handleAddNewInvoice = () => {
+        navigate('/invoice');
+    };
+
     const formatCurrency = (amount) => {
         return new Intl.NumberFormat('en-IN', {
             style: 'currency',
@@ -97,8 +100,8 @@ export default function InvoiceGrid() {
     };
 
     const handleExportToExcel = () => {
-        const exportData = invoices.map(invoice => ({
-            'S.No': invoice.sno,
+        const exportData = invoices.map((invoice, index) => ({
+            'S.No': index + 1,
             'Invoice No': invoice.invoiceNo,
             'Invoice Date': formatDate(invoice.invoiceDate),
             'Party Name': invoice.partyName,
@@ -117,7 +120,6 @@ export default function InvoiceGrid() {
     };
 
     const handleExportToPDF = () => {
-        // Implement PDF export
         window.print();
         setExportAnchorEl(null);
     };
@@ -135,7 +137,7 @@ export default function InvoiceGrid() {
         {
             field: 'invoiceNo',
             headerName: 'Invoice No',
-            width: 130,
+            width: 150,
             headerAlign: 'center',
             renderCell: (params) => (
                 <Typography sx={{ fontWeight: 'bold', fontSize: '0.75rem' }}>
@@ -148,7 +150,6 @@ export default function InvoiceGrid() {
             headerName: 'Date',
             width: 110,
             headerAlign: 'center',
-            valueFormatter: (params) => formatDate(params.value),
             renderCell: (params) => (
                 <Typography sx={{ fontSize: '0.75rem' }}>
                     {formatDate(params.value)}
@@ -183,7 +184,6 @@ export default function InvoiceGrid() {
             width: 120,
             headerAlign: 'right',
             align: 'right',
-            valueFormatter: (params) => formatCurrency(params.value),
             renderCell: (params) => (
                 <Typography sx={{ fontSize: '0.75rem' }}>
                     {formatCurrency(params.value)}
@@ -196,7 +196,6 @@ export default function InvoiceGrid() {
             width: 100,
             headerAlign: 'right',
             align: 'right',
-            valueFormatter: (params) => formatCurrency(params.value),
             renderCell: (params) => (
                 <Typography sx={{ fontSize: '0.75rem' }}>
                     {formatCurrency(params.value)}
@@ -206,11 +205,9 @@ export default function InvoiceGrid() {
         {
             field: 'grandTotal',
             headerName: 'Grand Total',
-            width: 120,
+            width: 130,
             headerAlign: 'right',
             align: 'right',
-            fontWeight: 'bold',
-            valueFormatter: (params) => formatCurrency(params.value),
             renderCell: (params) => (
                 <Typography sx={{ fontSize: '0.75rem', fontWeight: 'bold' }}>
                     {formatCurrency(params.value)}
@@ -243,7 +240,7 @@ export default function InvoiceGrid() {
                 <Box>
                     <IconButton
                         size="small"
-                        onClick={() => window.open(`/invoice/${params.row.id}`, '_blank')}
+                        onClick={() => navigate(`/invoice/${params.row.id}`)}
                         sx={{ padding: 0.5 }}
                         title="View Invoice"
                     >
@@ -349,9 +346,20 @@ export default function InvoiceGrid() {
             <Box sx={{ height: 'calc(100vh - 200px)', width: '100%', p: 3 }}>
                 <Card sx={{ mb: 3, borderRadius: 2 }}>
                     <CardContent>
-                        <Typography variant="h6" gutterBottom sx={{ fontSize: '1rem', fontWeight: 'bold' }}>
-                            Invoice Management
-                        </Typography>
+                        <Box sx={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', mb: 2 }}>
+                            <Typography variant="h6" sx={{ fontSize: '1rem', fontWeight: 'bold' }}>
+                                Invoice Management
+                            </Typography>
+                            <Button
+                                variant="contained"
+                                startIcon={<AddIcon />}
+                                onClick={handleAddNewInvoice}
+                                size="small"
+                                sx={{ fontSize: '0.75rem', textTransform: 'none' }}
+                            >
+                                Add New Invoice
+                            </Button>
+                        </Box>
                         <CustomToolbar />
                     </CardContent>
                 </Card>
