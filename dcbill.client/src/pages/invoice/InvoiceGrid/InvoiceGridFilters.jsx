@@ -6,7 +6,7 @@ import { DatePicker } from '@mui/x-date-pickers/DatePicker';
 const inputStyle = {
     '& .MuiInputBase-root': {
         fontSize: '0.7rem',
-        height: '32px',
+        height: '37px',
     },
     '& .MuiInputBase-input': {
         padding: '4px 8px',

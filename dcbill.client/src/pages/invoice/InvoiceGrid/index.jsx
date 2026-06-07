@@ -60,7 +60,7 @@ export default function InvoiceGrid() {
 
     return (
         <LocalizationProvider dateAdapter={AdapterDateFns}>
-            <Box sx={{ height: 'calc(100vh - 200px)', width: '100%', p: 3 }}>
+            <Box sx={{ height: 'calc(100vh - 100px)', width: '100%', p: 3 }}>
                 <Card sx={{ mb: 3, borderRadius: 2 }}>
                     <CardContent>
                         {/* Title and Add Button in one row */}
