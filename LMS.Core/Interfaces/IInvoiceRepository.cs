@@ -8,18 +8,15 @@ namespace LMS.API.Repositories.Interfaces
         /// <summary>
         /// Get all invoices
         /// </summary>
-        Task<IEnumerable<InvoiceMaster>> GetAllAsync();
+        Task<(IEnumerable<InvoiceMaster> Invoices, int TotalCount)> GetAllAsync(
+            int pageNumber, int pageSize, string search, DateTime? startDate, DateTime? endDate);
 
         /// <summary>
         /// Get invoice by ID with details
         /// </summary>
         Task<InvoiceMaster> GetByIdAsync(long id);
 
-        /// <summary>
-        /// Get invoices by date range
-        /// </summary>
-        Task<IEnumerable<InvoiceMaster>> GetByDateRangeAsync(DateTime startDate, DateTime endDate);
-
+       
         /// <summary>
         /// Get invoices by party ID
         /// </summary>

@@ -1,4 +1,5 @@
-﻿using LMS.API.Repositories.Interfaces;
+﻿using Dapper;
+using LMS.API.Repositories.Interfaces;
 using LMS.Core.Entities;
 using LMS.Repo.Repository;
 using System.Data;
@@ -7,11 +8,29 @@ namespace LMS.Repository.Repo
 {
     public class InvoiceRepository : BaseRepository, IInvoiceRepository
     {
-        public async Task<IEnumerable<InvoiceMaster>> GetAllAsync()
+        public async Task<(IEnumerable<InvoiceMaster> Invoices, int TotalCount)> GetAllAsync(
+            int pageNumber, int pageSize, string search, DateTime? startDate, DateTime? endDate)
         {
+            var parameters = new
+            {
+                PageNumber = pageNumber,
+                PageSize = pageSize,
+                Search = string.IsNullOrEmpty(search) ? null : search,
+                StartDate = startDate,
+                EndDate = endDate
+            };
+
             var sql = "USP_GetAllInvoices";
-            return await QueryAsync<InvoiceMaster>(sql, null, CommandType.StoredProcedure);
+
+            // Use QueryAsync from BaseRepository
+            var result = await QueryAsync<InvoiceMaster>(sql, parameters, CommandType.StoredProcedure);
+
+            var invoiceList = result.AsList();
+            var totalCount = invoiceList.FirstOrDefault()?.TotalCount ?? 0;
+
+            return (invoiceList, totalCount);
         }
+
 
         public async Task<InvoiceMaster> GetByIdAsync(long id)
         {
@@ -30,12 +49,6 @@ namespace LMS.Repository.Repo
             return invoice;
         }
 
-        public async Task<IEnumerable<InvoiceMaster>> GetByDateRangeAsync(DateTime startDate, DateTime endDate)
-        {
-            var parameters = new { StartDate = startDate, EndDate = endDate };
-            var sql = "USP_GetInvoicesByDateRange";
-            return await QueryAsync<InvoiceMaster>(sql, parameters, CommandType.StoredProcedure);
-        }
 
         public async Task<IEnumerable<InvoiceMaster>> GetByPartyIdAsync(long partyId)
         {

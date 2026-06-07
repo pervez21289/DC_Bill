@@ -74,6 +74,7 @@ namespace LMS.Core.Entities
             public string Notes { get; set; }
             public DateTime CreatedDate { get; set; }
             public DateTime? UpdatedDate { get; set; }
+            public int? TotalCount { get; set; } = 0;
             public List<InvoiceDetail> Details { get; set; }
         }
 

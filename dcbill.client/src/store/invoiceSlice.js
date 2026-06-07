@@ -15,15 +15,16 @@ export const saveInvoice = createAsyncThunk(
 
 export const fetchInvoices = createAsyncThunk(
     "invoice/fetchAll",
-    async (_, { rejectWithValue }) => {
+    async (filters, { rejectWithValue }) => {
         try {
-            const response = await invoiceService.getAll();
-            return response;
+            const response = await invoiceService.getAll(filters);
+            return response; // response = { success: true, data: { data: [...], totalCount: 7 } }
         } catch (error) {
             return rejectWithValue(error.response?.data || error.message);
         }
     }
 );
+
 
 export const fetchInvoiceById = createAsyncThunk(
     "invoice/fetchById",
@@ -77,11 +78,30 @@ const invoiceSlice = createSlice({
             })
             .addCase(fetchInvoices.fulfilled, (state, action) => {
                 state.loading = false;
-                state.invoices = action.payload;
+
+                // Handle the nested response structure
+                const response = action.payload;
+
+                if (response && response.success && response.data) {
+                    // Response structure: { success: true, data: { data: [...], totalCount: 7 } }
+                    state.invoices = response.data.data || [];
+                    state.totalCount = response.data.totalCount || 0;
+                    state.currentPage = response.data.currentPage || 1;
+                    state.pageSize = response.data.pageSize || 10;
+                } else if (response && Array.isArray(response)) {
+                    // Fallback for direct array response
+                    state.invoices = response;
+                    state.totalCount = response.length;
+                } else {
+                    state.invoices = [];
+                    state.totalCount = 0;
+                }
             })
             .addCase(fetchInvoices.rejected, (state, action) => {
                 state.loading = false;
                 state.error = action.payload;
+                state.invoices = [];
+                state.totalCount = 0;
             })
             // Fetch Invoice By Id
             .addCase(fetchInvoiceById.pending, (state) => {

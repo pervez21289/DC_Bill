@@ -18,6 +18,33 @@ namespace LMS.API.Controllers
             _invoiceRepository = invoiceRepository;
         }
 
+        [HttpGet]
+        public async Task<ActionResult<ApiResponse<object>>> GetAll(
+            [FromQuery] int page = 1,
+            [FromQuery] int pageSize = 10,
+            [FromQuery] string search = null,
+            [FromQuery] DateTime? startDate = null,
+            [FromQuery] DateTime? endDate = null)
+        {
+            try
+            {
+                (IEnumerable<InvoiceMaster> invoices, int totalCount) = await _invoiceRepository.GetAllAsync(
+                    page, pageSize, search, startDate, endDate);
+
+                return Ok(ApiResponse<object>.Ok(new
+                {
+                    data = invoices,
+                    totalCount = totalCount,
+                    currentPage = page,
+                    pageSize = pageSize
+                }));
+            }
+            catch (System.Exception ex)
+            {
+                return BadRequest(ApiResponse<object>.Fail(ex.Message));
+            }
+        }
+
         [HttpPost]
         public async Task<ActionResult<ApiResponse<int>>> CreateInvoice([FromBody] CreateInvoiceRequest request)
         {

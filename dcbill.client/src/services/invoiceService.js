@@ -6,9 +6,17 @@ export const invoiceService = {
         return response.data;
     },
 
-    async getAll() {
-        const response = await api.get("/Invoice");
-        return response.data;
+    async getAll(filters) {
+        const params = new URLSearchParams();
+        if (filters) {
+            Object.keys(filters).forEach(key => {
+                if (filters[key] !== null && filters[key] !== '') {
+                    params.append(key, filters[key]);
+                }
+            });
+        }
+        const response = await api.get(`/Invoice?${params.toString()}`);
+        return response.data; // Just return the full response
     },
 
     async getById(id) {

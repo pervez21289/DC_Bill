@@ -72,6 +72,11 @@ export default function InvoiceGrid() {
         dispatch(fetchInvoices(filters));
     }, [dispatch, paginationModel, debouncedSearch, startDate, endDate]);
 
+    useEffect(() => {
+        console.log('Invoices from state:', invoices);
+        console.log('Total count:', totalCount);
+    }, [invoices, totalCount]);
+
     const handleClearFilters = () => {
         setSearchTerm('');
         setStartDate(null);
