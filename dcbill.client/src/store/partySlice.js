@@ -1,69 +1,39 @@
 import { createSlice, createAsyncThunk } from '@reduxjs/toolkit';
 import { partyService } from "./../services/partyService";
 
-// Async thunks
-export const fetchParties = createAsyncThunk(
-    "parties/fetch",
-    async (_, { rejectWithValue }) => {
-        try {
-            const response = await partyService.get();
-            // Handle response format
-            if (response && response.success) {
-                return response.data || [];
-            }
-            if (Array.isArray(response)) {
-                return response;
-            }
-            return [];
-        } catch (error) {
-            return rejectWithValue(error.response?.data || error.message);
-        }
-    }
-);
-
+// Async thunk to add party to database
 export const addPartyToMaster = createAsyncThunk(
     "parties/add",
     async (partyData, { rejectWithValue }) => {
         try {
             const response = await partyService.create(partyData);
-            if (response && response.success) {
-                const newParty = {
-                    id: response.data,
-                    ...partyData
-                };
-                return newParty;
-            }
-            return rejectWithValue(response?.message || 'Failed to add party');
+            return response;
         } catch (error) {
             return rejectWithValue(error.response?.data || error.message);
         }
     }
 );
 
+// Async thunk to fetch parties
+export const fetchParties = createAsyncThunk(
+    "parties/fetch",
+    async (_, { rejectWithValue }) => {
+        try {
+            const response = await partyService.get();
+            return response;
+        } catch (error) {
+            return rejectWithValue(error.response?.data || error.message);
+        }
+    }
+);
+
+// Async thunk to update party
 export const updatePartyInMaster = createAsyncThunk(
     "parties/update",
     async ({ id, partyData }, { rejectWithValue }) => {
         try {
             const response = await partyService.update(id, partyData);
-            if (response && response.success) {
-                return { id, ...partyData };
-            }
-            return rejectWithValue(response?.message || 'Failed to update party');
-        } catch (error) {
-            return rejectWithValue(error.response?.data || error.message);
-        }
-    }
-);
-
-export const deletePartyFromMaster = createAsyncThunk(
-    "parties/delete",
-    async (id, { rejectWithValue }) => {
-        try {
-            const response = await partyService.delete(id);
-            if (response && response.success) {
-                return { id };
-            }
-            return rejectWithValue(response?.message || 'Failed to delete party');
+            return response;
         } catch (error) {
             return rejectWithValue(error.response?.data || error.message);
         }
@@ -90,96 +60,82 @@ const partySlice = createSlice({
         clearSelectedParty: (state) => {
             state.selectedParty = null;
         },
-        addPartyLocally: (state, action) => {
-            state.parties.push(action.payload);
-        },
-        // Add this - the addParty action you're trying to use
+        // Add this - local action for adding party without API
         addParty: (state, action) => {
             state.parties.push(action.payload);
         },
+        // Add this - local action for updating party without API
         updateParty: (state, action) => {
             const index = state.parties.findIndex(party => party.id === action.payload.id);
             if (index !== -1) {
                 state.parties[index] = action.payload;
             }
         },
+        // Add this - local action for deleting party without API
         deleteParty: (state, action) => {
             state.parties = state.parties.filter(party => party.id !== action.payload);
         }
     },
     extraReducers: (builder) => {
         builder
+            // Fetch parties
             .addCase(fetchParties.pending, (state) => {
                 state.loading = true;
                 state.error = null;
             })
             .addCase(fetchParties.fulfilled, (state, action) => {
                 state.loading = false;
-                state.parties = Array.isArray(action.payload) ? action.payload : [];
+                if (action.payload && action.payload.success) {
+                    state.parties = Array.isArray(action.payload.data) ? action.payload.data : [];
+                } else if (Array.isArray(action.payload)) {
+                    state.parties = action.payload;
+                } else {
+                    state.parties = [];
+                }
             })
             .addCase(fetchParties.rejected, (state, action) => {
                 state.loading = false;
                 state.error = action.payload;
                 state.parties = [];
             })
+            // Add party
             .addCase(addPartyToMaster.pending, (state) => {
                 state.loading = true;
                 state.error = null;
             })
             .addCase(addPartyToMaster.fulfilled, (state, action) => {
                 state.loading = false;
-                if (action.payload) {
-                    state.parties.push(action.payload);
-                    state.selectedParty = action.payload;
+                if (action.payload && action.payload.success && action.payload.data) {
+                    // Refresh parties after successful API call
+                    // You'll need to call fetchParties again or construct the object
                 }
             })
             .addCase(addPartyToMaster.rejected, (state, action) => {
                 state.loading = false;
                 state.error = action.payload;
             })
+            // Update party
             .addCase(updatePartyInMaster.pending, (state) => {
                 state.loading = true;
                 state.error = null;
             })
             .addCase(updatePartyInMaster.fulfilled, (state, action) => {
                 state.loading = false;
-                const index = state.parties.findIndex(party => party.id === action.payload.id);
-                if (index !== -1) {
-                    state.parties[index] = action.payload;
-                }
-                state.selectedParty = action.payload;
             })
             .addCase(updatePartyInMaster.rejected, (state, action) => {
-                state.loading = false;
-                state.error = action.payload;
-            })
-            .addCase(deletePartyFromMaster.pending, (state) => {
-                state.loading = true;
-                state.error = null;
-            })
-            .addCase(deletePartyFromMaster.fulfilled, (state, action) => {
-                state.loading = false;
-                state.parties = state.parties.filter(party => party.id !== action.payload.id);
-                if (state.selectedParty?.id === action.payload.id) {
-                    state.selectedParty = null;
-                }
-            })
-            .addCase(deletePartyFromMaster.rejected, (state, action) => {
                 state.loading = false;
                 state.error = action.payload;
             });
     }
 });
 
-// Export all actions including addParty
 export const {
     clearError,
     selectParty,
     clearSelectedParty,
-    addPartyLocally,
-    addParty,      // Add this export
-    updateParty,   // Add this export
-    deleteParty    // Add this export
+    addParty,      // Export this
+    updateParty,   // Export this
+    deleteParty    // Export this
 } = partySlice.actions;
 
 export default partySlice.reducer;

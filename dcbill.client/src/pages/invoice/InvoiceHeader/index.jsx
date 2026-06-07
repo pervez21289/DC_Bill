@@ -1,8 +1,8 @@
-import { Box, Paper, Typography } from '@mui/material';
+import { Box, Paper, Typography, Snackbar, Alert } from '@mui/material';
 import { useDispatch, useSelector } from 'react-redux';
 import { useEffect, useState } from 'react';
 import { fetchBillingSettings, updateBillingSettings } from './../../../store/billingSettingsSlice';
-import { fetchParties, selectParty, addParty, updateParty } from './../../../store/partySlice'; // Add addParty here
+import { fetchParties, selectParty, addParty, updateParty, addPartyToMaster, updatePartyInMaster, fetchParties as fetchPartiesList } from './../../../store/partySlice';
 import HeaderBar from './HeaderBar';
 import CompanyDetails from './CompanyDetails';
 import PartySection from './PartySection';
@@ -21,11 +21,32 @@ export default function InvoiceHeader() {
     const [newParty, setNewParty] = useState({});
     const [editingPartyData, setEditingPartyData] = useState(null);
 
+    // Snackbar state
+    const [snackbar, setSnackbar] = useState({
+        open: false,
+        message: '',
+        severity: 'success' // 'success', 'error', 'info', 'warning'
+    });
+
     const [invoiceData, setInvoiceData] = useState({
         gstin: '', mobile: '', companyName: '', address: '', city: '', pinCode: '', state: '', country: '',
         dated: new Date().toLocaleDateString('en-GB'), invoiceNo: '048',
         partyName: '', partyAddress: '', partyCity: '', partyState: '', partyPinCode: '', partyGstin: '', partyMobile: ''
     });
+
+    // Close snackbar
+    const handleCloseSnackbar = () => {
+        setSnackbar({ ...snackbar, open: false });
+    };
+
+    // Show snackbar message
+    const showMessage = (message, severity = 'success') => {
+        setSnackbar({
+            open: true,
+            message,
+            severity
+        });
+    };
 
     useEffect(() => {
         dispatch(fetchBillingSettings());
@@ -64,6 +85,13 @@ export default function InvoiceHeader() {
         setInvoiceData(prev => ({ ...prev, [field]: value }));
     };
 
+    const handleDateChange = (newDate) => {
+        setInvoiceData(prev => ({
+            ...prev,
+            dated: newDate
+        }));
+    };
+
     const handleEditChange = (field, value) => {
         setEditedData(prev => ({ ...prev, [field]: value }));
     };
@@ -71,6 +99,7 @@ export default function InvoiceHeader() {
     const handlePartySelect = (event, newValue) => {
         if (newValue) {
             dispatch(selectParty(newValue));
+            showMessage(`Selected: ${newValue.partyName}`, 'info');
         } else {
             dispatch(selectParty(null));
             setInvoiceData(prev => ({
@@ -95,6 +124,7 @@ export default function InvoiceHeader() {
         setInvoiceData(prev => ({ ...prev, ...billingSettings }));
         dispatch(updateBillingSettings(billingSettings));
         setIsEditMode(false);
+        showMessage('Company details saved successfully!', 'success');
     };
 
     const handleCancelEdit = () => {
@@ -119,21 +149,52 @@ export default function InvoiceHeader() {
             setEditingPartyData({ ...selectedParty });
             setIsPartyDialogOpen(true);
         } else {
-            alert('Please select a party first');
+            showMessage('Please select a party first', 'warning');
         }
     };
 
-    const handleSaveParty = () => {
+    const handleSaveParty = async () => {
         if (isEditingParty) {
-            dispatch(updateParty({ id: editingPartyData.id, partyData: editingPartyData }));
-            dispatch(selectParty(editingPartyData));
+            // Update existing party
+            try {
+                await dispatch(updatePartyInMaster({
+                    id: editingPartyData.id,
+                    partyData: editingPartyData
+                })).unwrap();
+
+                dispatch(updateParty(editingPartyData));
+                dispatch(selectParty(editingPartyData));
+                await dispatch(fetchPartiesList());
+                showMessage('Party updated successfully!', 'success');
+            } catch (error) {
+                showMessage('Failed to update party: ' + (error?.message || 'Please try again'), 'error');
+            }
         } else {
+            // Add new party
             if (!newParty.partyName || !newParty.gstin) {
-                alert('Please fill Party Name and GSTIN');
+                showMessage('Please fill Party Name and GSTIN', 'warning');
                 return;
             }
-            // Use addParty action (local) or addPartyToMaster (API)
-            dispatch(addParty(newParty));
+
+            try {
+                // Add locally for immediate UI update
+                const tempId = Date.now();
+                const partyWithId = { ...newParty, id: tempId };
+                dispatch(addParty(partyWithId));
+                dispatch(selectParty(partyWithId));
+
+                // Save to API
+                const result = await dispatch(addPartyToMaster(newParty)).unwrap();
+
+                if (result && result.success) {
+                    await dispatch(fetchPartiesList());
+                    showMessage('Party added successfully!', 'success');
+                } else {
+                    showMessage('Failed to add party', 'error');
+                }
+            } catch (error) {
+                showMessage('Error adding party: ' + (error?.message || 'Please try again'), 'error');
+            }
         }
 
         setIsPartyDialogOpen(false);
@@ -169,7 +230,7 @@ export default function InvoiceHeader() {
                     handleEditChange={handleEditChange}
                     handleSaveCompanyDetails={handleSaveCompanyDetails}
                     handleCancelEdit={handleCancelEdit}
-                    onDateChange={handleChange}
+                    onDateChange={handleDateChange}
                 />
 
                 <PartySection
@@ -193,6 +254,23 @@ export default function InvoiceHeader() {
                 setPartyData={isEditingParty ? setEditingPartyData : setNewParty}
                 onSave={handleSaveParty}
             />
+
+            {/* Snackbar for messages */}
+            <Snackbar
+                open={snackbar.open}
+                autoHideDuration={3000}
+                onClose={handleCloseSnackbar}
+                anchorOrigin={{ vertical: 'bottom', horizontal: 'right' }}
+            >
+                <Alert
+                    onClose={handleCloseSnackbar}
+                    severity={snackbar.severity}
+                    variant="filled"
+                    sx={{ width: '100%' }}
+                >
+                    {snackbar.message}
+                </Alert>
+            </Snackbar>
         </>
     );
 }

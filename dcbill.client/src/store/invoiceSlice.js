@@ -1,59 +1,103 @@
-﻿import { createSlice } from '@reduxjs/toolkit';
+﻿import { createSlice, createAsyncThunk } from '@reduxjs/toolkit';
+import { invoiceService } from "./../services/invoiceService";
+
+export const saveInvoice = createAsyncThunk(
+    "invoice/save",
+    async (invoiceData, { rejectWithValue }) => {
+        try {
+            const response = await invoiceService.create(invoiceData);
+            return response;
+        } catch (error) {
+            return rejectWithValue(error.response?.data || error.message);
+        }
+    }
+);
+
+export const fetchInvoices = createAsyncThunk(
+    "invoice/fetchAll",
+    async (_, { rejectWithValue }) => {
+        try {
+            const response = await invoiceService.getAll();
+            return response;
+        } catch (error) {
+            return rejectWithValue(error.response?.data || error.message);
+        }
+    }
+);
+
+export const fetchInvoiceById = createAsyncThunk(
+    "invoice/fetchById",
+    async (id, { rejectWithValue }) => {
+        try {
+            const response = await invoiceService.getById(id);
+            return response;
+        } catch (error) {
+            return rejectWithValue(error.response?.data || error.message);
+        }
+    }
+);
 
 const initialState = {
-    invoiceNo: '',
-    invoiceDate: '',
-    customer: null,
-    items: []
+    invoices: [],
+    currentInvoice: null,
+    loading: false,
+    error: null,
 };
 
 const invoiceSlice = createSlice({
     name: 'invoice',
-
     initialState,
-
     reducers: {
-        setInvoiceNo: (state, action) => {
-            state.invoiceNo = action.payload;
+        clearError: (state) => {
+            state.error = null;
         },
-
-        setInvoiceDate: (state, action) => {
-            state.invoiceDate = action.payload;
+        clearCurrentInvoice: (state) => {
+            state.currentInvoice = null;
         },
-
-        setCustomer: (state, action) => {
-            state.customer = action.payload;
-        },
-
-        setItems: (state, action) => {
-            state.items = action.payload;
-        },
-
-        addItem: (state, action) => {
-            state.items.push(action.payload);
-        },
-
-        removeItem: (state, action) => {
-            state.items = state.items.filter(
-                (_, index) => index !== action.payload
-            );
-        },
-
-        clearInvoice: (state) => {
-            state.items = [];
-            state.customer = null;
-        }
+    },
+    extraReducers: (builder) => {
+        builder
+            // Save Invoice
+            .addCase(saveInvoice.pending, (state) => {
+                state.loading = true;
+                state.error = null;
+            })
+            .addCase(saveInvoice.fulfilled, (state, action) => {
+                state.loading = false;
+                state.currentInvoice = action.payload;
+            })
+            .addCase(saveInvoice.rejected, (state, action) => {
+                state.loading = false;
+                state.error = action.payload;
+            })
+            // Fetch All Invoices
+            .addCase(fetchInvoices.pending, (state) => {
+                state.loading = true;
+                state.error = null;
+            })
+            .addCase(fetchInvoices.fulfilled, (state, action) => {
+                state.loading = false;
+                state.invoices = action.payload;
+            })
+            .addCase(fetchInvoices.rejected, (state, action) => {
+                state.loading = false;
+                state.error = action.payload;
+            })
+            // Fetch Invoice By Id
+            .addCase(fetchInvoiceById.pending, (state) => {
+                state.loading = true;
+                state.error = null;
+            })
+            .addCase(fetchInvoiceById.fulfilled, (state, action) => {
+                state.loading = false;
+                state.currentInvoice = action.payload;
+            })
+            .addCase(fetchInvoiceById.rejected, (state, action) => {
+                state.loading = false;
+                state.error = action.payload;
+            });
     }
 });
 
-export const {
-    setInvoiceNo,
-    setInvoiceDate,
-    setCustomer,
-    setItems,
-    addItem,
-    removeItem,
-    clearInvoice
-} = invoiceSlice.actions;
-
+export const { clearError, clearCurrentInvoice } = invoiceSlice.actions;
 export default invoiceSlice.reducer;
