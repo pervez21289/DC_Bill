@@ -6,28 +6,34 @@ import { DatePicker } from '@mui/x-date-pickers/DatePicker';
 const inputStyle = {
     '& .MuiInputBase-root': {
         fontSize: '0.7rem',
-        height: '38px',
+        height: '32px',
     },
     '& .MuiInputBase-input': {
-        padding: '2px 6px',
+        padding: '4px 8px',
     }
 };
 
 const datePickerStyle = {
     '& .MuiInputBase-root': {
         fontSize: '0.7rem',
-        height: '28px',
+        height: '32px',
     },
     '& .MuiInputBase-input': {
-        padding: '2px 6px',
+        padding: '8px 8px',
     },
     '& .MuiFormLabel-root': {
-        fontSize: '0.65rem',
-        transform: 'translate(14px, 7px) scale(1)',
+        fontSize: '0.7rem',
+        top: '-3px',
     },
-    '& .MuiFormLabel-shrink': {
-        transform: 'translate(14px, -4px) scale(0.75)',
+    '& .MuiInputLabel-shrink': {
+        transform: 'translate(14px, -6px) scale(0.75)',
     },
+    '& .MuiOutlinedInput-notchedOutline': {
+        top: 0,
+    },
+    '& .MuiOutlinedInput-root': {
+        padding: 0,
+    }
 };
 
 export default function InvoiceGridFilters({
@@ -76,6 +82,7 @@ export default function InvoiceGridFilters({
                         textField: {
                             fullWidth: true,
                             size: 'small',
+                            variant: 'outlined',
                             sx: datePickerStyle
                         }
                     }}
@@ -90,6 +97,7 @@ export default function InvoiceGridFilters({
                         textField: {
                             fullWidth: true,
                             size: 'small',
+                            variant: 'outlined',
                             sx: datePickerStyle
                         }
                     }}
@@ -103,7 +111,7 @@ export default function InvoiceGridFilters({
                     size="small"
                     sx={{
                         fontSize: '0.65rem',
-                        height: '38px',
+                        height: '32px',
                         textTransform: 'none'
                     }}
                 >
@@ -119,7 +127,7 @@ export default function InvoiceGridFilters({
                     startIcon={<DownloadIcon sx={{ fontSize: '0.8rem' }} />}
                     sx={{
                         fontSize: '0.65rem',
-                        height: '38px',
+                        height: '32px',
                         textTransform: 'none'
                     }}
                 >
@@ -135,7 +143,7 @@ export default function InvoiceGridFilters({
                     startIcon={<AddIcon sx={{ fontSize: '0.8rem' }} />}
                     sx={{
                         fontSize: '0.65rem',
-                        height: '35px',
+                        height: '32px',
                         textTransform: 'none',
                         whiteSpace: 'nowrap'
                     }}

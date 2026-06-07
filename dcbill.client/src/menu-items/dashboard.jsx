@@ -1,9 +1,10 @@
 // assets
 import { DashboardOutlined } from '@ant-design/icons';
-
+import { LoginOutlined, ProfileOutlined } from '@ant-design/icons';
 // icons
 const icons = {
-  DashboardOutlined
+    DashboardOutlined,
+    ProfileOutlined
 };
 
 // ==============================|| MENU ITEMS - DASHBOARD ||============================== //
@@ -17,10 +18,19 @@ const dashboard = {
       id: 'dashboard',
       title: 'Dashboard',
       type: 'item',
-      url: '/dashboard/default',
+      url: '/',
       icon: icons.DashboardOutlined,
       breadcrumbs: false
-    }
+      },
+      {
+          id: 'invocie',
+          title: 'Invoices',
+          type: 'item',
+          url: '/invoices',
+          icon: icons.ProfileOutlined,
+          breadcrumbs: false,
+          external: true,
+      }
   ]
 };
 

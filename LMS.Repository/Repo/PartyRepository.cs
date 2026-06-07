@@ -67,7 +67,11 @@ namespace LMS.API.Repositories
             };
 
             var sql = "USP_UpdateParty";
-            return await ExecuteAsync(sql, parameters, CommandType.StoredProcedure);
+
+            // For RETURN values, use ExecuteScalarAsync
+            var result = await ExecuteScalarAsync<int>(sql, parameters, CommandType.StoredProcedure);
+
+            return result;
         }
 
         public async Task<int> DeleteAsync(int id)
