@@ -43,6 +43,11 @@ export default function HeaderBar({ isExpanded, setIsExpanded, isEditMode, setIs
                 )}
             </Box>
 
+            {/* TAX INVOICE in center */}
+            <Typography sx={{ fontSize: '0.8rem', fontWeight: 'bold', letterSpacing: 1 }}>
+                TAX INVOICE
+            </Typography>
+
             <Box sx={{ display: 'flex', gap: 1, alignItems: 'center' }}>
                 {!isEditMode && (
                     <Tooltip title="Edit Company Details">
