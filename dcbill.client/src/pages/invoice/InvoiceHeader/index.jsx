@@ -162,8 +162,11 @@ export default function InvoiceHeader() {
                     partyData: editingPartyData
                 })).unwrap();
 
+                // Update local state
                 dispatch(updateParty(editingPartyData));
                 dispatch(selectParty(editingPartyData));
+
+                // Refresh from API to get latest data
                 await dispatch(fetchPartiesList());
                 showMessage('Party updated successfully!', 'success');
             } catch (error) {
@@ -177,29 +180,27 @@ export default function InvoiceHeader() {
             }
 
             try {
-                // Add locally for immediate UI update
-                const tempId = Date.now();
-                const partyWithId = { ...newParty, id: tempId };
-                dispatch(addParty(partyWithId));
-                dispatch(selectParty(partyWithId));
-
-                // Save to API
+                setSaving(true);
+                // ONLY save to API - don't add locally
                 const result = await dispatch(addPartyToMaster(newParty)).unwrap();
 
                 if (result && result.success) {
+                    // Fetch the updated list from API (this will add the party once)
                     await dispatch(fetchPartiesList());
                     showMessage('Party added successfully!', 'success');
+
+                    // Close dialog
+                    setIsPartyDialogOpen(false);
+                    setNewParty({});
                 } else {
                     showMessage('Failed to add party', 'error');
                 }
             } catch (error) {
                 showMessage('Error adding party: ' + (error?.message || 'Please try again'), 'error');
+            } finally {
+                setSaving(false);
             }
         }
-
-        setIsPartyDialogOpen(false);
-        setEditingPartyData(null);
-        setNewParty({});
     };
 
     if (billingLoading) {

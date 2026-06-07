@@ -22,7 +22,7 @@ export default function PartyDialog({ open, onClose, isEditing, partyData, setPa
 
     const handleSave = async () => {
         if (isEditing) {
-            onSave();
+            onSave(); // Just call parent's save function
         } else {
             if (!partyData.partyName || !partyData.gstin) {
                 showMessage('Please fill Party Name and GSTIN', 'warning');
@@ -42,13 +42,18 @@ export default function PartyDialog({ open, onClose, isEditing, partyData, setPa
                     email: partyData.email || ''
                 };
 
+                // Save to API
                 const result = await dispatch(addPartyToMaster(partyDataToSave)).unwrap();
 
                 if (result && result.success) {
+                    // Refresh the list
                     await dispatch(fetchParties());
                     showMessage('Party added successfully!', 'success');
+
+                    // Close dialog after success
                     setTimeout(() => {
-                        onSave();
+                        onClose(); // Close dialog
+                        onSave(); // Call parent to refresh
                     }, 1000);
                 } else {
                     showMessage(result?.message || 'Failed to add party', 'error');
