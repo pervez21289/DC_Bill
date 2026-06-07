@@ -1,5 +1,5 @@
 ﻿// components/InvoicePDFButton.jsx
-import { IconButton, CircularProgress } from '@mui/material';
+import { IconButton, CircularProgress, Button } from '@mui/material';
 import { PictureAsPdf as PdfIcon } from '@mui/icons-material';
 import { useState } from 'react';
 import { useInvoicePdf } from './useInvoicePdf';
@@ -12,23 +12,28 @@ export default function InvoicePDFButton({ invoice, invoiceId, invoiceNo, billin
         setIsLoading(true);
         let success = false;
 
-        if (invoice) {
-            // If invoice data is already available
-            success = await downloadPdf(invoice);
-        } else if (invoiceId) {
-            // If only ID is available (for grid)
-            success = await downloadInvoicePdf(invoiceId, invoiceNo);
-        }
+        try {
+            if (invoice) {
+                // If invoice data is already available
+                success = await downloadPdf(invoice);
+            } else if (invoiceId) {
+                // If only ID is available (for grid)
+                success = await downloadInvoicePdf(invoiceId, invoiceNo);
+            }
 
-        if (success && onSuccess) {
-            onSuccess();
+            if (success && onSuccess) {
+                onSuccess();
+            }
+        } catch (error) {
+            console.error('Download error:', error);
+        } finally {
+            setIsLoading(false);
         }
-        setIsLoading(false);
     };
 
     if (isLoading) {
         return (
-            <IconButton size="small" disabled>
+            <IconButton size="small" disabled sx={{ padding: 0.5 }}>
                 <CircularProgress size={16} />
             </IconButton>
         );
@@ -36,9 +41,16 @@ export default function InvoicePDFButton({ invoice, invoiceId, invoiceNo, billin
 
     if (variant === 'button') {
         return (
-            <button onClick={handleDownload} disabled={isLoading}>
-                Download PDF
-            </button>
+            <Button
+                variant="outlined"
+                onClick={handleDownload}
+                disabled={isLoading}
+                startIcon={<PdfIcon />}
+                size="small"
+                sx={{ fontSize: '0.7rem', textTransform: 'none' }}
+            >
+                {isLoading ? 'Generating...' : 'Download PDF'}
+            </Button>
         );
     }
 

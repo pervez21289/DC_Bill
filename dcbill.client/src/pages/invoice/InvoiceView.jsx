@@ -7,22 +7,34 @@ import { ArrowBack as ArrowBackIcon, PictureAsPdf as PdfIcon, Print as PrintIcon
 import { pdf } from '@react-pdf/renderer';
 
 import { fetchInvoiceById } from '../../store/invoiceSlice';
+import { fetchBillingSettings } from '../../store/billingSettingsSlice';
 import { InvoicePDF } from './Pdf/InvoicePDF';
 import InvoicePDFViewer from './Pdf/InvoicePDFViewer';
 import InvoicePDFButton from './Pdf/InvoicePDFButton';
-import InvoiceSummary from './InvoiceSummary'; // Reuse InvoiceSummary
+import InvoiceSummary from './InvoiceSummary';
+import { useInvoicePdf } from './Pdf/useInvoicePdf';
 
 export default function InvoiceView() {
     const dispatch = useDispatch();
     const navigate = useNavigate();
     const { id } = useParams();
+    const printRef = useRef();
 
     const { currentInvoice, loading } = useSelector(state => state.invoice);
-    const { data: billingData } = useSelector(state => state.billingSettings);
+    const { data: billingData, loading: billingLoading } = useSelector(state => state.billingSettings);
+
+    // Fetch billing settings if not available
+    useEffect(() => {
+        if (!billingData && !billingLoading) {
+            dispatch(fetchBillingSettings());
+        }
+    }, [dispatch, billingData, billingLoading]);
+
+    // Use the hook correctly
+    const { pdfData, getPdfData, isLoading: pdfLoading } = useInvoicePdf(billingData);
 
     const [pdfOpen, setPdfOpen] = useState(false);
     const [printLoading, setPrintLoading] = useState(false);
-    const [pdfData, setPdfData] = useState(null);
 
     useEffect(() => {
         if (id) {
@@ -30,47 +42,56 @@ export default function InvoiceView() {
         }
     }, [dispatch, id]);
 
-    // Prepare PDF data
+    // Prepare PDF data for preview and print
     const preparePdfData = async () => {
         if (!currentInvoice) return null;
 
-        const companyState = billingData?.state || '';
-        const partyState = currentInvoice.partyState || '';
-        const isInterState = companyState !== partyState && companyState !== '' && partyState !== '';
         const gstPercent = currentInvoice.gstPercent || 18;
         const totalGST = currentInvoice.totalGST || (currentInvoice.subtotal * gstPercent) / 100;
 
         return {
-            gstin: billingData?.gstin,
-            mobile: billingData?.mobileNumber,
-            companyName: billingData?.companyName,
-            address: billingData?.address,
+            // Company Details - from billingData
+            gstin: billingData?.gstin || '',
+            mobile: billingData?.mobileNumber || '',
+            companyName: billingData?.companyName || '',
+            address: billingData?.address || '',
+            city: billingData?.city || "",
+            pinCode: billingData?.pinCode || "",
+            state: billingData?.state || "",
+
+            // Invoice Details
             invoiceDate: currentInvoice.invoiceDate,
             invoiceNo: currentInvoice.invoiceNo,
+
+            // Party Details
             partyName: currentInvoice.partyName,
             partyAddress: currentInvoice.partyAddress || "",
             partyCity: currentInvoice.partyCity || "",
             partyPinCode: currentInvoice.partyPinCode || "",
             partyState: currentInvoice.partyState || "",
             partyGstin: currentInvoice.partyGSTIN || "",
+
+            // Items
             items: currentInvoice.details?.map(item => ({
                 itemName: item.itemName,
                 hsnCode: item.hsnCode,
                 quantity: item.quantity,
                 rate: item.rate,
-                amount: item.amount
+                amount: item.amount,
+                gstPercent: gstPercent
             })) || [],
+
+            // Financials
             subtotal: currentInvoice.subtotal,
             totalGST: totalGST,
             grandTotal: currentInvoice.grandTotal,
-            isInterState: isInterState,
             gstPercent: gstPercent,
-            cgstPercent: isInterState ? 0 : gstPercent / 2,
-            sgstPercent: isInterState ? 0 : gstPercent / 2,
-            igstPercent: isInterState ? gstPercent : 0,
-            cgstAmount: isInterState ? 0 : totalGST / 2,
-            sgstAmount: isInterState ? 0 : totalGST / 2,
-            igstAmount: isInterState ? totalGST : 0
+
+            // Always show CGST and SGST
+            cgstPercent: gstPercent / 2,
+            sgstPercent: gstPercent / 2,
+            cgstAmount: totalGST / 2,
+            sgstAmount: totalGST / 2
         };
     };
 
@@ -107,8 +128,9 @@ export default function InvoiceView() {
     const handlePreviewPDF = async () => {
         if (currentInvoice) {
             const data = await preparePdfData();
-            setPdfData(data);
             setPdfOpen(true);
+            // Use the hook to set pdfData
+            await getPdfData(currentInvoice);
         }
     };
 
@@ -129,9 +151,6 @@ export default function InvoiceView() {
     const calculateGST = () => {
         if (!currentInvoice) return { totalGST: 0, grandTotal: 0 };
 
-        const companyState = billingData?.state || '';
-        const partyState = currentInvoice.partyState || '';
-        const isInterState = companyState !== partyState && companyState !== '' && partyState !== '';
         const gstPercent = currentInvoice.gstPercent || 18;
         const totalGST = currentInvoice.totalGST || (currentInvoice.subtotal * gstPercent) / 100;
         const grandTotal = currentInvoice.grandTotal || currentInvoice.subtotal + totalGST;
@@ -141,12 +160,12 @@ export default function InvoiceView() {
             totalGST: totalGST,
             grandTotal: grandTotal,
             itemsCount: currentInvoice.details?.length || 0,
-            isInterState: isInterState,
             gstPercent: gstPercent
         };
     };
 
-    if (loading) {
+    // Show loading while billing settings are being fetched
+    if (loading || billingLoading) {
         return (
             <Box sx={{ display: 'flex', justifyContent: 'center', alignItems: 'center', height: '100vh' }}>
                 <CircularProgress />
@@ -176,8 +195,14 @@ export default function InvoiceView() {
                         Back to Invoices
                     </Button>
                     <Box sx={{ display: 'flex', gap: 2 }}>
-                        <Button variant="outlined" onClick={handlePreviewPDF} startIcon={<PdfIcon />} size="small">
-                            Preview PDF
+                        <Button
+                            variant="outlined"
+                            onClick={handlePreviewPDF}
+                            startIcon={<PdfIcon />}
+                            size="small"
+                            disabled={pdfLoading}
+                        >
+                            {pdfLoading ? <CircularProgress size={20} /> : 'Preview PDF'}
                         </Button>
                         <InvoicePDFButton
                             invoice={currentInvoice}
@@ -282,7 +307,6 @@ export default function InvoiceView() {
                             total={summaryData.grandTotal}
                             itemsCount={summaryData.itemsCount}
                             gstPercent={summaryData.gstPercent}
-                            isInterState={summaryData.isInterState}
                         />
                     </Box>
 

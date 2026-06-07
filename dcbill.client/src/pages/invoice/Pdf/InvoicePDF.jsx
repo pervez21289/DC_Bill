@@ -75,7 +75,6 @@ const styles = StyleSheet.create({
         padding: 5,
         fontSize: 9
     },
-    // Fixed column widths - aligned with summary section
     col1: { width: '8%', textAlign: 'center' },
     col2: { width: '32%', textAlign: 'left' },
     col3: { width: '12%', textAlign: 'center' },
@@ -147,13 +146,19 @@ export const InvoicePDF = ({ invoiceData }) => {
         return new Date(date).toLocaleDateString('en-GB');
     };
 
-    // Calculate CGST, SGST, IGST based on invoice data
-    const cgstPercent = invoiceData.cgstPercent || (invoiceData.isInterState ? 0 : (invoiceData.gstPercent || 18) / 2);
-    const sgstPercent = invoiceData.sgstPercent || (invoiceData.isInterState ? 0 : (invoiceData.gstPercent || 18) / 2);
-    const igstPercent = invoiceData.igstPercent || (invoiceData.isInterState ? (invoiceData.gstPercent || 18) : 0);
-    const cgstAmount = invoiceData.cgstAmount || (invoiceData.totalGST / 2);
-    const sgstAmount = invoiceData.sgstAmount || (invoiceData.totalGST / 2);
-    const igstAmount = invoiceData.igstAmount || (invoiceData.isInterState ? invoiceData.totalGST : 0);
+    // Calculate CGST and SGST (always half of GST percent)
+    const gstPercent = invoiceData?.gstPercent || 18;
+    const cgstPercent = gstPercent / 2;
+    const sgstPercent = gstPercent / 2;
+    const totalGST = invoiceData?.totalGST || (invoiceData?.subtotal * gstPercent) / 100;
+    const cgstAmount = totalGST / 2;
+    const sgstAmount = totalGST / 2;
+
+    // Get values with fallbacks
+    const gstin = invoiceData?.gstin || '';
+    const mobile = invoiceData?.mobile || '';
+    const companyName = invoiceData?.companyName || '';
+    const address = invoiceData?.address || '';
 
     return (
         <Document>
@@ -161,43 +166,47 @@ export const InvoicePDF = ({ invoiceData }) => {
                 {/* Header */}
                 <View style={styles.header}>
                     <View style={styles.headerLeft}>
-                        <Text>GSTIN : {invoiceData.gstin }</Text>
+                        <Text>GSTIN : {gstin}</Text>
                     </View>
                     <Text style={{ fontWeight: 'bold', fontSize: 12 }}>TAX INVOICE</Text>
                     <View style={styles.headerRight}>
-                        <Text>MOB. : {invoiceData.mobile }</Text>
+                        <Text>MOB. : {mobile}</Text>
                     </View>
                 </View>
 
-                {/* Company Details */}
-                <Text style={styles.companyName}>{invoiceData.companyName }</Text>
-                <Text style={styles.address}>{invoiceData.address }</Text>
+                {/* Company Details - Only show if company name exists */}
+                {companyName && (
+                    <>
+                        <Text style={styles.companyName}>{companyName}</Text>
+                        <Text style={styles.address}>{address}</Text>
+                    </>
+                )}
 
                 {/* Invoice Date and No */}
                 <View style={styles.invoiceDetails}>
-                    <Text>Dated: {formatDate(invoiceData.invoiceDate)}</Text>
-                    <Text>No.: {invoiceData.invoiceNo}</Text>
+                    <Text>Dated: {formatDate(invoiceData?.invoiceDate)}</Text>
+                    <Text>No.: {invoiceData?.invoiceNo}</Text>
                 </View>
 
                 {/* Party Details */}
                 <View style={styles.partySection}>
                     <View style={styles.partyRow}>
                         <Text style={styles.partyLabel}>M/s.:</Text>
-                        <Text style={styles.partyValue}>{invoiceData.partyName}</Text>
+                        <Text style={styles.partyValue}>{invoiceData?.partyName}</Text>
                     </View>
                     <View style={styles.partyRow}>
                         <Text style={styles.partyLabel}>Address:</Text>
-                        <Text style={styles.partyValue}>{invoiceData.partyAddress}</Text>
+                        <Text style={styles.partyValue}>{invoiceData?.partyAddress}</Text>
                     </View>
                     <View style={styles.partyRow}>
                         <Text style={styles.partyLabel}>City/Pin/State:</Text>
                         <Text style={styles.partyValue}>
-                            {invoiceData.partyCity} - {invoiceData.partyPinCode} - {invoiceData.partyState}
+                            {invoiceData?.partyCity} - {invoiceData?.partyPinCode} - {invoiceData?.partyState}
                         </Text>
                     </View>
                     <View style={styles.partyRow}>
                         <Text style={styles.partyLabel}>Party GSTIN:</Text>
-                        <Text style={styles.partyValue}>{invoiceData.partyGstin}</Text>
+                        <Text style={styles.partyValue}>{invoiceData?.partyGstin}</Text>
                     </View>
                 </View>
 
@@ -208,11 +217,11 @@ export const InvoicePDF = ({ invoiceData }) => {
                         <Text style={[styles.tableCell, styles.col2]}>Description</Text>
                         <Text style={[styles.tableCell, styles.col3]}>HSN Code</Text>
                         <Text style={[styles.tableCell, styles.col4]}>Qty.</Text>
-                        <Text style={[styles.tableCell, styles.col5]}>Rate</Text>
-                        <Text style={[styles.tableCell, styles.col6]}>Amount</Text>
+                        <Text style={[styles.tableCell, styles.col5]}>Rate (₹)</Text>
+                        <Text style={[styles.tableCell, styles.col6]}>Amount (₹)</Text>
                     </View>
 
-                    {invoiceData.items?.map((item, index) => (
+                    {invoiceData?.items?.map((item, index) => (
                         <View key={index} style={styles.tableRow}>
                             <Text style={[styles.tableCell, styles.col1]}>{index + 1}</Text>
                             <Text style={[styles.tableCell, styles.col2]}>{item.itemName}</Text>
@@ -224,11 +233,11 @@ export const InvoicePDF = ({ invoiceData }) => {
                     ))}
                 </View>
 
-                {/* Summary Section */}
+                {/* Summary Section - Always show CGST & SGST */}
                 <View style={styles.summarySection}>
                     <View style={styles.summaryRow}>
                         <Text style={styles.summaryLabel}>Total</Text>
-                        <Text style={styles.summaryValue}>{formatCurrency(invoiceData.subtotal)}</Text>
+                        <Text style={styles.summaryValue}>{formatCurrency(invoiceData?.subtotal)}</Text>
                     </View>
                     <View style={styles.summaryRow}>
                         <Text style={styles.summaryLabel}>Discount</Text>
@@ -236,28 +245,18 @@ export const InvoicePDF = ({ invoiceData }) => {
                     </View>
                     <View style={styles.summaryRow}>
                         <Text style={styles.summaryLabel}>Total</Text>
-                        <Text style={styles.summaryValue}>{formatCurrency(invoiceData.subtotal)}</Text>
+                        <Text style={styles.summaryValue}>{formatCurrency(invoiceData?.subtotal)}</Text>
                     </View>
 
-                    {!invoiceData.isInterState && (
-                        <>
-                            <View style={styles.summaryRow}>
-                                <Text style={styles.summaryLabel}>CGST ({cgstPercent}%)</Text>
-                                <Text style={styles.summaryValue}>{formatCurrency(cgstAmount)}</Text>
-                            </View>
-                            <View style={styles.summaryRow}>
-                                <Text style={styles.summaryLabel}>SGST ({sgstPercent}%)</Text>
-                                <Text style={styles.summaryValue}>{formatCurrency(sgstAmount)}</Text>
-                            </View>
-                        </>
-                    )}
-
-                    {invoiceData.isInterState && (
-                        <View style={styles.summaryRow}>
-                            <Text style={styles.summaryLabel}>IGST ({igstPercent}%)</Text>
-                            <Text style={styles.summaryValue}>{formatCurrency(igstAmount)}</Text>
-                        </View>
-                    )}
+                    {/* Always show CGST and SGST */}
+                    <View style={styles.summaryRow}>
+                        <Text style={styles.summaryLabel}>CGST ({cgstPercent}%)</Text>
+                        <Text style={styles.summaryValue}>{formatCurrency(cgstAmount)}</Text>
+                    </View>
+                    <View style={styles.summaryRow}>
+                        <Text style={styles.summaryLabel}>SGST ({sgstPercent}%)</Text>
+                        <Text style={styles.summaryValue}>{formatCurrency(sgstAmount)}</Text>
+                    </View>
 
                     <View style={styles.summaryRow}>
                         <Text style={styles.summaryLabel}>Advance</Text>
@@ -266,13 +265,13 @@ export const InvoicePDF = ({ invoiceData }) => {
 
                     <View style={styles.grandTotalRow}>
                         <Text style={styles.summaryLabel}>GRAND TOTAL</Text>
-                        <Text style={styles.summaryValue}>{formatCurrency(invoiceData.grandTotal)}</Text>
+                        <Text style={styles.summaryValue}>{formatCurrency(invoiceData?.grandTotal)}</Text>
                     </View>
                 </View>
 
                 {/* Footer */}
                 <View style={styles.footer}>
-                    <Text style={{ fontWeight: 'bold' }}>{invoiceData.companyName || 'DHANRAJ CITY DEVELOPERS'}</Text>
+                    <Text style={{ fontWeight: 'bold' }}>{companyName || 'Authorised Signatory'}</Text>
                     <Text>Authorised Signature</Text>
                 </View>
 

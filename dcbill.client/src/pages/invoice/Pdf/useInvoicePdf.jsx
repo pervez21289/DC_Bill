@@ -14,29 +14,44 @@ export const useInvoicePdf = (billingData) => {
     const prepareInvoiceData = (invoice) => {
         if (!invoice) return null;
 
-        const companyState = billingData?.state || '';
-        const partyState = invoice.partyState || '';
-        const isInterState = companyState !== partyState && companyState !== '' && partyState !== '';
+        // Debug: Log billingData to see what's coming
+        console.log('billingData in useInvoicePdf:', billingData);
 
         const gstPercent = invoice.gstPercent || 18;
         const totalGST = invoice.totalGST || (invoice.subtotal * gstPercent) / 100;
 
+        // Get values with fallbacks
+        const gstin = billingData?.gstin || '';
+        const mobile = billingData?.mobileNumber || '';
+        const companyName = billingData?.companyName || '';
+        const address = billingData?.address || '';
+
+        console.log('GSTIN being passed:', gstin);
+        console.log('Mobile being passed:', mobile);
+
         return {
-            gstin: billingData?.gstin || "05AOSPA8862Q2Z2",
-            mobile: billingData?.mobileNumber || "9358001015",
-            companyName: billingData?.companyName || "DHANRAJ CITY DEVELOPERS",
-            address: billingData?.address || "C-19, Clement Town, Turner Road, Dehradun-248002",
+            // Company Details
+            gstin: gstin,
+            mobile: mobile,
+            companyName: companyName,
+            address: address,
             city: billingData?.city || "",
             pinCode: billingData?.pinCode || "",
             state: billingData?.state || "",
+
+            // Invoice Details
             invoiceDate: invoice.invoiceDate,
             invoiceNo: invoice.invoiceNo,
+
+            // Party Details
             partyName: invoice.partyName,
             partyAddress: invoice.partyAddress || "",
             partyCity: invoice.partyCity || "",
             partyPinCode: invoice.partyPinCode || "",
             partyState: invoice.partyState || "",
             partyGstin: invoice.partyGSTIN || "",
+
+            // Items
             items: invoice.details?.map(item => ({
                 itemName: item.itemName,
                 hsnCode: item.hsnCode,
@@ -45,16 +60,18 @@ export const useInvoicePdf = (billingData) => {
                 amount: item.amount,
                 gstPercent: gstPercent
             })) || [],
+
+            // Financials
             subtotal: invoice.subtotal,
             totalGST: totalGST,
             grandTotal: invoice.grandTotal,
-            isInterState: isInterState,
-            cgstPercent: isInterState ? 0 : gstPercent / 2,
-            sgstPercent: isInterState ? 0 : gstPercent / 2,
-            igstPercent: isInterState ? gstPercent : 0,
-            cgstAmount: isInterState ? 0 : totalGST / 2,
-            sgstAmount: isInterState ? 0 : totalGST / 2,
-            igstAmount: isInterState ? totalGST : 0
+            gstPercent: gstPercent,
+
+            // Always show CGST and SGST
+            cgstPercent: gstPercent / 2,
+            sgstPercent: gstPercent / 2,
+            cgstAmount: totalGST / 2,
+            sgstAmount: totalGST / 2
         };
     };
 
@@ -63,6 +80,11 @@ export const useInvoicePdf = (billingData) => {
         setIsLoading(true);
         try {
             const invoiceData = prepareInvoiceData(invoice);
+            if (!invoiceData) return null;
+
+            // Debug: Log final PDF data
+            console.log('Final PDF Data:', invoiceData);
+
             const blob = await pdf(<InvoicePDF invoiceData={invoiceData} />).toBlob();
             return blob;
         } catch (error) {
@@ -109,19 +131,22 @@ export const useInvoicePdf = (billingData) => {
         }
     };
 
-    // Get PDF data for preview (for grid and view)
+    // Get PDF data for preview
     const getPdfData = async (invoice) => {
         setIsLoading(true);
         try {
             const invoiceData = prepareInvoiceData(invoice);
             setPdfData(invoiceData);
             return invoiceData;
+        } catch (error) {
+            console.error('Error preparing PDF data:', error);
+            return null;
         } finally {
             setIsLoading(false);
         }
     };
 
-    // Fetch invoice and get PDF data (for grid)
+    // Fetch invoice and get PDF data
     const fetchAndGetPdfData = async (invoiceId) => {
         setIsLoading(true);
         try {
