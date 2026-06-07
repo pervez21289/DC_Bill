@@ -2,7 +2,7 @@ import { Box, Paper, Typography } from '@mui/material';
 import { useDispatch, useSelector } from 'react-redux';
 import { useEffect, useState } from 'react';
 import { fetchBillingSettings, updateBillingSettings } from './../../../store/billingSettingsSlice';
-import { fetchParties, selectParty, addParty, updateParty } from './../../../store/partySlice';
+import { fetchParties, selectParty, addParty, updateParty } from './../../../store/partySlice'; // Add addParty here
 import HeaderBar from './HeaderBar';
 import CompanyDetails from './CompanyDetails';
 import PartySection from './PartySection';
@@ -66,13 +66,6 @@ export default function InvoiceHeader() {
 
     const handleEditChange = (field, value) => {
         setEditedData(prev => ({ ...prev, [field]: value }));
-    };
-
-    const handleDateChange = (newDate) => {
-        setInvoiceData(prev => ({
-            ...prev,
-            dated: newDate
-        }));
     };
 
     const handlePartySelect = (event, newValue) => {
@@ -139,6 +132,7 @@ export default function InvoiceHeader() {
                 alert('Please fill Party Name and GSTIN');
                 return;
             }
+            // Use addParty action (local) or addPartyToMaster (API)
             dispatch(addParty(newParty));
         }
 
@@ -175,7 +169,7 @@ export default function InvoiceHeader() {
                     handleEditChange={handleEditChange}
                     handleSaveCompanyDetails={handleSaveCompanyDetails}
                     handleCancelEdit={handleCancelEdit}
-                    onDateChange={handleDateChange}
+                    onDateChange={handleChange}
                 />
 
                 <PartySection

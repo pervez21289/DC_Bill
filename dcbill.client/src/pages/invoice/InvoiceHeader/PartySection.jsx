@@ -14,6 +14,9 @@ export default function PartySection({
     isExpanded, parties, selectedParty, partiesLoading, invoiceData,
     handleChange, handlePartySelect, handleOpenAddPartyDialog, handleOpenEditPartyDialog
 }) {
+    // Ensure parties is always an array
+    const partyList = Array.isArray(parties) ? parties : [];
+
     return (
         <Collapse in={isExpanded}>
             <Box sx={{ p: 1.5, pt: 0 }}>
@@ -22,30 +25,48 @@ export default function PartySection({
                     <Box sx={{ display: 'flex', alignItems: 'center', gap: 1 }}>
                         <Typography sx={labelStyles}>Select Party:</Typography>
                         <Autocomplete
-                            options={parties}
-                            getOptionLabel={(option) => `${option.partyName} (${option.gstin})`}
-                            value={selectedParty}
+                            options={partyList}
+                            getOptionLabel={(option) => {
+                                if (!option) return '';
+                                return `${option.partyName || ''} (${option.gstin || ''})`;
+                            }}
+                            value={selectedParty || null}
                             onChange={handlePartySelect}
                             loading={partiesLoading}
                             size="small"
                             fullWidth
+                            isOptionEqualToValue={(option, value) => {
+                                return option?.id === value?.id;
+                            }}
                             renderInput={(params) => (
                                 <TextField
                                     {...params}
                                     placeholder="Search or select party"
                                     size="small"
                                     sx={textFieldStyles}
-                                    InputProps={{ ...params.InputProps, style: { fontSize: '0.7rem' } }}
+                                    InputProps={{
+                                        ...params.InputProps,
+                                        style: { fontSize: '0.7rem' }
+                                    }}
                                 />
                             )}
                         />
                         <Tooltip title="Add New Party">
-                            <IconButton size="small" onClick={handleOpenAddPartyDialog} sx={{ border: '1px solid #ccc', borderRadius: 1, minWidth: '30px' }}>
+                            <IconButton
+                                size="small"
+                                onClick={handleOpenAddPartyDialog}
+                                sx={{ border: '1px solid #ccc', borderRadius: 1, minWidth: '30px' }}
+                            >
                                 <AddIcon sx={{ fontSize: '16px' }} />
                             </IconButton>
                         </Tooltip>
                         <Tooltip title="Edit Selected Party">
-                            <IconButton size="small" onClick={handleOpenEditPartyDialog} sx={{ border: '1px solid #ccc', borderRadius: 1, minWidth: '30px' }} disabled={!selectedParty}>
+                            <IconButton
+                                size="small"
+                                onClick={handleOpenEditPartyDialog}
+                                sx={{ border: '1px solid #ccc', borderRadius: 1, minWidth: '30px' }}
+                                disabled={!selectedParty}
+                            >
                                 <EditNoteIcon sx={{ fontSize: '16px' }} />
                             </IconButton>
                         </Tooltip>
