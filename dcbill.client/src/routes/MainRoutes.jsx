@@ -17,52 +17,53 @@ const SamplePage = Loadable(lazy(() => import('pages/extra-pages/sample-page')))
 
 // render - invoice page
 const InvoicePage = Loadable(lazy(() => import('../pages/invoice/InvoicePage')));
+const InvoiceView = Loadable(lazy(() => import('../pages/invoice/InvoiceView')));
 const BillingSettings = Loadable(lazy(() => import('../pages/billingsettings/BillingSettings')));
 const InvoiceGrid = Loadable(lazy(() => import('../pages/invoice/InvoiceGrid')));
+
 // ==============================|| MAIN ROUTING ||============================== //
 
 const MainRoutes = {
-  path: '/',
-  element: <DashboardLayout />,
-  children: [
-    {
-      path: '/',
-          element: <DashboardDefault />
-    },
-    {
-      path: 'dashboard',
-      children: [
+    path: '/',
+    element: <DashboardLayout />,
+    children: [
         {
-          path: 'default',
-              element: <InvoiceGrid />
+            path: '/',
+            element: <DashboardDefault />
+        },
+        {
+            path: 'dashboard',
+            element: <InvoiceGrid />
+        },
+        {
+            path: 'invoices',
+            element: <InvoiceGrid />
+        },
+        {
+            path: 'invoice/create',
+            element: <InvoicePage />
+        },
+        {
+            path: 'invoice/:id',
+            element: <InvoiceView />
+        },
+        {
+            path: 'profile',
+            element: <BillingSettings />
+        },
+        {
+            path: 'color',
+            element: <Color />
+        },
+        {
+            path: 'shadow',
+            element: <Shadow />
+        },
+        {
+            path: 'sample-page',
+            element: <SamplePage />
         }
-      ]
-      },
-      {
-          path: 'Invoices',
-          element: <InvoiceGrid />
-      },
-      {
-          path: 'Invoice',
-          element: <InvoicePage />
-      },
-    {
-      path: 'profile',
-      element: <BillingSettings />
-    },
-    {
-      path: 'color',
-      element: <Color />
-    },
-    {
-      path: 'shadow',
-      element: <Shadow />
-    },
-    {
-      path: 'sample-page',
-      element: <SamplePage />
-    }
-  ]
+    ]
 };
 
 export default MainRoutes;

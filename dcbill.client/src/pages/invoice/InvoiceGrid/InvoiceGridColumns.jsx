@@ -1,15 +1,9 @@
-// components/InvoiceGrid/InvoiceGridColumns.jsx (Simpler Version)
+// components/InvoiceGrid/InvoiceGridColumns.jsx
 import { Box, Typography, Chip, IconButton } from '@mui/material';
-import { Visibility as ViewIcon, PictureAsPdf as PdfIcon, Print as PrintIcon } from '@mui/icons-material';
+import { Visibility as ViewIcon, Print as PrintIcon } from '@mui/icons-material';
 import { useNavigate } from 'react-router-dom';
-import { pdf } from '@react-pdf/renderer';
-import { InvoicePDF } from './../Pdf/InvoicePDF';
-import { useState } from 'react';
-import { CircularProgress } from '@mui/material';
-import { useDispatch, useSelector } from 'react-redux';
-import { fetchInvoiceById } from './../../../store/invoiceSlice';
+import InvoicePDFButton from './../Pdf/InvoicePDFButton';
 
-// Format helpers
 const formatCurrency = (amount) => {
     return new Intl.NumberFormat('en-IN', {
         style: 'currency',
@@ -20,115 +14,6 @@ const formatCurrency = (amount) => {
 
 const formatDate = (date) => {
     return new Date(date).toLocaleDateString('en-GB');
-};
-
-// Function to prepare invoice data for PDF
-const prepareInvoiceData = (invoice, billingData) => {
-    if (!invoice) return null;
-
-    // Get company state from billing data
-    const companyState = billingData?.state || '';
-    const partyState = invoice.partyState || '';
-    const isInterState = companyState !== partyState && companyState !== '' && partyState !== '';
-
-    // Calculate GST based on GSTPercent
-    const gstPercent = invoice.gstPercent || 18;
-    const totalGST = invoice.totalGST || (invoice.subtotal * gstPercent) / 100;
-    const cgstPercent = isInterState ? 0 : gstPercent / 2;
-    const sgstPercent = isInterState ? 0 : gstPercent / 2;
-    const igstPercent = isInterState ? gstPercent : 0;
-    const cgstAmount = isInterState ? 0 : totalGST / 2;
-    const sgstAmount = isInterState ? 0 : totalGST / 2;
-    const igstAmount = isInterState ? totalGST : 0;
-
-    return {
-        gstin: billingData?.gstin || "05AOSPA8862Q2Z2",
-        mobile: billingData?.mobileNumber || "9358001015",
-        companyName: billingData?.companyName || "DHANRAJ CITY DEVELOPERS",
-        address: billingData?.address || "C-19, Clement Town, Turner Road, Dehradun-248002",
-        city: billingData?.city || "",
-        pinCode: billingData?.pinCode || "",
-        state: billingData?.state || "",
-        invoiceDate: invoice.invoiceDate,
-        invoiceNo: invoice.invoiceNo,
-        partyName: invoice.partyName,
-        partyAddress: invoice.partyAddress || "",
-        partyCity: invoice.partyCity || "",
-        partyPinCode: invoice.partyPinCode || "",
-        partyState: invoice.partyState || "",
-        partyGstin: invoice.partyGSTIN || "",
-        items: invoice.details?.map(item => ({
-            itemName: item.itemName,
-            hsnCode: item.hsnCode,
-            quantity: item.quantity,
-            rate: item.rate,
-            amount: item.amount,
-            gstPercent: gstPercent
-        })) || [],
-        subtotal: invoice.subtotal,
-        totalGST: totalGST,
-        grandTotal: invoice.grandTotal,
-        isInterState: isInterState,
-        cgstPercent: cgstPercent,
-        sgstPercent: sgstPercent,
-        igstPercent: igstPercent,
-        cgstAmount: cgstAmount,
-        sgstAmount: sgstAmount,
-        igstAmount: igstAmount
-    };
-};
-
-// PDF Button Component
-const PDFButton = ({ row, billingData }) => {
-    const dispatch = useDispatch();
-    const [isLoading, setIsLoading] = useState(false);
-
-    const handleDownloadPDF = async () => {
-        setIsLoading(true);
-        try {
-            const result = await dispatch(fetchInvoiceById(row.id)).unwrap();
-            if (result && result.success) {
-                // Get the invoice data from the response
-                const invoice = result.data || result;
-                const invoiceData = prepareInvoiceData(invoice, billingData);
-
-                if (invoiceData) {
-                    const blob = await pdf(<InvoicePDF invoiceData={invoiceData} />).toBlob();
-                    const url = URL.createObjectURL(blob);
-                    const link = document.createElement('a');
-                    link.href = url;
-                    link.download = `Invoice_${row.invoiceNo}.pdf`;
-                    document.body.appendChild(link);
-                    link.click();
-                    document.body.removeChild(link);
-                    URL.revokeObjectURL(url);
-                }
-            }
-        } catch (error) {
-            console.error('Error generating PDF:', error);
-        } finally {
-            setIsLoading(false);
-        }
-    };
-
-    if (isLoading) {
-        return (
-            <IconButton size="small" sx={{ padding: 0.5 }} disabled>
-                <CircularProgress size={16} />
-            </IconButton>
-        );
-    }
-
-    return (
-        <IconButton
-            size="small"
-            onClick={handleDownloadPDF}
-            sx={{ padding: 0.5 }}
-            title="Download PDF"
-        >
-            <PdfIcon sx={{ fontSize: '1rem' }} />
-        </IconButton>
-    );
 };
 
 export const useInvoiceColumns = (billingData = null) => {
@@ -256,15 +141,11 @@ export const useInvoiceColumns = (billingData = null) => {
                         <ViewIcon sx={{ fontSize: '1rem' }} />
                     </IconButton>
 
-                    <PDFButton row={params.row} billingData={billingData} />
-
-                    <IconButton
-                        size="small"
-                        sx={{ padding: 0.5 }}
-                        title="Print Invoice"
-                    >
-                        <PrintIcon sx={{ fontSize: '1rem' }} />
-                    </IconButton>
+                    <InvoicePDFButton
+                        invoiceId={params.row.id}
+                        invoiceNo={params.row.invoiceNo}
+                        billingData={billingData}
+                    />
                 </Box>
             )
         }
