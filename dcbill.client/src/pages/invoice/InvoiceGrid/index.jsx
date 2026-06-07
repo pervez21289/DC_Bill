@@ -55,7 +55,7 @@ export default function InvoiceGrid() {
     };
 
     const handleAddNewInvoice = () => {
-        navigate('/invoice');
+        navigate('/invoice/create');
     };
 
     return (

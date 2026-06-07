@@ -20,14 +20,14 @@ export default function NavCard() {
       <Stack sx={{ gap: 2.5, alignItems: 'center' }}>
         <CardMedia component="img" image={avatar} sx={{ width: 112 }} />
         <Stack sx={{ alignItems: 'center' }}>
-          <Typography variant="h5">Mantis Pro</Typography>
+          <Typography variant="h5">NexBill</Typography>
           <Typography variant="h6" sx={{ color: 'secondary.main' }}>
-            Checkout pro features
+                      Resturant POS System
           </Typography>
         </Stack>
         <AnimateButton>
-          <Button component={Link} target="_blank" href="https://mantisdashboard.com" variant="contained" color="success" size="small">
-            Pro
+                  <Button component={Link} target="_blank" href="https://nexbillpos.com/" variant="contained" color="success" size="small">
+            Go
           </Button>
         </AnimateButton>
       </Stack>
