@@ -50,7 +50,7 @@ export default function BillingSettings() {
   }, [dispatch]);
 
     useEffect(() => {
-      debugger
+    
     if (data) {
       setFormData({
         id: data.id || 0,

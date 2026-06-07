@@ -1,3 +1,4 @@
+using LMS.API.Repositories;
 using LMS.Core.Interfaces;
 using LMS.Repo.Repository;
 using LMS.Repository.Repo;
@@ -6,6 +7,8 @@ var builder = WebApplication.CreateBuilder(args);
 
 // Add services to the container.
 builder.Services.AddScoped<IBillingSettingsRepository, BillingSettingsRepository>();
+builder.Services.AddScoped<IItemMasterRepository, ItemMasterRepository>();
+builder.Services.AddScoped<IPartyRepository, PartyRepository>();
 builder.Services.AddSingleton<BaseRepository>();
 builder.Services.AddControllers();
 

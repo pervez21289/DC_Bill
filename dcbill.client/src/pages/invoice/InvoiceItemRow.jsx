@@ -9,28 +9,34 @@
     DialogContent,
     DialogActions,
     Button,
-    Grid
+    Grid,
+    CircularProgress
 } from '@mui/material';
 import { useState } from 'react';
 import { useDispatch, useSelector } from 'react-redux';
 import { updateItem, deleteItem } from './../../store/invoiceItemsSlice';
-import { addItem } from './../../store/itemMasterSlice';
+import { addItemToMaster, fetchItemMaster } from './../../store/itemMasterSlice';
 
 export default function InvoiceItemRow({ index }) {
     const dispatch = useDispatch();
     const item = useSelector(state => state.invoiceItems.items[index]);
-    const itemMaster = useSelector(state => state.itemMaster.items);
+    const itemMaster = useSelector(state => state.itemMaster.items || []); // Ensure it's always an array
+    const { loading } = useSelector(state => state.itemMaster);
 
     const [isDialogOpen, setIsDialogOpen] = useState(false);
+    const [saving, setSaving] = useState(false);
     const [newItem, setNewItem] = useState({
         itemName: '',
         hsnCode: '',
         rate: 0,
         gst: 18
     });
+    const [errors, setErrors] = useState({
+        itemName: '',
+        hsnCode: ''
+    });
 
     const handleItemSelect = (_, selectedItem) => {
-        // Check if "add new" option was selected
         if (selectedItem?.isNew) {
             setIsDialogOpen(true);
             return;
@@ -61,47 +67,100 @@ export default function InvoiceItemRow({ index }) {
         dispatch(deleteItem(index));
     };
 
-    const handleAddNewItem = () => {
-        // Validate required fields
-        if (!newItem.itemName || !newItem.hsnCode) {
-            alert('Please fill Item Name and HSN Code');
+    const validateForm = () => {
+        let isValid = true;
+        const newErrors = { itemName: '', hsnCode: '' };
+
+        if (!newItem.itemName.trim()) {
+            newErrors.itemName = 'Item Name is required';
+            isValid = false;
+        }
+
+        if (!newItem.hsnCode.trim()) {
+            newErrors.hsnCode = 'HSN Code is required';
+            isValid = false;
+        }
+
+        setErrors(newErrors);
+        return isValid;
+    };
+
+    const handleAddNewItem = async () => {
+        if (!validateForm()) {
             return;
         }
 
-        const newItemObject = {
-            id: Date.now(),
-            ...newItem,
-            rate: Number(newItem.rate),
-            gst: Number(newItem.gst)
-        };
+        setSaving(true);
 
-        // Add to master list
-        dispatch(addItem(newItemObject));
+        try {
+            const itemData = {
+                itemName: newItem.itemName,
+                hsnCode: newItem.hsnCode,
+                rate: Number(newItem.rate),
+                gst: Number(newItem.gst)
+            };
 
-        // Auto-select the newly added item
-        dispatch(updateItem({
-            index,
-            data: {
-                itemId: newItemObject.id,
-                itemName: newItemObject.itemName,
-                hsnCode: newItemObject.hsnCode,
-                rate: newItemObject.rate,
-                gst: newItemObject.gst
+            const result = await dispatch(addItemToMaster(itemData)).unwrap();
+
+            // Handle API response
+            let newItemId = null;
+            if (result && typeof result === 'object') {
+                if (result.data && typeof result.data === 'number') {
+                    newItemId = result.data;
+                } else if (result.id) {
+                    newItemId = result.id;
+                } else if (typeof result === 'number') {
+                    newItemId = result;
+                }
             }
-        }));
 
-        // Reset form and close dialog
-        setNewItem({
-            itemName: '',
-            hsnCode: '',
-            rate: 0,
-            gst: 18
-        });
-        setIsDialogOpen(false);
+            if (newItemId && newItemId > 0) {
+                const savedItem = {
+                    id: newItemId,
+                    itemName: newItem.itemName,
+                    hsnCode: newItem.hsnCode,
+                    rate: Number(newItem.rate),
+                    gst: Number(newItem.gst)
+                };
+
+                dispatch(updateItem({
+                    index,
+                    data: {
+                        itemId: savedItem.id,
+                        itemName: savedItem.itemName,
+                        hsnCode: savedItem.hsnCode,
+                        rate: savedItem.rate,
+                        gst: savedItem.gst
+                    }
+                }));
+
+                dispatch(fetchItemMaster());
+
+                setNewItem({
+                    itemName: '',
+                    hsnCode: '',
+                    rate: 0,
+                    gst: 18
+                });
+                setErrors({ itemName: '', hsnCode: '' });
+                setIsDialogOpen(false);
+            } else {
+                alert(result?.message || 'Failed to add item. Please try again.');
+            }
+        } catch (error) {
+            console.error('Error adding item:', error);
+            alert('Error adding item: ' + (error?.message || 'Please try again'));
+        } finally {
+            setSaving(false);
+        }
     };
 
-    // Create options array with "Add New" option
-    const options = [...itemMaster, {
+    // Create options array with safety check
+    const options = Array.isArray(itemMaster) ? [...itemMaster, {
+        id: 'new',
+        itemName: '+ Add New Item',
+        isNew: true
+    }] : [{
         id: 'new',
         itemName: '+ Add New Item',
         isNew: true
@@ -109,7 +168,6 @@ export default function InvoiceItemRow({ index }) {
 
     if (!item) return null;
 
-    // Common text field styles for compact view
     const textFieldStyles = {
         '& .MuiInputBase-root': {
             fontSize: '0.75rem',
@@ -128,24 +186,25 @@ export default function InvoiceItemRow({ index }) {
                     <Autocomplete
                         options={options}
                         getOptionLabel={(option) => {
-                            if (option.isNew) return option.itemName;
-                            return option.itemName || '';
+                            if (option?.isNew) return option.itemName;
+                            return option?.itemName || '';
                         }}
                         value={
-                            itemMaster.find(
-                                (x) => x.id === item.itemId
-                            ) || null
+                            Array.isArray(itemMaster)
+                                ? itemMaster.find((x) => x?.id === item?.itemId) || null
+                                : null
                         }
                         onChange={handleItemSelect}
                         size="small"
+                        loading={loading}
                         renderOption={(props, option) => (
                             <li {...props} style={{
-                                fontWeight: option.isNew ? 'bold' : 'normal',
-                                color: option.isNew ? '#1976d2' : 'inherit',
-                                backgroundColor: option.isNew ? '#f0f7ff' : 'inherit',
+                                fontWeight: option?.isNew ? 'bold' : 'normal',
+                                color: option?.isNew ? '#1976d2' : 'inherit',
+                                backgroundColor: option?.isNew ? '#f0f7ff' : 'inherit',
                                 fontSize: '0.75rem'
                             }}>
-                                {option.isNew ? '➕ ' : ''}{option.itemName}
+                                {option?.isNew ? '➕ ' : ''}{option?.itemName || ''}
                             </li>
                         )}
                         renderInput={(params) => (
@@ -162,7 +221,7 @@ export default function InvoiceItemRow({ index }) {
                 <TableCell sx={{ py: 0.5, px: 1 }}>
                     <TextField
                         size="small"
-                        value={item.hsnCode || ''}
+                        value={item?.hsnCode || ''}
                         disabled
                         sx={textFieldStyles}
                         InputProps={{
@@ -175,7 +234,7 @@ export default function InvoiceItemRow({ index }) {
                     <TextField
                         size="small"
                         type="number"
-                        value={item.qty || ''}
+                        value={item?.qty || ''}
                         onChange={(e) =>
                             handleChange('qty', e.target.value)
                         }
@@ -193,7 +252,7 @@ export default function InvoiceItemRow({ index }) {
                     <TextField
                         size="small"
                         type="number"
-                        value={item.rate || ''}
+                        value={item?.rate || ''}
                         onChange={(e) =>
                             handleChange('rate', e.target.value)
                         }
@@ -210,7 +269,7 @@ export default function InvoiceItemRow({ index }) {
                 <TableCell sx={{ py: 0.5, px: 1 }}>
                     <TextField
                         size="small"
-                        value={item.amount || 0}
+                        value={item?.amount || 0}
                         disabled
                         sx={textFieldStyles}
                         InputProps={{
@@ -225,7 +284,7 @@ export default function InvoiceItemRow({ index }) {
                 <TableCell sx={{ py: 0.5, px: 1 }}>
                     <TextField
                         size="small"
-                        value={`${item.gst || 0}%`}
+                        value={`${item?.gst || 0}%`}
                         disabled
                         sx={{
                             width: 60,
@@ -279,8 +338,13 @@ export default function InvoiceItemRow({ index }) {
                                 label="Item Name"
                                 size="small"
                                 value={newItem.itemName}
-                                onChange={(e) => setNewItem({ ...newItem, itemName: e.target.value })}
+                                onChange={(e) => {
+                                    setNewItem({ ...newItem, itemName: e.target.value });
+                                    setErrors({ ...errors, itemName: '' });
+                                }}
                                 required
+                                error={!!errors.itemName}
+                                helperText={errors.itemName}
                                 sx={{
                                     '& .MuiInputLabel-root': { fontSize: '0.75rem' },
                                     '& .MuiInputBase-root': { fontSize: '0.75rem' }
@@ -293,8 +357,13 @@ export default function InvoiceItemRow({ index }) {
                                 label="HSN Code"
                                 size="small"
                                 value={newItem.hsnCode}
-                                onChange={(e) => setNewItem({ ...newItem, hsnCode: e.target.value })}
+                                onChange={(e) => {
+                                    setNewItem({ ...newItem, hsnCode: e.target.value });
+                                    setErrors({ ...errors, hsnCode: '' });
+                                }}
                                 required
+                                error={!!errors.hsnCode}
+                                helperText={errors.hsnCode}
                                 sx={{
                                     '& .MuiInputLabel-root': { fontSize: '0.75rem' },
                                     '& .MuiInputBase-root': { fontSize: '0.75rem' }
@@ -333,9 +402,19 @@ export default function InvoiceItemRow({ index }) {
                 </DialogContent>
                 <DialogActions sx={{ p: 2 }}>
                     <Button
-                        onClick={() => setIsDialogOpen(false)}
+                        onClick={() => {
+                            setIsDialogOpen(false);
+                            setNewItem({
+                                itemName: '',
+                                hsnCode: '',
+                                rate: 0,
+                                gst: 18
+                            });
+                            setErrors({ itemName: '', hsnCode: '' });
+                        }}
                         size="small"
                         sx={{ fontSize: '0.7rem' }}
+                        disabled={saving}
                     >
                         Cancel
                     </Button>
@@ -345,8 +424,9 @@ export default function InvoiceItemRow({ index }) {
                         color="primary"
                         size="small"
                         sx={{ fontSize: '0.7rem' }}
+                        disabled={saving}
                     >
-                        Add Item
+                        {saving ? <CircularProgress size={20} /> : 'Add Item'}
                     </Button>
                 </DialogActions>
             </Dialog>

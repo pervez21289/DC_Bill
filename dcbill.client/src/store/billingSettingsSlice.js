@@ -5,7 +5,7 @@ export const fetchBillingSettings = createAsyncThunk(
   "billingSettings/fetch",
   async () => {
       const response = await billingSettingsService.get();
-      debugger;
+   
     return response;
   }
 );
@@ -14,7 +14,6 @@ export const updateBillingSettings = createAsyncThunk(
   "billingSettings/save",
   async (payload) => {
       const response = await billingSettingsService.save(payload);
-      debugger;
     return response;
   }
 );
@@ -36,7 +35,6 @@ const billingSlice = createSlice({
       })
 
         .addCase(fetchBillingSettings.fulfilled, (state, action) => {
-            debugger;
         state.loading = false;
         state.data = action.payload;
       })
