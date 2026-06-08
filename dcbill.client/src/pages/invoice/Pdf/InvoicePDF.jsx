@@ -15,161 +15,198 @@ Font.register({
     fontWeight: 'bold',
 });
 
-// Create styles with optimized font sizes for cost reduction
-const styles = StyleSheet.create({
-    page: {
-        padding: 20,
-        fontSize: 8,
-        fontFamily: 'Noto Sans' // Using Noto Sans font
-    },
-    header: {
-        flexDirection: 'row',
-        justifyContent: 'space-between',
-        marginBottom: 8,
-        borderBottom: '1px solid #000',
-        paddingBottom: 3,
-        fontSize: 7
-    },
-    headerLeft: {
-        flexDirection: 'row',
-        gap: 3
-    },
-    headerRight: {
-        flexDirection: 'row',
-        gap: 3
-    },
-    companyName: {
-        fontSize: 11,
-        fontWeight: 'bold',
-        textAlign: 'center',
-        marginBottom: 3,
-        marginTop: 5
-    },
-    address: {
-        fontSize: 7,
-        textAlign: 'center',
-        marginBottom: 2
-    },
-    invoiceDetails: {
-        flexDirection: 'row',
-        justifyContent: 'space-between',
-        marginBottom: 10,
-        fontSize: 8
-    },
-    partySection: {
-        marginBottom: 10,
-        border: '1px solid #000',
-        padding: 5
-    },
-    partyRow: {
-        flexDirection: 'row',
-        marginBottom: 2,
-        fontSize: 7
-    },
-    partyLabel: {
-        width: 70,
-        fontWeight: 'bold'
-    },
-    partyValue: {
-        flex: 1
-    },
-    table: {
-        width: '100%',
-        marginBottom: 10,
-        border: '1px solid #000'
-    },
-    tableHeader: {
-        flexDirection: 'row',
-        backgroundColor: '#f0f0f0',
-        borderBottom: '1px solid #000',
-        fontWeight: 'bold',
-        fontSize: 7
-    },
-    tableRow: {
-        flexDirection: 'row',
-        borderBottom: '1px solid #eee',
-        fontSize: 7
-    },
-    tableCell: {
-        padding: 3,
-        fontSize: 7
-    },
-    col1: { width: '6%', textAlign: 'center' },
-    col2: { width: '34%', textAlign: 'left' },
-    col3: { width: '10%', textAlign: 'center' },
-    col4: { width: '8%', textAlign: 'center' },
-    col5: { width: '15%', textAlign: 'right' },
-    col6: { width: '27%', textAlign: 'right' },
-    summarySection: {
-        marginTop: 8,
-        width: '100%',
-        flexDirection: 'row',
-        justifyContent: 'space-between'
-    },
-    summaryLeft: {
-        width: '45%'
-    },
-    summaryRight: {
-        width: '45%'
-    },
-    amountInWords: {
-        fontSize: 7,
-        border: '1px solid #000',
-        padding: 5,
-        marginTop: 5
-    },
-    amountInWordsTitle: {
-        fontWeight: 'bold',
-        marginBottom: 3,
-        fontSize: 7
-    },
-    amountInWordsText: {
-        fontSize: 7,
-        lineHeight: 1.3
-    },
-    summaryRow: {
-        flexDirection: 'row',
-        justifyContent: 'space-between',
-        marginBottom: 2,
-        paddingHorizontal: 3,
-        fontSize: 7
-    },
-    summaryLabel: {
-        fontWeight: 'bold'
-    },
-    summaryValue: {
-        textAlign: 'right'
-    },
-    grandTotalRow: {
-        flexDirection: 'row',
-        justifyContent: 'space-between',
-        marginTop: 3,
-        paddingTop: 3,
-        paddingHorizontal: 3,
-        borderTop: '1px solid #000',
-        borderBottom: '1px solid #000',
-        fontWeight: 'bold',
-        fontSize: 9
-    },
-    footer: {
-        marginTop: 15,
-        textAlign: 'center',
-        borderTop: '1px solid #ccc',
-        paddingTop: 8,
-        fontSize: 7
-    },
-    termsSection: {
-        marginTop: 10,
-        fontSize: 6,
-        borderTop: '1px solid #ccc',
-        paddingTop: 5
-    },
-    eoe: {
-        textAlign: 'center',
-        fontSize: 6,
-        marginTop: 3
-    }
+Font.register({
+    family: 'NotoSansLightItalic',
+    src: '/fonts/NotoSans-LightItalic.ttf',
 });
+// Helper function to get page settings from localStorage
+const getPageSettings = () => {
+    if (typeof window !== 'undefined') {
+        const savedSettings = localStorage.getItem('invoicePageSettings');
+        if (savedSettings) {
+            try {
+                return JSON.parse(savedSettings);
+            } catch (error) {
+                console.error('Error parsing page settings:', error);
+            }
+        }
+    }
+    // Default settings
+    return {
+        pageSize: 'A5',
+        orientation: 'portrait',
+        marginTop: 20,
+        marginRight: 20,
+        marginBottom: 20,
+        marginLeft: 20,
+        fontSize: 8,
+    };
+};
+
+// Get page settings
+const pageSettings = getPageSettings();
+
+// Create styles with dynamic values from localStorage
+const createStyles = (settings) => {
+    return StyleSheet.create({
+        page: {
+            paddingTop: settings.marginTop,
+            paddingRight: settings.marginRight,
+            paddingBottom: settings.marginBottom,
+            paddingLeft: settings.marginLeft,
+            fontSize: settings.fontSize,
+            fontFamily: 'Noto Sans'
+        },
+        header: {
+            flexDirection: 'row',
+            justifyContent: 'space-between',
+            marginBottom: 8,
+            borderBottom: '1px solid #000',
+            paddingBottom: 3,
+            fontSize: Math.max(6, settings.fontSize - 1)
+        },
+        headerLeft: {
+            flexDirection: 'row',
+            gap: 3
+        },
+        headerRight: {
+            flexDirection: 'row',
+            gap: 3
+        },
+        companyName: {
+            fontSize: Math.max(9, settings.fontSize + 3),
+            fontWeight: 'bold',
+            textAlign: 'center',
+            marginBottom: 3,
+            marginTop: 5
+        },
+        address: {
+            fontSize: Math.max(6, settings.fontSize - 1),
+            textAlign: 'center',
+            marginBottom: 2
+        },
+        invoiceDetails: {
+            flexDirection: 'row',
+            justifyContent: 'space-between',
+            marginBottom: 10,
+            fontSize: settings.fontSize
+        },
+        partySection: {
+            marginBottom: 10,
+            border: '1px solid #000',
+            padding: 5
+        },
+        partyRow: {
+            flexDirection: 'row',
+            marginBottom: 2,
+            fontSize: Math.max(6, settings.fontSize - 1)
+        },
+        partyLabel: {
+            width: 70,
+            fontWeight: 'bold'
+        },
+        partyValue: {
+            flex: 1
+        },
+        table: {
+            width: '100%',
+            marginBottom: 10,
+            border: '1px solid #000'
+        },
+        tableHeader: {
+            flexDirection: 'row',
+            backgroundColor: '#f0f0f0',
+            borderBottom: '1px solid #000',
+            fontWeight: 'bold',
+            fontSize: Math.max(6, settings.fontSize - 1)
+        },
+        tableRow: {
+            flexDirection: 'row',
+            borderBottom: '1px solid #eee',
+            fontSize: Math.max(6, settings.fontSize - 1)
+        },
+        tableCell: {
+            padding: 3,
+            fontSize: Math.max(6, settings.fontSize - 1)
+        },
+        col1: { width: '6%', textAlign: 'center' },
+        col2: { width: '34%', textAlign: 'left' },
+        col3: { width: '10%', textAlign: 'center' },
+        col4: { width: '8%', textAlign: 'center' },
+        col5: { width: '15%', textAlign: 'right' },
+        col6: { width: '27%', textAlign: 'right' },
+        summarySection: {
+            marginTop: 8,
+            width: '100%',
+            flexDirection: 'row',
+            justifyContent: 'space-between'
+        },
+        summaryLeft: {
+            width: '45%'
+        },
+        summaryRight: {
+            width: '45%'
+        },
+        amountInWords: {
+            fontSize: Math.max(6, settings.fontSize - 1),
+            border: '1px solid #000',
+            padding: 5,
+            marginTop: 5
+        },
+        amountInWordsTitle: {
+            fontWeight: 'bold',
+            marginBottom: 3,
+            fontSize: Math.max(6, settings.fontSize - 1)
+        },
+        amountInWordsText: {
+            fontSize: Math.max(6, settings.fontSize - 1),
+            lineHeight: 1.3,
+            fontFamily: 'NotoSansLightItalic',
+        },
+        summaryRow: {
+            flexDirection: 'row',
+            justifyContent: 'space-between',
+            marginBottom: 2,
+            paddingHorizontal: 3,
+            fontSize: Math.max(6, settings.fontSize - 1)
+        },
+        summaryLabel: {
+            fontWeight: 'bold'
+        },
+        summaryValue: {
+            textAlign: 'right'
+        },
+        grandTotalRow: {
+            flexDirection: 'row',
+            justifyContent: 'space-between',
+            marginTop: 3,
+            paddingTop: 3,
+            paddingHorizontal: 3,
+            borderTop: '1px solid #000',
+            borderBottom: '1px solid #000',
+            fontWeight: 'bold',
+            fontSize: Math.max(8, settings.fontSize + 1)
+        },
+        footer: {
+            marginTop: 15,
+            textAlign: 'center',
+            borderTop: '1px solid #ccc',
+            paddingTop: 8,
+            fontSize: Math.max(6, settings.fontSize - 1)
+        },
+        termsSection: {
+            marginTop: 10,
+            fontSize: Math.max(5, settings.fontSize - 2),
+            borderTop: '1px solid #ccc',
+            paddingTop: 5
+        },
+        eoe: {
+            textAlign: 'center',
+            fontSize: Math.max(5, settings.fontSize - 2),
+            marginTop: 3
+        }
+    });
+};
 
 // Helper function to convert number to words
 const numberToWords = (num) => {
@@ -200,6 +237,14 @@ const numberToWords = (num) => {
 };
 
 export const InvoicePDF = ({ invoiceData }) => {
+    // Get fresh page settings for this render
+    const currentPageSettings = getPageSettings();
+    const styles = createStyles(currentPageSettings);
+
+    // Determine page size and orientation
+    const pageSize = currentPageSettings.pageSize || 'A5';
+    const orientation = currentPageSettings.orientation || 'portrait';
+
     // Format currency without Rupee symbol (for regular amounts)
     const formatCurrency = (amount) => {
         if (!amount && amount !== 0) return '0.00';
@@ -243,13 +288,13 @@ export const InvoicePDF = ({ invoiceData }) => {
 
     return (
         <Document>
-            <Page size="A5" style={styles.page}>
+            <Page size={pageSize} orientation={orientation} style={styles.page}>
                 {/* Header */}
                 <View style={styles.header}>
                     <View style={styles.headerLeft}>
                         <Text>GSTIN : {gstin}</Text>
                     </View>
-                    <Text style={{ fontWeight: 'bold', fontSize: 10 }}>TAX INVOICE</Text>
+                    <Text style={{ fontWeight: 'bold', fontSize: Math.max(8, currentPageSettings.fontSize + 2) }}>TAX INVOICE</Text>
                     <View style={styles.headerRight}>
                         <Text>MOB. : {mobile}</Text>
                     </View>
