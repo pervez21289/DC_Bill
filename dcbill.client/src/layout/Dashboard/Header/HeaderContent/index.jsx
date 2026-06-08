@@ -24,8 +24,7 @@ export default function HeaderContent() {
       {downLG && <Box sx={{ width: '100%', ml: 1 }} />}
       <IconButton
         component={Link}
-        href="https://github.com/codedthemes/mantis-free-react-admin-template"
-        target="_blank"
+        href="/"
         disableRipple
         color="secondary"
         title="Download Free Version"
@@ -34,7 +33,7 @@ export default function HeaderContent() {
         <GithubOutlined />
       </IconButton>
 
-      <Notification />
+     
       {!downLG && <Profile />}
       {downLG && <MobileSection />}
     </>

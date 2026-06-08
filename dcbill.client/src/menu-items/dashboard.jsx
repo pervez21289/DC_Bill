@@ -14,14 +14,14 @@ const dashboard = {
   title: 'Navigation',
   type: 'group',
   children: [
-    {
-      id: 'dashboard',
-      title: 'Dashboard',
-      type: 'item',
-      url: '/',
-      icon: icons.DashboardOutlined,
-      breadcrumbs: false
-      },
+    // {
+    //   id: 'dashboard',
+    //   title: 'Dashboard',
+    //   type: 'item',
+    //   url: '/',
+    //   icon: icons.DashboardOutlined,
+    //   breadcrumbs: false
+    //   },
       {
           id: 'invocie',
           title: 'Invoices',

@@ -8,11 +8,16 @@ import CompanyDetails from './CompanyDetails';
 import PartySection from './PartySection';
 import PartyDialog from './PartyDialog';
 
-export default function InvoiceHeader() {
+export default function InvoiceHeader({
+    onInvoiceNoChange,
+    onInvoiceDateChange,
+    initialInvoiceNo,
+    initialInvoiceDate,
+    resetForm
+}) {
     const dispatch = useDispatch();
     const { data: billingData, loading: billingLoading } = useSelector(state => state.billingSettings);
     const { parties, selectedParty, loading: partiesLoading } = useSelector(state => state.parties);
-    const { invoices } = useSelector(state => state.invoice);
 
     const [isExpanded, setIsExpanded] = useState(true);
     const [isEditMode, setIsEditMode] = useState(false);
@@ -29,33 +34,7 @@ export default function InvoiceHeader() {
         severity: 'success'
     });
 
-    // Get today's date in DDMMYYYY format
-    const getTodayDate = () => {
-        const today = new Date();
-        const day = String(today.getDate()).padStart(2, '0');
-        const month = String(today.getMonth() + 1).padStart(2, '0');
-        const year = today.getFullYear();
-        return `${day}${month}${year}`;
-    };
-
-    // Generate invoice number based on today's date and count of invoices created today
-    const generateInvoiceNumber = () => {
-        const todayDate = getTodayDate();
-
-        // Count how many invoices were created today
-        const todayInvoices = invoices.filter(invoice => {
-            const invoiceDate = new Date(invoice.invoiceDate);
-            const today = new Date();
-            return invoiceDate.toDateString() === today.toDateString();
-        });
-
-        const nextNumber = todayInvoices.length + 1;
-        const paddedNumber = String(nextNumber).padStart(3, '0');
-
-        return `${todayDate}${paddedNumber}`;
-    };
-
-    // Initialize invoice data
+    // Initialize invoice data (without invoice generation)
     const [invoiceData, setInvoiceData] = useState({
         gstin: '',
         mobile: '',
@@ -65,8 +44,8 @@ export default function InvoiceHeader() {
         pinCode: '',
         state: '',
         country: '',
-        dated: new Date().toISOString().split('T')[0],
-        invoiceNo: generateInvoiceNumber(),
+        dated: initialInvoiceDate || new Date().toISOString().split('T')[0],
+        invoiceNo: initialInvoiceNo || '',
         partyName: '',
         partyAddress: '',
         partyCity: '',
@@ -76,13 +55,36 @@ export default function InvoiceHeader() {
         partyMobile: ''
     });
 
-    // Regenerate invoice number when invoice list changes (after save)
+    // Update invoice data when props change
     useEffect(() => {
-        setInvoiceData(prev => ({
-            ...prev,
-            invoiceNo: generateInvoiceNumber()
-        }));
-    }, [invoices.length]);
+        if (initialInvoiceNo) {
+            setInvoiceData(prev => ({ ...prev, invoiceNo: initialInvoiceNo }));
+        }
+    }, [initialInvoiceNo]);
+
+    useEffect(() => {
+        if (initialInvoiceDate) {
+            setInvoiceData(prev => ({ ...prev, dated: initialInvoiceDate }));
+        }
+    }, [initialInvoiceDate]);
+
+    // Reset form when resetForm prop changes
+    useEffect(() => {
+        if (resetForm) {
+            setInvoiceData(prev => ({
+                ...prev,
+                dated: initialInvoiceDate || new Date().toISOString().split('T')[0],
+                invoiceNo: initialInvoiceNo || '',
+                partyName: '',
+                partyAddress: '',
+                partyCity: '',
+                partyState: '',
+                partyPinCode: '',
+                partyGstin: '',
+                partyMobile: ''
+            }));
+        }
+    }, [resetForm, initialInvoiceDate, initialInvoiceNo]);
 
     const handleCloseSnackbar = () => {
         setSnackbar({ ...snackbar, open: false });
@@ -142,6 +144,19 @@ export default function InvoiceHeader() {
             ...prev,
             dated: newDate
         }));
+        if (onInvoiceDateChange) {
+            onInvoiceDateChange(newDate);
+        }
+    };
+
+    const handleInvoiceNoChange = (newInvoiceNo) => {
+        setInvoiceData(prev => ({
+            ...prev,
+            invoiceNo: newInvoiceNo
+        }));
+        if (onInvoiceNoChange) {
+            onInvoiceNoChange(newInvoiceNo);
+        }
     };
 
     const handleEditChange = (field, value) => {
@@ -230,13 +245,6 @@ export default function InvoiceHeader() {
         dispatch(fetchPartiesList());
         setEditingPartyData(null);
         setNewParty({});
-    };
-
-    const handleInvoiceNoChange = (newInvoiceNo) => {
-        setInvoiceData(prev => ({
-            ...prev,
-            invoiceNo: newInvoiceNo
-        }));
     };
 
     if (billingLoading) {
