@@ -138,11 +138,12 @@ export default function InvoiceGridFilters({
                 <Button
                     fullWidth
                     variant="contained"
+                    color="success"  
                     onClick={onAddNewClick}
                     size="small"
                     startIcon={<AddIcon sx={{ fontSize: '0.8rem' }} />}
                     sx={{
-                        fontSize: '0.65rem',
+                        fontSize: '0.85rem',
                         height: '32px',
                         textTransform: 'none',
                         whiteSpace: 'nowrap'

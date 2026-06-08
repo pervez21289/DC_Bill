@@ -44,10 +44,11 @@ export default function InvoiceItemsTable() {
                 </TableBody>
             </Table>
 
-            <Box mt={1}>
+            <Box sx={{ mt: 2 }}>
                 <Button
                     variant="contained"
                     onClick={addRow}
+                    color="success"
                     size="small"
                     sx={{ fontSize: '0.7rem' }}
                 >

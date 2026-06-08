@@ -12,6 +12,7 @@ export default function InvoiceHeader() {
     const dispatch = useDispatch();
     const { data: billingData, loading: billingLoading } = useSelector(state => state.billingSettings);
     const { parties, selectedParty, loading: partiesLoading } = useSelector(state => state.parties);
+    const { invoices } = useSelector(state => state.invoice);
 
     const [isExpanded, setIsExpanded] = useState(true);
     const [isEditMode, setIsEditMode] = useState(false);
@@ -28,11 +29,60 @@ export default function InvoiceHeader() {
         severity: 'success'
     });
 
+    // Get today's date in DDMMYYYY format
+    const getTodayDate = () => {
+        const today = new Date();
+        const day = String(today.getDate()).padStart(2, '0');
+        const month = String(today.getMonth() + 1).padStart(2, '0');
+        const year = today.getFullYear();
+        return `${day}${month}${year}`;
+    };
+
+    // Generate invoice number based on today's date and count of invoices created today
+    const generateInvoiceNumber = () => {
+        const todayDate = getTodayDate();
+
+        // Count how many invoices were created today
+        const todayInvoices = invoices.filter(invoice => {
+            const invoiceDate = new Date(invoice.invoiceDate);
+            const today = new Date();
+            return invoiceDate.toDateString() === today.toDateString();
+        });
+
+        const nextNumber = todayInvoices.length + 1;
+        const paddedNumber = String(nextNumber).padStart(3, '0');
+
+        return `${todayDate}${paddedNumber}`;
+    };
+
+    // Initialize invoice data
     const [invoiceData, setInvoiceData] = useState({
-        gstin: '', mobile: '', companyName: '', address: '', city: '', pinCode: '', state: '', country: '',
-        dated: new Date().toLocaleDateString('en-GB'), invoiceNo: '048',
-        partyName: '', partyAddress: '', partyCity: '', partyState: '', partyPinCode: '', partyGstin: '', partyMobile: ''
+        gstin: '',
+        mobile: '',
+        companyName: '',
+        address: '',
+        city: '',
+        pinCode: '',
+        state: '',
+        country: '',
+        dated: new Date().toISOString().split('T')[0],
+        invoiceNo: generateInvoiceNumber(),
+        partyName: '',
+        partyAddress: '',
+        partyCity: '',
+        partyState: '',
+        partyPinCode: '',
+        partyGstin: '',
+        partyMobile: ''
     });
+
+    // Regenerate invoice number when invoice list changes (after save)
+    useEffect(() => {
+        setInvoiceData(prev => ({
+            ...prev,
+            invoiceNo: generateInvoiceNumber()
+        }));
+    }, [invoices.length]);
 
     const handleCloseSnackbar = () => {
         setSnackbar({ ...snackbar, open: false });
@@ -54,10 +104,14 @@ export default function InvoiceHeader() {
     useEffect(() => {
         if (billingData) {
             const data = {
-                gstin: billingData.gstin || '', mobile: billingData.mobileNumber || '',
-                companyName: billingData.companyName || '', address: billingData.address || '',
-                city: billingData.city || '', pinCode: billingData.pinCode || '',
-                state: billingData.state || '', country: billingData.country || ''
+                gstin: billingData.gstin || '',
+                mobile: billingData.mobileNumber || '',
+                companyName: billingData.companyName || '',
+                address: billingData.address || '',
+                city: billingData.city || '',
+                pinCode: billingData.pinCode || '',
+                state: billingData.state || '',
+                country: billingData.country || ''
             };
             setInvoiceData(prev => ({ ...prev, ...data }));
             setEditedData(data);
@@ -102,7 +156,13 @@ export default function InvoiceHeader() {
             dispatch(selectParty(null));
             setInvoiceData(prev => ({
                 ...prev,
-                partyName: '', partyAddress: '', partyCity: '', partyState: '', partyPinCode: '', partyGstin: '', partyMobile: ''
+                partyName: '',
+                partyAddress: '',
+                partyCity: '',
+                partyState: '',
+                partyPinCode: '',
+                partyGstin: '',
+                partyMobile: ''
             }));
         }
     };
@@ -127,17 +187,30 @@ export default function InvoiceHeader() {
 
     const handleCancelEdit = () => {
         setEditedData({
-            gstin: invoiceData.gstin, mobile: invoiceData.mobile,
-            companyName: invoiceData.companyName, address: invoiceData.address,
-            city: invoiceData.city, pinCode: invoiceData.pinCode,
-            state: invoiceData.state, country: invoiceData.country
+            gstin: invoiceData.gstin,
+            mobile: invoiceData.mobile,
+            companyName: invoiceData.companyName,
+            address: invoiceData.address,
+            city: invoiceData.city,
+            pinCode: invoiceData.pinCode,
+            state: invoiceData.state,
+            country: invoiceData.country
         });
         setIsEditMode(false);
     };
 
     const handleOpenAddPartyDialog = () => {
         setIsEditingParty(false);
-        setNewParty({ partyName: '', address: '', city: '', state: '', pinCode: '', gstin: '', mobile: '', email: '' });
+        setNewParty({
+            partyName: '',
+            address: '',
+            city: '',
+            state: '',
+            pinCode: '',
+            gstin: '',
+            mobile: '',
+            email: ''
+        });
         setIsPartyDialogOpen(true);
     };
 
@@ -154,9 +227,16 @@ export default function InvoiceHeader() {
     // Simplified - just refresh parties and close dialog
     const handleSaveParty = () => {
         setIsPartyDialogOpen(false);
-        dispatch(fetchPartiesList()); // Refresh the parties list
+        dispatch(fetchPartiesList());
         setEditingPartyData(null);
         setNewParty({});
+    };
+
+    const handleInvoiceNoChange = (newInvoiceNo) => {
+        setInvoiceData(prev => ({
+            ...prev,
+            invoiceNo: newInvoiceNo
+        }));
     };
 
     if (billingLoading) {
@@ -188,6 +268,7 @@ export default function InvoiceHeader() {
                     handleSaveCompanyDetails={handleSaveCompanyDetails}
                     handleCancelEdit={handleCancelEdit}
                     onDateChange={handleDateChange}
+                    onInvoiceNoChange={handleInvoiceNoChange}
                 />
 
                 <PartySection
