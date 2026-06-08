@@ -1,56 +1,73 @@
 ﻿// components/InvoicePDF.jsx
-import { Page, Document, StyleSheet, View, Text } from '@react-pdf/renderer';
+import { Page, Document, StyleSheet, View, Text, Font } from '@react-pdf/renderer';
 
-// Create styles
+// Register Noto Sans font for proper Unicode support including ₹ symbol
+// Make sure the font file is in your public/fonts/ directory
+Font.register({
+    family: 'Noto Sans',
+    src: '/fonts/NotoSans-Regular.ttf',
+    fontWeight: 'normal',
+});
+
+Font.register({
+    family: 'Noto Sans',
+    src: '/fonts/NotoSans-Bold.ttf',
+    fontWeight: 'bold',
+});
+
+// Create styles with optimized font sizes for cost reduction
 const styles = StyleSheet.create({
     page: {
-        padding: 30,
-        fontSize: 10,
-        fontFamily: 'Helvetica'
+        padding: 20,
+        fontSize: 8,
+        fontFamily: 'Noto Sans' // Using Noto Sans font
     },
     header: {
         flexDirection: 'row',
         justifyContent: 'space-between',
-        marginBottom: 10,
+        marginBottom: 8,
         borderBottom: '1px solid #000',
-        paddingBottom: 5
+        paddingBottom: 3,
+        fontSize: 7
     },
     headerLeft: {
         flexDirection: 'row',
-        gap: 5
+        gap: 3
     },
     headerRight: {
         flexDirection: 'row',
-        gap: 5
+        gap: 3
     },
     companyName: {
-        fontSize: 14,
+        fontSize: 11,
         fontWeight: 'bold',
         textAlign: 'center',
-        marginBottom: 5,
-        marginTop: 10
+        marginBottom: 3,
+        marginTop: 5
     },
     address: {
-        fontSize: 9,
+        fontSize: 7,
         textAlign: 'center',
-        marginBottom: 3
+        marginBottom: 2
     },
     invoiceDetails: {
         flexDirection: 'row',
         justifyContent: 'space-between',
-        marginBottom: 15
+        marginBottom: 10,
+        fontSize: 8
     },
     partySection: {
-        marginBottom: 15,
+        marginBottom: 10,
         border: '1px solid #000',
-        padding: 8
+        padding: 5
     },
     partyRow: {
         flexDirection: 'row',
-        marginBottom: 4
+        marginBottom: 2,
+        fontSize: 7
     },
     partyLabel: {
-        width: 80,
+        width: 70,
         fontWeight: 'bold'
     },
     partyValue: {
@@ -58,86 +75,147 @@ const styles = StyleSheet.create({
     },
     table: {
         width: '100%',
-        marginBottom: 15,
+        marginBottom: 10,
         border: '1px solid #000'
     },
     tableHeader: {
         flexDirection: 'row',
         backgroundColor: '#f0f0f0',
         borderBottom: '1px solid #000',
-        fontWeight: 'bold'
+        fontWeight: 'bold',
+        fontSize: 7
     },
     tableRow: {
         flexDirection: 'row',
-        borderBottom: '1px solid #eee'
+        borderBottom: '1px solid #eee',
+        fontSize: 7
     },
     tableCell: {
-        padding: 5,
-        fontSize: 9
+        padding: 3,
+        fontSize: 7
     },
-    col1: { width: '8%', textAlign: 'center' },
-    col2: { width: '32%', textAlign: 'left' },
-    col3: { width: '12%', textAlign: 'center' },
-    col4: { width: '10%', textAlign: 'center' },
+    col1: { width: '6%', textAlign: 'center' },
+    col2: { width: '34%', textAlign: 'left' },
+    col3: { width: '10%', textAlign: 'center' },
+    col4: { width: '8%', textAlign: 'center' },
     col5: { width: '15%', textAlign: 'right' },
-    col6: { width: '23%', textAlign: 'right' },
+    col6: { width: '27%', textAlign: 'right' },
     summarySection: {
-        marginTop: 10,
-        width: '60%',
-        alignSelf: 'flex-end'
+        marginTop: 8,
+        width: '100%',
+        flexDirection: 'row',
+        justifyContent: 'space-between'
+    },
+    summaryLeft: {
+        width: '45%'
+    },
+    summaryRight: {
+        width: '45%'
+    },
+    amountInWords: {
+        fontSize: 7,
+        border: '1px solid #000',
+        padding: 5,
+        marginTop: 5
+    },
+    amountInWordsTitle: {
+        fontWeight: 'bold',
+        marginBottom: 3,
+        fontSize: 7
+    },
+    amountInWordsText: {
+        fontSize: 7,
+        lineHeight: 1.3
     },
     summaryRow: {
         flexDirection: 'row',
         justifyContent: 'space-between',
-        marginBottom: 3,
-        paddingHorizontal: 5
+        marginBottom: 2,
+        paddingHorizontal: 3,
+        fontSize: 7
     },
     summaryLabel: {
-        width: '60%',
         fontWeight: 'bold'
     },
     summaryValue: {
-        width: '40%',
         textAlign: 'right'
     },
     grandTotalRow: {
         flexDirection: 'row',
         justifyContent: 'space-between',
-        marginTop: 5,
-        paddingTop: 5,
-        paddingHorizontal: 5,
+        marginTop: 3,
+        paddingTop: 3,
+        paddingHorizontal: 3,
         borderTop: '1px solid #000',
         borderBottom: '1px solid #000',
         fontWeight: 'bold',
-        fontSize: 12
+        fontSize: 9
     },
     footer: {
-        marginTop: 20,
+        marginTop: 15,
         textAlign: 'center',
         borderTop: '1px solid #ccc',
-        paddingTop: 10
+        paddingTop: 8,
+        fontSize: 7
     },
     termsSection: {
-        marginTop: 15,
-        fontSize: 8,
+        marginTop: 10,
+        fontSize: 6,
         borderTop: '1px solid #ccc',
-        paddingTop: 8
+        paddingTop: 5
     },
     eoe: {
         textAlign: 'center',
-        fontSize: 8,
-        marginTop: 5
+        fontSize: 6,
+        marginTop: 3
     }
 });
 
+// Helper function to convert number to words
+const numberToWords = (num) => {
+    if (!num || num === 0) return 'Zero Rupees Only';
+
+    const ones = ['', 'One', 'Two', 'Three', 'Four', 'Five', 'Six', 'Seven', 'Eight', 'Nine',
+        'Ten', 'Eleven', 'Twelve', 'Thirteen', 'Fourteen', 'Fifteen', 'Sixteen',
+        'Seventeen', 'Eighteen', 'Nineteen'];
+    const tens = ['', '', 'Twenty', 'Thirty', 'Forty', 'Fifty', 'Sixty', 'Seventy', 'Eighty', 'Ninety'];
+
+    const convertToWords = (n) => {
+        if (n < 20) return ones[n];
+        if (n < 100) return tens[Math.floor(n / 10)] + (n % 10 !== 0 ? ' ' + ones[n % 10] : '');
+        if (n < 1000) return ones[Math.floor(n / 100)] + ' Hundred' + (n % 100 !== 0 ? ' ' + convertToWords(n % 100) : '');
+        if (n < 100000) return convertToWords(Math.floor(n / 1000)) + ' Thousand' + (n % 1000 !== 0 ? ' ' + convertToWords(n % 1000) : '');
+        if (n < 10000000) return convertToWords(Math.floor(n / 100000)) + ' Lakh' + (n % 100000 !== 0 ? ' ' + convertToWords(n % 100000) : '');
+        return convertToWords(Math.floor(n / 10000000)) + ' Crore' + (n % 10000000 !== 0 ? ' ' + convertToWords(n % 10000000) : '');
+    };
+
+    const rupees = Math.floor(num);
+    const paise = Math.round((num - rupees) * 100);
+
+    let result = convertToWords(rupees) + ' Rupees';
+    if (paise > 0) {
+        result += ' and ' + convertToWords(paise) + ' Paise';
+    }
+    return result + ' Only';
+};
+
 export const InvoicePDF = ({ invoiceData }) => {
-    // Format currency
+    // Format currency without Rupee symbol (for regular amounts)
     const formatCurrency = (amount) => {
-        if (!amount) return '0';
+        if (!amount && amount !== 0) return '0.00';
         return amount.toLocaleString('en-IN', {
             maximumFractionDigits: 2,
             minimumFractionDigits: 2
         });
+    };
+
+    // Format grand total with Indian Rupee symbol (₹) using Unicode \u20B9
+    const formatGrandTotal = (amount) => {
+        if (!amount && amount !== 0) return '\u20B9 0.00';
+        return `\u20B9 ${amount.toLocaleString('en-IN', {
+            maximumFractionDigits: 2,
+            minimumFractionDigits: 2
+        })}`;
     };
 
     // Format date
@@ -160,15 +238,18 @@ export const InvoicePDF = ({ invoiceData }) => {
     const companyName = invoiceData?.companyName || '';
     const address = invoiceData?.address || '';
 
+    // Get amount in words
+    const amountInWords = numberToWords(invoiceData?.grandTotal || 0);
+
     return (
         <Document>
-            <Page size="A4" style={styles.page}>
+            <Page size="A5" style={styles.page}>
                 {/* Header */}
                 <View style={styles.header}>
                     <View style={styles.headerLeft}>
                         <Text>GSTIN : {gstin}</Text>
                     </View>
-                    <Text style={{ fontWeight: 'bold', fontSize: 12 }}>TAX INVOICE</Text>
+                    <Text style={{ fontWeight: 'bold', fontSize: 10 }}>TAX INVOICE</Text>
                     <View style={styles.headerRight}>
                         <Text>MOB. : {mobile}</Text>
                     </View>
@@ -233,39 +314,50 @@ export const InvoicePDF = ({ invoiceData }) => {
                     ))}
                 </View>
 
-                {/* Summary Section - Always show CGST & SGST */}
+                {/* Summary Section with Amount in Words on Left */}
                 <View style={styles.summarySection}>
-                    <View style={styles.summaryRow}>
-                        <Text style={styles.summaryLabel}>Total</Text>
-                        <Text style={styles.summaryValue}>{formatCurrency(invoiceData?.subtotal)}</Text>
-                    </View>
-                    <View style={styles.summaryRow}>
-                        <Text style={styles.summaryLabel}>Discount</Text>
-                        <Text style={styles.summaryValue}>-</Text>
-                    </View>
-                    <View style={styles.summaryRow}>
-                        <Text style={styles.summaryLabel}>Total</Text>
-                        <Text style={styles.summaryValue}>{formatCurrency(invoiceData?.subtotal)}</Text>
+                    {/* Left Side - Amount in Words */}
+                    <View style={styles.summaryLeft}>
+                        <View style={styles.amountInWords}>
+                            <Text style={styles.amountInWordsTitle}>Amount in Words:</Text>
+                            <Text style={styles.amountInWordsText}>{amountInWords}</Text>
+                        </View>
                     </View>
 
-                    {/* Always show CGST and SGST */}
-                    <View style={styles.summaryRow}>
-                        <Text style={styles.summaryLabel}>CGST ({cgstPercent}%)</Text>
-                        <Text style={styles.summaryValue}>{formatCurrency(cgstAmount)}</Text>
-                    </View>
-                    <View style={styles.summaryRow}>
-                        <Text style={styles.summaryLabel}>SGST ({sgstPercent}%)</Text>
-                        <Text style={styles.summaryValue}>{formatCurrency(sgstAmount)}</Text>
-                    </View>
+                    {/* Right Side - Financial Summary */}
+                    <View style={styles.summaryRight}>
+                        <View style={styles.summaryRow}>
+                            <Text style={styles.summaryLabel}>Total</Text>
+                            <Text style={styles.summaryValue}>{formatCurrency(invoiceData?.subtotal)}</Text>
+                        </View>
+                        <View style={styles.summaryRow}>
+                            <Text style={styles.summaryLabel}>Discount</Text>
+                            <Text style={styles.summaryValue}>-</Text>
+                        </View>
+                        <View style={styles.summaryRow}>
+                            <Text style={styles.summaryLabel}>Total</Text>
+                            <Text style={styles.summaryValue}>{formatCurrency(invoiceData?.subtotal)}</Text>
+                        </View>
 
-                    <View style={styles.summaryRow}>
-                        <Text style={styles.summaryLabel}>Advance</Text>
-                        <Text style={styles.summaryValue}>-</Text>
-                    </View>
+                        {/* Always show CGST and SGST */}
+                        <View style={styles.summaryRow}>
+                            <Text style={styles.summaryLabel}>CGST ({cgstPercent}%)</Text>
+                            <Text style={styles.summaryValue}>{formatCurrency(cgstAmount)}</Text>
+                        </View>
+                        <View style={styles.summaryRow}>
+                            <Text style={styles.summaryLabel}>SGST ({sgstPercent}%)</Text>
+                            <Text style={styles.summaryValue}>{formatCurrency(sgstAmount)}</Text>
+                        </View>
 
-                    <View style={styles.grandTotalRow}>
-                        <Text style={styles.summaryLabel}>GRAND TOTAL</Text>
-                        <Text style={styles.summaryValue}>{formatCurrency(invoiceData?.grandTotal)}</Text>
+                        <View style={styles.summaryRow}>
+                            <Text style={styles.summaryLabel}>Advance</Text>
+                            <Text style={styles.summaryValue}>-</Text>
+                        </View>
+
+                        <View style={styles.grandTotalRow}>
+                            <Text style={styles.summaryLabel}>GRAND TOTAL</Text>
+                            <Text style={styles.summaryValue}>{formatGrandTotal(invoiceData?.grandTotal)}</Text>
+                        </View>
                     </View>
                 </View>
 

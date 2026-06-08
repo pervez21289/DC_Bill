@@ -1,4 +1,5 @@
 // material-ui
+import { useNavigate } from 'react-router-dom';
 import List from '@mui/material/List';
 import Link from '@mui/material/Link';
 import ListItemButton from '@mui/material/ListItemButton';
@@ -15,6 +16,7 @@ import UnorderedListOutlined from '@ant-design/icons/UnorderedListOutlined';
 // ==============================|| HEADER PROFILE - SETTING TAB ||============================== //
 
 export default function SettingTab() {
+    const navigate = useNavigate();
   return (
     <List component="nav" sx={{ p: 0, '& .MuiListItemIcon-root': { minWidth: 32 } }}>
       <Link underline="none" sx={{ color: 'inherit' }} target="_blank" href="https://codedthemes.support-hub.io/">
@@ -25,11 +27,11 @@ export default function SettingTab() {
           <ListItemText primary="Support" />
         </ListItemButton>
       </Link>
-      <ListItemButton>
+          <ListItemButton onClick={() => navigate('/profile')}>
         <ListItemIcon>
           <UserOutlined />
         </ListItemIcon>
-        <ListItemText primary="Account Settings" />
+        <ListItemText primary="Account Settings"  />
       </ListItemButton>
       <ListItemButton>
         <ListItemIcon>
