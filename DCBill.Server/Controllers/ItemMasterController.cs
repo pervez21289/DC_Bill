@@ -88,12 +88,12 @@ namespace LMS.API.Controllers
             }
         }
 
-        [HttpPut("{id}")]
-        public async Task<ActionResult<ApiResponse<int>>> Update(int id, [FromBody] ItemMaster model)
+        [HttpPut]
+        public async Task<ActionResult<ApiResponse<int>>> Update([FromBody] ItemMaster model)
         {
             try
             {
-                if (id != model.Id)
+                if (model.Id == 0)
                 {
                     return BadRequest(ApiResponse<int>.Fail("ID mismatch"));
                 }

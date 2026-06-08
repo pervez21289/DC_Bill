@@ -51,14 +51,14 @@ namespace LMS.API.Repositories
             };
 
             var sql = "USP_UpdateItemMaster";
-            return await ExecuteAsync(sql, parameters, CommandType.StoredProcedure);
+            return await ExecuteScalarAsync<int>(sql, parameters, CommandType.StoredProcedure);
         }
 
         public async Task<int> DeleteAsync(int id)
         {
             var parameters = new { Id = id };
             var sql = "USP_DeleteItemMaster";
-            return await ExecuteAsync(sql, parameters, CommandType.StoredProcedure);
+            return await ExecuteScalarAsync<int>(sql, parameters, CommandType.StoredProcedure);
         }
 
         public async Task<IEnumerable<ItemMaster>> SearchAsync(string keyword)

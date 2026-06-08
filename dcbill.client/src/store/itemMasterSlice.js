@@ -54,14 +54,16 @@ export const addItemToMaster = createAsyncThunk(
 
 export const updateItemInMaster = createAsyncThunk(
     "itemMaster/update",
-    async ({ id, itemData }, { rejectWithValue }) => {
+    async (itemData , { rejectWithValue }) => {
         try {
-            const response = await itemMasterService.update(id, itemData);
+            debugger;
+            const response = await itemMasterService.update(itemData);
+            return response;
 
-            if (response && response.success) {
-                return { id, ...itemData };
-            }
-            return rejectWithValue(response?.message || 'Failed to update item');
+            // if (response && response.success) {
+            //     return { id, ...itemData };
+            // }
+            // return rejectWithValue(response?.message || 'Failed to update item');
         } catch (error) {
             return rejectWithValue(error.response?.data || error.message);
         }
@@ -146,6 +148,7 @@ const itemMasterSlice = createSlice({
                 state.error = null;
             })
             .addCase(updateItemInMaster.fulfilled, (state, action) => {
+                debugger;
                 state.loading = false;
                 const index = state.items.findIndex(item => item.id === action.payload.id);
                 if (index !== -1) {

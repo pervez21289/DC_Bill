@@ -10,20 +10,24 @@
     DialogActions,
     Button,
     Grid,
-    CircularProgress
+    CircularProgress,
+    Box
 } from '@mui/material';
 import { useState } from 'react';
 import { useDispatch, useSelector } from 'react-redux';
 import { updateItem, deleteItem } from './../../store/invoiceItemsSlice';
-import { addItemToMaster, fetchItemMaster } from './../../store/itemMasterSlice';
+import { addItemToMaster, fetchItemMaster, updateItemInMaster } from './../../store/itemMasterSlice';
+import EditIcon from '@mui/icons-material/Edit';
 
 export default function InvoiceItemRow({ index }) {
     const dispatch = useDispatch();
     const item = useSelector(state => state.invoiceItems.items[index]);
-    const itemMaster = useSelector(state => state.itemMaster.items || []); // Ensure it's always an array
+    const itemMaster = useSelector(state => state.itemMaster.items || []);
     const { loading } = useSelector(state => state.itemMaster);
 
     const [isDialogOpen, setIsDialogOpen] = useState(false);
+    const [isEditing, setIsEditing] = useState(false);
+    const [editingItemId, setEditingItemId] = useState(null);
     const [saving, setSaving] = useState(false);
     const [newItem, setNewItem] = useState({
         itemName: '',
@@ -38,6 +42,13 @@ export default function InvoiceItemRow({ index }) {
 
     const handleItemSelect = (_, selectedItem) => {
         if (selectedItem?.isNew) {
+            setIsEditing(false);
+            setNewItem({
+                itemName: '',
+                hsnCode: '',
+                rate: 0,
+                gst: 18
+            });
             setIsDialogOpen(true);
             return;
         }
@@ -67,6 +78,22 @@ export default function InvoiceItemRow({ index }) {
         dispatch(deleteItem(index));
     };
 
+    const handleEditItem = () => {
+        // Find the selected item from itemMaster
+        const selectedItem = itemMaster.find(x => x.id === item.itemId);
+        if (selectedItem) {
+            setIsEditing(true);
+            setEditingItemId(selectedItem.id);
+            setNewItem({
+                itemName: selectedItem.itemName || '',
+                hsnCode: selectedItem.hsnCode || '',
+                rate: selectedItem.rate || 0,
+                gst: selectedItem.gst || 18
+            });
+            setIsDialogOpen(true);
+        }
+    };
+
     const validateForm = () => {
         let isValid = true;
         const newErrors = { itemName: '', hsnCode: '' };
@@ -85,7 +112,7 @@ export default function InvoiceItemRow({ index }) {
         return isValid;
     };
 
-    const handleAddNewItem = async () => {
+    const handleSaveItem = async () => {
         if (!validateForm()) {
             return;
         }
@@ -93,78 +120,125 @@ export default function InvoiceItemRow({ index }) {
         setSaving(true);
 
         try {
-            const itemData = {
-                itemName: newItem.itemName,
-                hsnCode: newItem.hsnCode,
-                rate: Number(newItem.rate),
-                gst: Number(newItem.gst)
-            };
-
-            const result = await dispatch(addItemToMaster(itemData)).unwrap();
-
-            // Handle API response
-            let newItemId = null;
-            if (result && typeof result === 'object') {
-                if (result.data && typeof result.data === 'number') {
-                    newItemId = result.data;
-                } else if (result.id) {
-                    newItemId = result.id;
-                } else if (typeof result === 'number') {
-                    newItemId = result;
-                }
-            }
-
-            if (newItemId && newItemId > 0) {
-                const savedItem = {
-                    id: newItemId,
+            if (isEditing && editingItemId) {
+                // Update existing item
+                const itemData = {
+                    id: editingItemId,
                     itemName: newItem.itemName,
                     hsnCode: newItem.hsnCode,
                     rate: Number(newItem.rate),
                     gst: Number(newItem.gst)
                 };
 
-                dispatch(updateItem({
-                    index,
-                    data: {
-                        itemId: savedItem.id,
-                        itemName: savedItem.itemName,
-                        hsnCode: savedItem.hsnCode,
-                        rate: savedItem.rate,
-                        gst: savedItem.gst
+                const result = await dispatch(updateItemInMaster(itemData)).unwrap();
+
+                if (result && result.success) {
+                    // Refresh item master list
+                    await dispatch(fetchItemMaster());
+
+                    // Update the current row if this item is selected
+                    if (item.itemId === editingItemId) {
+                        dispatch(updateItem({
+                            index,
+                            data: {
+                                itemId: editingItemId,
+                                itemName: newItem.itemName,
+                                hsnCode: newItem.hsnCode,
+                                rate: Number(newItem.rate),
+                                gst: Number(newItem.gst)
+                            }
+                        }));
                     }
-                }));
 
-                dispatch(fetchItemMaster());
-
-                setNewItem({
-                    itemName: '',
-                    hsnCode: '',
-                    rate: 0,
-                    gst: 18
-                });
-                setErrors({ itemName: '', hsnCode: '' });
-                setIsDialogOpen(false);
+                    setNewItem({
+                        itemName: '',
+                        hsnCode: '',
+                        rate: 0,
+                        gst: 18
+                    });
+                    setErrors({ itemName: '', hsnCode: '' });
+                    setIsDialogOpen(false);
+                    setIsEditing(false);
+                    setEditingItemId(null);
+                } else {
+                    alert(result?.message || 'Failed to update item');
+                }
             } else {
-                alert(result?.message || 'Failed to add item. Please try again.');
+                // Add new item
+                const itemData = {
+                    itemName: newItem.itemName,
+                    hsnCode: newItem.hsnCode,
+                    rate: Number(newItem.rate),
+                    gst: Number(newItem.gst)
+                };
+
+                const result = await dispatch(addItemToMaster(itemData)).unwrap();
+
+                let newItemId = null;
+                if (result && typeof result === 'object') {
+                    if (result.data && typeof result.data === 'number') {
+                        newItemId = result.data;
+                    } else if (result.id) {
+                        newItemId = result.id;
+                    } else if (typeof result === 'number') {
+                        newItemId = result;
+                    }
+                }
+
+                if (newItemId && newItemId > 0) {
+                    const savedItem = {
+                        id: newItemId,
+                        itemName: newItem.itemName,
+                        hsnCode: newItem.hsnCode,
+                        rate: Number(newItem.rate),
+                        gst: Number(newItem.gst)
+                    };
+
+                    dispatch(updateItem({
+                        index,
+                        data: {
+                            itemId: savedItem.id,
+                            itemName: savedItem.itemName,
+                            hsnCode: savedItem.hsnCode,
+                            rate: savedItem.rate,
+                            gst: savedItem.gst
+                        }
+                    }));
+
+                    await dispatch(fetchItemMaster());
+
+                    setNewItem({
+                        itemName: '',
+                        hsnCode: '',
+                        rate: 0,
+                        gst: 18
+                    });
+                    setErrors({ itemName: '', hsnCode: '' });
+                    setIsDialogOpen(false);
+                } else {
+                    alert(result?.message || 'Failed to add item');
+                }
             }
         } catch (error) {
-            console.error('Error adding item:', error);
-            alert('Error adding item: ' + (error?.message || 'Please try again'));
+            console.error('Error saving item:', error);
+            alert('Error saving item: ' + (error?.message || 'Please try again'));
         } finally {
             setSaving(false);
         }
     };
 
     // Create options array with safety check
-    const options = Array.isArray(itemMaster) ? [...itemMaster, {
-        id: 'new',
-        itemName: '+ Add New Item',
-        isNew: true
-    }] : [{
-        id: 'new',
-        itemName: '+ Add New Item',
-        isNew: true
-    }];
+    const options = Array.isArray(itemMaster) && itemMaster.length > 0
+        ? [...itemMaster, {
+            id: 'new',
+            itemName: '+ Add New Item',
+            isNew: true
+        }]
+        : [{
+            id: 'new',
+            itemName: '+ Add New Item',
+            isNew: true
+        }];
 
     if (!item) return null;
 
@@ -183,39 +257,52 @@ export default function InvoiceItemRow({ index }) {
         <>
             <TableRow sx={{ '&:hover': { backgroundColor: '#f5f5f5' } }}>
                 <TableCell sx={{ py: 0.5, px: 1 }}>
-                    <Autocomplete
-                        options={options}
-                        getOptionLabel={(option) => {
-                            if (option?.isNew) return option.itemName;
-                            return option?.itemName || '';
-                        }}
-                        value={
-                            Array.isArray(itemMaster)
-                                ? itemMaster.find((x) => x?.id === item?.itemId) || null
-                                : null
-                        }
-                        onChange={handleItemSelect}
-                        size="small"
-                        loading={loading}
-                        renderOption={(props, option) => (
-                            <li {...props} style={{
-                                fontWeight: option?.isNew ? 'bold' : 'normal',
-                                color: option?.isNew ? '#1976d2' : 'inherit',
-                                backgroundColor: option?.isNew ? '#f0f7ff' : 'inherit',
-                                fontSize: '0.75rem'
-                            }}>
-                                {option?.isNew ? '➕ ' : ''}{option?.itemName || ''}
-                            </li>
-                        )}
-                        renderInput={(params) => (
-                            <TextField
-                                {...params}
+                    <Box sx={{ display: 'flex', alignItems: 'center', gap: 1 }}>
+                        <Autocomplete
+                            sx={{ flex: 1 }}
+                            options={options}
+                            getOptionLabel={(option) => {
+                                if (option?.isNew) return option.itemName;
+                                return option?.itemName || '';
+                            }}
+                            value={
+                                Array.isArray(itemMaster)
+                                    ? itemMaster.find((x) => x?.id === item?.itemId) || null
+                                    : null
+                            }
+                            onChange={handleItemSelect}
+                            size="small"
+                            loading={loading}
+                            renderOption={(props, option) => (
+                                <li {...props} style={{
+                                    fontWeight: option?.isNew ? 'bold' : 'normal',
+                                    color: option?.isNew ? '#1976d2' : 'inherit',
+                                    backgroundColor: option?.isNew ? '#f0f7ff' : 'inherit',
+                                    fontSize: '0.75rem'
+                                }}>
+                                    {option?.isNew ? '➕ ' : ''}{option?.itemName || ''}
+                                </li>
+                            )}
+                            renderInput={(params) => (
+                                <TextField
+                                    {...params}
+                                    size="small"
+                                    placeholder="Search or add new item"
+                                    sx={textFieldStyles}
+                                />
+                            )}
+                        />
+                        {item.itemId && (
+                            <IconButton
                                 size="small"
-                                placeholder="Search or add new item"
-                                sx={textFieldStyles}
-                            />
+                                onClick={handleEditItem}
+                                title="Edit Item"
+                                sx={{ padding: 0.5 }}
+                            >
+                                <EditIcon sx={{ fontSize: '1rem' }} />
+                            </IconButton>
                         )}
-                    />
+                    </Box>
                 </TableCell>
 
                 <TableCell sx={{ py: 0.5, px: 1 }}>
@@ -314,10 +401,21 @@ export default function InvoiceItemRow({ index }) {
                 </TableCell>
             </TableRow>
 
-            {/* Add New Item Dialog */}
+            {/* Add/Edit Item Dialog */}
             <Dialog
                 open={isDialogOpen}
-                onClose={() => setIsDialogOpen(false)}
+                onClose={() => {
+                    setIsDialogOpen(false);
+                    setIsEditing(false);
+                    setEditingItemId(null);
+                    setNewItem({
+                        itemName: '',
+                        hsnCode: '',
+                        rate: 0,
+                        gst: 18
+                    });
+                    setErrors({ itemName: '', hsnCode: '' });
+                }}
                 maxWidth="sm"
                 fullWidth
                 PaperProps={{
@@ -328,7 +426,7 @@ export default function InvoiceItemRow({ index }) {
                 }}
             >
                 <DialogTitle sx={{ fontSize: '1rem', py: 1.5 }}>
-                    Add New Item
+                    {isEditing ? 'Edit Item' : 'Add New Item'}
                 </DialogTitle>
                 <DialogContent>
                     <Grid container spacing={2} sx={{ mt: 0.5 }}>
@@ -404,6 +502,8 @@ export default function InvoiceItemRow({ index }) {
                     <Button
                         onClick={() => {
                             setIsDialogOpen(false);
+                            setIsEditing(false);
+                            setEditingItemId(null);
                             setNewItem({
                                 itemName: '',
                                 hsnCode: '',
@@ -419,14 +519,14 @@ export default function InvoiceItemRow({ index }) {
                         Cancel
                     </Button>
                     <Button
-                        onClick={handleAddNewItem}
+                        onClick={handleSaveItem}
                         variant="contained"
                         color="primary"
                         size="small"
                         sx={{ fontSize: '0.7rem' }}
                         disabled={saving}
                     >
-                        {saving ? <CircularProgress size={20} /> : 'Add Item'}
+                        {saving ? <CircularProgress size={20} /> : (isEditing ? 'Update Item' : 'Add Item')}
                     </Button>
                 </DialogActions>
             </Dialog>

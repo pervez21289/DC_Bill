@@ -17,8 +17,9 @@ export const itemMasterService = {
         return response.data;
     },
 
-    async update(id, data) {
-        const response = await api.put(`/ItemMaster/${id}`, data);
+    async update(data) {
+        debugger;
+        const response = await api.put(`/ItemMaster`, data);
         return response.data;
     },
 
