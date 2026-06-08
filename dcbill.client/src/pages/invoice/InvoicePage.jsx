@@ -28,8 +28,9 @@ export default function InvoicePage() {
 
     const [pdfOpen, setPdfOpen] = useState(false);
     const [saving, setSaving] = useState(false);
-    const [gstPercent, setGstPercent] = useState(18); // Editable GST percent
+    const [gstPercent, setGstPercent] = useState(18);
     const [snackbar, setSnackbar] = useState({ open: false, message: '', severity: 'success' });
+    const [resetForm, setResetForm] = useState(false);
 
     useEffect(() => {
         dispatch(fetchItemMaster());
@@ -62,12 +63,62 @@ export default function InvoicePage() {
         setGstPercent(newGSTPercent);
     };
 
-    // Prepare invoice data for PDF
+    // Validation functions
+    const isPartySelected = () => {
+        return selectedParty !== null && selectedParty !== undefined;
+    };
+
+    const hasItems = () => {
+        return items.length > 0;
+    };
+
+    const areItemsValid = () => {
+        return items.every(item =>
+            item.itemId &&
+            item.qty > 0 &&
+            item.rate > 0 &&
+            item.itemName
+        );
+    };
+
+    const getValidationErrors = () => {
+        const errors = [];
+        if (!isPartySelected()) {
+            errors.push('Please select a party');
+        }
+        if (!hasItems()) {
+            errors.push('Please add at least one item');
+        } else {
+            const invalidItems = items.filter(item => !item.qty || item.qty <= 0);
+            if (invalidItems.length > 0) {
+                errors.push('Please enter valid quantity for all items');
+            }
+        }
+        return errors;
+    };
+
+    const isFormValid = () => {
+        return isPartySelected() && hasItems() && areItemsValid();
+    };
+
+    const resetInvoiceForm = () => {
+        // Clear items from the invoice
+        dispatch(clearItems());
+        // Clear selected party from Redux
+        dispatch({ type: 'parties/clearSelectedParty' });
+        // Reset GST percent to default
+        setGstPercent(18);
+        // Trigger reset in child components
+        setResetForm(true);
+        setTimeout(() => setResetForm(false), 100);
+    };
+
+    // Prepare invoice data for PDF (without default values)
     const invoiceData = {
-        gstin: billingData?.gstin || "05AOSPA8862Q2Z2",
-        mobile: billingData?.mobileNumber || "9358001015",
-        companyName: billingData?.companyName || "DHANRAJ CITY DEVELOPERS",
-        address: billingData?.address || "C-19, Clement Town, Turner Road, Dehradun-248002",
+        gstin: billingData?.gstin || '',
+        mobile: billingData?.mobileNumber || '',
+        companyName: billingData?.companyName || '',
+        address: billingData?.address || '',
         city: billingData?.city || "",
         pinCode: billingData?.pinCode || "",
         state: billingData?.state || "",
@@ -101,17 +152,20 @@ export default function InvoicePage() {
 
     const handleSaveInvoice = async () => {
         // Validate invoice data
-        if (!selectedParty) {
-            setSnackbar({ open: true, message: 'Please select a party', severity: 'error' });
+        const errors = getValidationErrors();
+        if (errors.length > 0) {
+            setSnackbar({ open: true, message: errors.join('. '), severity: 'error' });
             return;
         }
 
-        if (items.length === 0) {
-            setSnackbar({ open: true, message: 'Please add at least one item', severity: 'error' });
+        // Validate each item has quantity > 0
+        const invalidItems = items.filter(item => !item.qty || item.qty <= 0);
+        if (invalidItems.length > 0) {
+            setSnackbar({ open: true, message: 'Please enter quantity for all items', severity: 'error' });
             return;
         }
 
-        // Prepare invoice data for API (simplified - GST at header level)
+        // Prepare invoice data for API
         const saveData = {
             invoiceNo: `INV-${Date.now()}`,
             invoiceDate: new Date().toISOString().split('T')[0],
@@ -134,7 +188,6 @@ export default function InvoicePage() {
                 quantity: item.qty,
                 rate: item.rate,
                 amount: item.amount
-                // No GST at item level
             }))
         };
 
@@ -143,12 +196,8 @@ export default function InvoicePage() {
             const result = await dispatch(saveInvoice(saveData)).unwrap();
             if (result && result.success) {
                 setSnackbar({ open: true, message: 'Invoice saved successfully!', severity: 'success' });
-                // Clear items after successful save
-                dispatch(clearItems());
-                // Navigate to invoice list
-                setTimeout(() => {
-                    navigate('/invoices');
-                }, 2000);
+                // Reset the form after successful save
+                resetInvoiceForm();
             } else {
                 setSnackbar({ open: true, message: result?.message || 'Failed to save invoice', severity: 'error' });
             }
@@ -160,11 +209,19 @@ export default function InvoicePage() {
         }
     };
 
+    const handleNewInvoice = () => {
+        resetInvoiceForm();
+        setSnackbar({ open: true, message: 'Form reset. You can create a new invoice', severity: 'info' });
+    };
+
+    // Check if form is valid to enable save button
+    const validForm = isFormValid();
+
     return (
         <>
             <Box p={3}>
-                <InvoiceHeader />
-                <InvoiceItemsTable />
+                <InvoiceHeader resetForm={resetForm} />
+                <InvoiceItemsTable resetForm={resetForm} />
 
                 <Box
                     sx={{
@@ -195,10 +252,11 @@ export default function InvoicePage() {
                 >
                     <Button
                         variant="outlined"
-                        onClick={() => navigate('/invoices')}
+                        onClick={handleNewInvoice}
                         sx={{ fontSize: '0.75rem', textTransform: 'none' }}
+                        disabled={saving}
                     >
-                        Cancel
+                        New Invoice
                     </Button>
 
                     <Button
@@ -207,6 +265,7 @@ export default function InvoicePage() {
                         startIcon={<PdfIcon />}
                         size="small"
                         sx={{ fontSize: '0.7rem', textTransform: 'none' }}
+                        disabled={!hasItems()}
                     >
                         Preview PDF
                     </Button>
@@ -219,12 +278,37 @@ export default function InvoicePage() {
                     <Button
                         variant="contained"
                         onClick={handleSaveInvoice}
-                        disabled={saving}
+                        disabled={saving || !validForm}
                         sx={{ fontSize: '0.75rem', textTransform: 'none' }}
                     >
                         {saving ? <CircularProgress size={20} /> : 'Save Invoice'}
                     </Button>
                 </Box>
+
+                {/* Show validation warnings */}
+                {!isPartySelected() && (
+                    <Box sx={{ mt: 2, p: 1, bgcolor: '#fff3e0', borderRadius: 1 }}>
+                        <Alert severity="warning" sx={{ fontSize: '0.75rem' }}>
+                            Please select a party
+                        </Alert>
+                    </Box>
+                )}
+
+                {isPartySelected() && !hasItems() && (
+                    <Box sx={{ mt: 2, p: 1, bgcolor: '#fff3e0', borderRadius: 1 }}>
+                        <Alert severity="warning" sx={{ fontSize: '0.75rem' }}>
+                            Please add at least one item
+                        </Alert>
+                    </Box>
+                )}
+
+                {hasItems() && !areItemsValid() && (
+                    <Box sx={{ mt: 2, p: 1, bgcolor: '#fff3e0', borderRadius: 1 }}>
+                        <Alert severity="warning" sx={{ fontSize: '0.75rem' }}>
+                            Please enter valid quantity for all items
+                        </Alert>
+                    </Box>
+                )}
 
                 <Snackbar
                     open={snackbar.open}
