@@ -22,6 +22,7 @@ import EditIcon from '@mui/icons-material/Edit';
 export default function InvoiceItemRow({ index }) {
     const dispatch = useDispatch();
     const item = useSelector(state => state.invoiceItems.items[index]);
+    const allItems = useSelector(state => state.invoiceItems.items); // Get all items for duplicate check
     const itemMaster = useSelector(state => state.itemMaster.items || []);
     const { loading } = useSelector(state => state.itemMaster);
 
@@ -40,6 +41,15 @@ export default function InvoiceItemRow({ index }) {
         hsnCode: ''
     });
 
+    // Check if an item is already selected in other rows
+    const isItemAlreadySelected = (itemId) => {
+        if (!itemId) return false;
+        // Check all items except the current row
+        return allItems.some((existingItem, idx) =>
+            idx !== index && existingItem.itemId === itemId
+        );
+    };
+
     const handleItemSelect = (_, selectedItem) => {
         if (selectedItem?.isNew) {
             setIsEditing(false);
@@ -54,6 +64,12 @@ export default function InvoiceItemRow({ index }) {
         }
 
         if (!selectedItem) return;
+
+        // Check for duplicate item
+        if (isItemAlreadySelected(selectedItem.id)) {
+            alert(`Item "${selectedItem.itemName}" is already added. Please select a different item.`);
+            return;
+        }
 
         dispatch(updateItem({
             index,
@@ -79,7 +95,6 @@ export default function InvoiceItemRow({ index }) {
     };
 
     const handleEditItem = () => {
-        // Find the selected item from itemMaster
         const selectedItem = itemMaster.find(x => x.id === item.itemId);
         if (selectedItem) {
             setIsEditing(true);
@@ -121,7 +136,6 @@ export default function InvoiceItemRow({ index }) {
 
         try {
             if (isEditing && editingItemId) {
-                // Update existing item
                 const itemData = {
                     id: editingItemId,
                     itemName: newItem.itemName,
@@ -133,10 +147,8 @@ export default function InvoiceItemRow({ index }) {
                 const result = await dispatch(updateItemInMaster(itemData)).unwrap();
 
                 if (result && result.success) {
-                    // Refresh item master list
                     await dispatch(fetchItemMaster());
 
-                    // Update the current row if this item is selected
                     if (item.itemId === editingItemId) {
                         dispatch(updateItem({
                             index,
@@ -164,7 +176,6 @@ export default function InvoiceItemRow({ index }) {
                     alert(result?.message || 'Failed to update item');
                 }
             } else {
-                // Add new item
                 const itemData = {
                     itemName: newItem.itemName,
                     hsnCode: newItem.hsnCode,
@@ -227,18 +238,26 @@ export default function InvoiceItemRow({ index }) {
         }
     };
 
-    // Create options array with safety check
-    const options = Array.isArray(itemMaster) && itemMaster.length > 0
-        ? [...itemMaster, {
-            id: 'new',
-            itemName: '+ Add New Item',
-            isNew: true
-        }]
-        : [{
+    // Create options array with safety check and filter out already selected items
+    const getAvailableOptions = () => {
+        if (!Array.isArray(itemMaster)) return [];
+
+        // Get IDs of items already selected in other rows
+        const selectedItemIds = allItems
+            .filter((_, idx) => idx !== index && _.itemId)
+            .map(_ => _.itemId);
+
+        // Filter out already selected items, but keep "Add New Item" option
+        const availableItems = itemMaster.filter(item => !selectedItemIds.includes(item.id));
+
+        return [...availableItems, {
             id: 'new',
             itemName: '+ Add New Item',
             isNew: true
         }];
+    };
+
+    const options = getAvailableOptions();
 
     if (!item) return null;
 
@@ -305,6 +324,7 @@ export default function InvoiceItemRow({ index }) {
                     </Box>
                 </TableCell>
 
+                {/* Rest of the table cells remain the same */}
                 <TableCell sx={{ py: 0.5, px: 1 }}>
                     <TextField
                         size="small"
@@ -401,7 +421,7 @@ export default function InvoiceItemRow({ index }) {
                 </TableCell>
             </TableRow>
 
-            {/* Add/Edit Item Dialog */}
+            {/* Add/Edit Item Dialog - remains the same */}
             <Dialog
                 open={isDialogOpen}
                 onClose={() => {
