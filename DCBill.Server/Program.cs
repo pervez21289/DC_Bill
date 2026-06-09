@@ -47,7 +47,8 @@ if (app.Environment.IsDevelopment())
 
 app.UseHttpsRedirection();
 app.UseDefaultFiles();
-app.MapStaticAssets();
+app.UseStaticFiles();
+
 
 // IMPORTANT: CORS must come before Authorization
 app.UseCors("AllowReactApp");
@@ -56,6 +57,5 @@ app.UseAuthorization();
 app.MapControllers();
 
 // This should be last - catches all non-API routes for React
-app.MapFallbackToFile("/index.html");
-
+app.MapFallbackToFile("index.html");
 app.Run();
