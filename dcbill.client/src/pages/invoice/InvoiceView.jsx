@@ -13,6 +13,7 @@ import InvoicePDFViewer from './Pdf/InvoicePDFViewer';
 import InvoicePDFButton from './Pdf/InvoicePDFButton';
 import InvoiceSummary from './InvoiceSummary';
 import { useInvoicePdf } from './Pdf/useInvoicePdf';
+import { useInvoiceSummary as useInvoiceSummaryHook } from './useInvoiceSummary';
 
 export default function InvoiceView() {
     const dispatch = useDispatch();
@@ -42,12 +43,34 @@ export default function InvoiceView() {
         }
     }, [dispatch, id]);
 
+    // Convert invoice details to items array for the summary hook
+    const invoiceItems = currentInvoice?.details?.map(item => ({
+        amount: item.amount,
+        quantity: item.quantity,
+        rate: item.rate,
+        itemName: item.itemName,
+        hsnCode: item.hsnCode
+    })) || [];
+
+    // Use the common hook for calculations
+    const gstPercent = currentInvoice?.gstPercent || 18;
+    const {
+        subtotal,
+        totalGST,
+        grandTotal,
+        itemsCount,
+        cgstAmount,
+        sgstAmount,
+        cgstPercent,
+        sgstPercent,
+        formattedSubtotal,
+        formattedTotalGST,
+        formattedGrandTotal
+    } = useInvoiceSummaryHook(invoiceItems, gstPercent);
+
     // Prepare PDF data for preview and print
     const preparePdfData = async () => {
         if (!currentInvoice) return null;
-
-        const gstPercent = currentInvoice.gstPercent || 18;
-        const totalGST = currentInvoice.totalGST || (currentInvoice.subtotal * gstPercent) / 100;
 
         return {
             // Company Details - from billingData
@@ -82,16 +105,16 @@ export default function InvoiceView() {
             })) || [],
 
             // Financials
-            subtotal: currentInvoice.subtotal,
+            subtotal: subtotal,
             totalGST: totalGST,
-            grandTotal: currentInvoice.grandTotal,
+            grandTotal: grandTotal,
             gstPercent: gstPercent,
 
             // Always show CGST and SGST
-            cgstPercent: gstPercent / 2,
-            sgstPercent: gstPercent / 2,
-            cgstAmount: totalGST / 2,
-            sgstAmount: totalGST / 2
+            cgstPercent: cgstPercent,
+            sgstPercent: sgstPercent,
+            cgstAmount: cgstAmount,
+            sgstAmount: sgstAmount
         };
     };
 
@@ -127,10 +150,8 @@ export default function InvoiceView() {
 
     const handlePreviewPDF = async () => {
         if (currentInvoice) {
-            const data = await preparePdfData();
-            setPdfOpen(true);
-            // Use the hook to set pdfData
             await getPdfData(currentInvoice);
+            setPdfOpen(true);
         }
     };
 
@@ -145,23 +166,6 @@ export default function InvoiceView() {
     const formatDate = (date) => {
         if (!date) return '';
         return new Date(date).toLocaleDateString('en-GB');
-    };
-
-    // Calculate GST breakdown for summary
-    const calculateGST = () => {
-        if (!currentInvoice) return { totalGST: 0, grandTotal: 0 };
-
-        const gstPercent = currentInvoice.gstPercent || 18;
-        const totalGST = currentInvoice.totalGST || (currentInvoice.subtotal * gstPercent) / 100;
-        const grandTotal = currentInvoice.grandTotal || currentInvoice.subtotal + totalGST;
-
-        return {
-            subtotal: currentInvoice.subtotal,
-            totalGST: totalGST,
-            grandTotal: grandTotal,
-            itemsCount: currentInvoice.details?.length || 0,
-            gstPercent: gstPercent
-        };
     };
 
     // Show loading while billing settings are being fetched
@@ -183,8 +187,6 @@ export default function InvoiceView() {
             </Box>
         );
     }
-
-    const summaryData = calculateGST();
 
     return (
         <>
@@ -299,14 +301,11 @@ export default function InvoiceView() {
                         </Table>
                     </TableContainer>
 
-                    {/* Reusing InvoiceSummary Component */}
+                   
                     <Box sx={{ display: 'flex', justifyContent: 'flex-end', mt: 2 }}>
                         <InvoiceSummary
-                            subtotal={summaryData.subtotal}
-                            totalGST={summaryData.totalGST}
-                            total={summaryData.grandTotal}
-                            itemsCount={summaryData.itemsCount}
-                            gstPercent={summaryData.gstPercent}
+                            items={invoiceItems}  // Pass items array directly instead of individual values
+                            gstPercent={gstPercent}
                         />
                     </Box>
 

@@ -12,23 +12,21 @@ export default function Footer() {
     >
       <Typography variant="caption">
         &copy; All rights reserved{' '}
-        <Link href="https://codedthemes.com/" target="_blank" underline="hover">
-          CodedThemes
+        <Link href="https://nexbillpos.com/" target="_blank" underline="hover">
+          NexBillPOS
         </Link>
       </Typography>
       <Stack direction="row" sx={{ gap: 1.5, alignItems: 'center', justifyContent: 'space-between' }}>
-        <Link href="https://codedthemes.com/hire-us/" {...footerLinkProps}>
+        <Link href="https://nexbillpos.com/hire-us/" {...footerLinkProps}>
           Hire us
         </Link>
-        <Link href="https://mui.com/store/license/" {...footerLinkProps}>
+        <Link href="https://nexbillpos.com/license/" {...footerLinkProps}>
           License
         </Link>
-        <Link href="https://mui.com/store/terms/" {...footerLinkProps}>
+        <Link href="https://nexbillpos.com/terms/" {...footerLinkProps}>
           Terms
         </Link>
-        <Link href="https://links.codedthemes.com/dAAOP" {...footerLinkProps}>
-          Figma Design System
-        </Link>
+       
       </Stack>
     </Stack>
   );

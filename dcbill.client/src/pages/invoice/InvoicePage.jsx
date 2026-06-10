@@ -1,17 +1,14 @@
-﻿import { useEffect, useState } from "react";
-import { Box, Button, Snackbar, Alert, CircularProgress } from "@mui/material";
+﻿// pages/invoice/InvoicePage.jsx
+import { useEffect, useState } from "react";
 import { useDispatch, useSelector } from 'react-redux';
 import { useNavigate } from 'react-router-dom';
-import {
-    PictureAsPdf as PdfIcon,
-    Print as PrintIcon,
-    Visibility as ViewIcon
-} from '@mui/icons-material';
+import { Box, Button, Snackbar, Alert, CircularProgress } from "@mui/material";
+import { PictureAsPdf as PdfIcon } from '@mui/icons-material';
 
 import InvoiceHeader from "./InvoiceHeader";
 import InvoiceItemsTable from "./InvoiceItemsTable";
 import InvoiceSummary from "./InvoiceSummary";
-import useInvoiceCalculation from "./useInvoiceCalculation";
+import { useInvoiceSummary } from "./useInvoiceSummary";
 import { fetchItemMaster } from "./../../store/itemMasterSlice";
 import { saveInvoice } from "./../../store/invoiceSlice";
 import { clearItems } from "./../../store/invoiceItemsSlice";
@@ -24,63 +21,45 @@ export default function InvoicePage() {
     const items = useSelector(state => state.invoiceItems.items);
     const { selectedParty } = useSelector(state => state.parties);
     const { data: billingData } = useSelector(state => state.billingSettings);
-    const calculations = useInvoiceCalculation(items);
     const { invoices } = useSelector(state => state.invoice);
 
     const [pdfOpen, setPdfOpen] = useState(false);
     const [saving, setSaving] = useState(false);
     const [gstPercent, setGstPercent] = useState(18);
     const [snackbar, setSnackbar] = useState({ open: false, message: '', severity: 'success' });
-    const [resetForm, setResetForm] = useState(false);
-    const [invoiceDate, setInvoiceDate] = useState(new Date().toISOString().split('T')[0]);
-    const [invoiceNo, setInvoiceNo] = useState('');
+    const [resetFormFlag, setResetFormFlag] = useState(false);
 
-    // Format date to M-D-Y format (e.g., 1-15-2024)
-    const formatDateToMDY = (date) => {
-        const d = new Date(date);
-        const month = d.getMonth() + 1; // Month (1-12)
-        const day = d.getDate(); // Day (1-31)
-        const year = d.getFullYear(); // Year (YYYY)
-        return `INV-${day}${month}${year}`;
-    };
+    // Generate invoice number based on today's date
+    const generateInvoiceNumber = () => {
+        const today = new Date();
+        const day = String(today.getDate()).padStart(2, '0');
+        const month = String(today.getMonth() + 1).padStart(2, '0');
+        const year = today.getFullYear();
+        const dateStr = `${day}${month}${year}`;
 
-    // Get date string for comparison (without time)
-    const getDateString = (date) => {
-        return new Date(date).toDateString();
-    };
+        // Count invoices created today
+        const todayInvoices = invoices?.filter(invoice => {
+            const invoiceDate = new Date(invoice.invoiceDate);
+            const today = new Date();
+            return invoiceDate.toDateString() === today.toDateString();
+        }) || [];
 
-    // Generate invoice number based on invoice date and count of invoices on that date
-    const generateInvoiceNumber = (date) => {
-        if (!date) return '';
-
-        const dateFormatted = formatDateToMDY(date);
-
-        // Count how many invoices were created on the same date
-        const invoicesOnSameDate = invoices.filter(invoice => {
-            if (!invoice.invoiceDate) return false;
-            return getDateString(invoice.invoiceDate) === getDateString(date);
-        });
-
-        const nextNumber = invoicesOnSameDate.length + 1;
+        const nextNumber = todayInvoices.length + 1;
         const paddedNumber = String(nextNumber).padStart(3, '0');
-
-        // Format: M-D-Y-XXX (e.g., 1-15-2024-001)
-        return `${dateFormatted}${paddedNumber}`;
+        return `${dateStr}${paddedNumber}`;
     };
 
-    // Regenerate invoice number when invoice date or invoices list changes
-    useEffect(() => {
-        if (invoiceDate) {
-            setInvoiceNo(generateInvoiceNumber(invoiceDate));
-        }
-    }, [invoiceDate, invoices.length]);
+    // State for invoice number and date
+    const [invoiceNumber, setInvoiceNumber] = useState(generateInvoiceNumber());
+    const [invoiceDate, setInvoiceDate] = useState(new Date().toISOString().split('T')[0]);
 
-    // Initial invoice number generation
+    // Regenerate invoice number when invoices list changes (after save)
     useEffect(() => {
-        if (invoiceDate && !invoiceNo) {
-            setInvoiceNo(generateInvoiceNumber(invoiceDate));
-        }
-    }, [invoiceDate]);
+        setInvoiceNumber(generateInvoiceNumber());
+    }, [invoices?.length]);
+
+    // Use the custom hook for calculations
+    const { subtotal, totalGST, grandTotal, itemsCount } = useInvoiceSummary(items, gstPercent);
 
     useEffect(() => {
         dispatch(fetchItemMaster());
@@ -90,97 +69,25 @@ export default function InvoicePage() {
         setSnackbar({ ...snackbar, open: false });
     };
 
-    // Handle date change from header
-    const handleDateChange = (newDate) => {
-        setInvoiceDate(newDate);
-        // Invoice number will be regenerated automatically by the useEffect
-    };
-
-    // Handle manual invoice number change
-    const handleInvoiceNoChange = (newInvoiceNo) => {
-        setInvoiceNo(newInvoiceNo);
-    };
-
-    // Get company state from billing settings
-    const companyState = billingData?.state || '';
-    const partyState = selectedParty?.state || '';
-
-    // Determine if inter-state (different states)
-    const isInterState = companyState !== partyState && companyState !== '' && partyState !== '';
-
-    // Calculate GST based on GST percent and transaction type
-    const totalGST = (calculations.subtotal * gstPercent) / 100;
-    const grandTotal = calculations.subtotal + totalGST;
-
-    // Calculate CGST, SGST, IGST based on transaction type
-    const cgstPercent = isInterState ? 0 : gstPercent / 2;
-    const sgstPercent = isInterState ? 0 : gstPercent / 2;
-    const igstPercent = isInterState ? gstPercent : 0;
-    const cgstAmount = isInterState ? 0 : totalGST / 2;
-    const sgstAmount = isInterState ? 0 : totalGST / 2;
-    const igstAmount = isInterState ? totalGST : 0;
-
     const handleGSTChange = (newGSTPercent) => {
         setGstPercent(newGSTPercent);
     };
 
-    // Validation functions
-    const isPartySelected = () => {
-        return selectedParty !== null && selectedParty !== undefined;
+    const handleInvoiceNoChange = (newInvoiceNo) => {
+        setInvoiceNumber(newInvoiceNo);
     };
 
-    const hasItems = () => {
-        return items.length > 0;
+    const handleInvoiceDateChange = (newDate) => {
+        setInvoiceDate(newDate);
     };
 
-    const areItemsValid = () => {
-        return items.every(item =>
-            item.itemId &&
-            item.qty > 0 &&
-            item.rate > 0 &&
-            item.itemName
-        );
-    };
-
-    const getValidationErrors = () => {
-        const errors = [];
-        if (!isPartySelected()) {
-            errors.push('Please select a party');
-        }
-        if (!hasItems()) {
-            errors.push('Please add at least one item');
-        } else {
-            const invalidItems = items.filter(item => !item.qty || item.qty <= 0);
-            if (invalidItems.length > 0) {
-                errors.push('Please enter valid quantity for all items');
-            }
-        }
-        return errors;
-    };
-
-    const isFormValid = () => {
-        return isPartySelected() && hasItems() && areItemsValid();
-    };
-
-    const resetInvoiceForm = () => {
-        // Clear items from the invoice
-        dispatch(clearItems());
-        // Clear selected party from Redux
-        dispatch({ type: 'parties/clearSelectedParty' });
-        // Reset GST percent to default
-        setGstPercent(18);
-        // Reset invoice date to today
-        const today = new Date().toISOString().split('T')[0];
-        setInvoiceDate(today);
-        // Invoice number will be regenerated by useEffect
-        // Trigger reset in child components
-        setResetForm(true);
-        setTimeout(() => setResetForm(false), 100);
+    const handleResetForm = () => {
+        setResetFormFlag(true);
+        setTimeout(() => setResetFormFlag(false), 100);
     };
 
     // Prepare invoice data for PDF
     const invoiceData = {
-        // Company Details from Billing Settings
         gstin: billingData?.gstin || '',
         mobile: billingData?.mobileNumber || '',
         companyName: billingData?.companyName || '',
@@ -188,22 +95,14 @@ export default function InvoicePage() {
         city: billingData?.city || "",
         pinCode: billingData?.pinCode || "",
         state: billingData?.state || "",
-        country: billingData?.country || "",
-
-        // Invoice Details
         invoiceDate: invoiceDate,
-        invoiceNo: invoiceNo,
-
-        // Party Details
+        invoiceNo: invoiceNumber,
         partyName: selectedParty?.partyName || "",
         partyAddress: selectedParty?.address || "",
         partyCity: selectedParty?.city || "",
         partyPinCode: selectedParty?.pinCode || "",
         partyState: selectedParty?.state || "",
         partyGstin: selectedParty?.gstin || "",
-        partyMobile: selectedParty?.mobile || "",
-
-        // Items
         items: items.map(item => ({
             itemName: item.itemName,
             hsnCode: item.hsnCode,
@@ -212,41 +111,34 @@ export default function InvoicePage() {
             amount: item.amount,
             gstPercent: gstPercent
         })),
-
-        // Financial Summary
-        subtotal: calculations.subtotal,
+        subtotal: subtotal,
         totalGST: totalGST,
         grandTotal: grandTotal,
-        gstPercent: gstPercent,
-
-        // GST Details
-        isInterState: isInterState,
-        cgstPercent: cgstPercent,
-        sgstPercent: sgstPercent,
-        igstPercent: igstPercent,
-        cgstAmount: cgstAmount,
-        sgstAmount: sgstAmount,
-        igstAmount: igstAmount
+        cgstPercent: gstPercent / 2,
+        sgstPercent: gstPercent / 2,
+        cgstAmount: totalGST / 2,
+        sgstAmount: totalGST / 2
     };
 
     const handleSaveInvoice = async () => {
-        // Validate invoice data
-        const errors = getValidationErrors();
-        if (errors.length > 0) {
-            setSnackbar({ open: true, message: errors.join('. '), severity: 'error' });
+        if (!selectedParty) {
+            setSnackbar({ open: true, message: 'Please select a party', severity: 'error' });
             return;
         }
 
-        // Validate each item has quantity > 0
+        if (items.length === 0) {
+            setSnackbar({ open: true, message: 'Please add at least one item', severity: 'error' });
+            return;
+        }
+
         const invalidItems = items.filter(item => !item.qty || item.qty <= 0);
         if (invalidItems.length > 0) {
             setSnackbar({ open: true, message: 'Please enter quantity for all items', severity: 'error' });
             return;
         }
 
-        // Prepare invoice data for API
         const saveData = {
-            invoiceNo: invoiceNo,
+            invoiceNo: invoiceNumber,
             invoiceDate: invoiceDate,
             partyId: selectedParty.id,
             partyName: selectedParty.partyName,
@@ -255,7 +147,7 @@ export default function InvoicePage() {
             partyState: selectedParty.state || '',
             partyPinCode: selectedParty.pinCode || '',
             partyGSTIN: selectedParty.gstin || '',
-            subtotal: calculations.subtotal,
+            subtotal: subtotal,
             gstPercent: gstPercent,
             totalGST: totalGST,
             grandTotal: grandTotal,
@@ -275,8 +167,14 @@ export default function InvoicePage() {
             const result = await dispatch(saveInvoice(saveData)).unwrap();
             if (result && result.success) {
                 setSnackbar({ open: true, message: 'Invoice saved successfully!', severity: 'success' });
-                // Reset the form after successful save
-                resetInvoiceForm();
+                dispatch(clearItems());
+                // Reset form after successful save
+                handleResetForm();
+                // Generate new invoice number for next invoice
+                setTimeout(() => {
+                    setInvoiceNumber(generateInvoiceNumber());
+                    setInvoiceDate(new Date().toISOString().split('T')[0]);
+                }, 500);
             } else {
                 setSnackbar({ open: true, message: result?.message || 'Failed to save invoice', severity: 'error' });
             }
@@ -288,131 +186,66 @@ export default function InvoicePage() {
         }
     };
 
-    const handleNewInvoice = () => {
-        resetInvoiceForm();
-        setSnackbar({ open: true, message: 'Form reset. You can create a new invoice', severity: 'info' });
-    };
-
-    // Check if form is valid to enable save button
-    const validForm = isFormValid();
+    const isPartySelected = () => selectedParty !== null && selectedParty !== undefined;
+    const hasItems = () => items.length > 0;
+    const areItemsValid = () => items.every(item => item.itemId && item.qty > 0 && item.rate > 0 && item.itemName);
+    const validForm = isPartySelected() && hasItems() && areItemsValid();
 
     return (
         <>
             <Box p={3}>
                 <InvoiceHeader
-                    resetForm={resetForm}
                     onInvoiceNoChange={handleInvoiceNoChange}
-                    onInvoiceDateChange={handleDateChange}
-                    initialInvoiceNo={invoiceNo}
+                    onInvoiceDateChange={handleInvoiceDateChange}
+                    initialInvoiceNo={invoiceNumber}
                     initialInvoiceDate={invoiceDate}
+                    resetForm={resetFormFlag}
                 />
-                <InvoiceItemsTable resetForm={resetForm} />
+                <InvoiceItemsTable resetForm={resetFormFlag} />
 
-                <Box
-                    sx={{
-                        display: "flex",
-                        justifyContent: "flex-end",
-                        mt: 3,
-                        gap: 2
-                    }}
-                >
+                <Box sx={{ display: "flex", justifyContent: "flex-end", mt: 3, gap: 2 }}>
                     <InvoiceSummary
-                        subtotal={calculations.subtotal}
-                        totalGST={totalGST}
-                        total={grandTotal}
-                        itemsCount={calculations.itemsCount}
+                        items={items}
                         gstPercent={gstPercent}
                         onGSTChange={handleGSTChange}
-                        isInterState={isInterState}
                     />
                 </Box>
 
-                <Box
-                    sx={{
-                        display: "flex",
-                        justifyContent: "flex-end",
-                        mt: 2,
-                        gap: 2
-                    }}
-                >
-                    <Button
-                        variant="outlined"
-                        onClick={handleNewInvoice}
-                        sx={{ fontSize: '0.75rem', textTransform: 'none' }}
-                        disabled={saving}
-                    >
-                        New Invoice
+                <Box sx={{ display: "flex", justifyContent: "flex-end", mt: 2, gap: 2 }}>
+                    <Button variant="outlined" onClick={() => navigate('/invoices')} sx={{ fontSize: '0.75rem', textTransform: 'none' }}>
+                        Cancel
                     </Button>
-
-                    <Button
-                        variant="outlined"
-                        onClick={() => setPdfOpen(true)}
-                        startIcon={<PdfIcon />}
-                        size="small"
-                        sx={{ fontSize: '0.7rem', textTransform: 'none' }}
-                        disabled={!hasItems()}
-                    >
+                    <Button variant="outlined" onClick={() => setPdfOpen(true)} startIcon={<PdfIcon />} disabled={!hasItems()} sx={{ fontSize: '0.75rem', textTransform: 'none' }}>
                         Preview PDF
                     </Button>
-
-                    <InvoicePDFDownload
-                        invoiceData={invoiceData}
-                        buttonText="Download PDF"
-                    />
-
-                    <Button
-                        variant="contained"
-                        onClick={handleSaveInvoice}
-                        disabled={saving || !validForm}
-                        sx={{ fontSize: '0.75rem', textTransform: 'none' }}
-                    >
+                    <InvoicePDFDownload invoiceData={invoiceData} buttonText="Download PDF" />
+                    <Button variant="contained" onClick={handleSaveInvoice} disabled={saving || !validForm} sx={{ fontSize: '0.75rem', textTransform: 'none' }}>
                         {saving ? <CircularProgress size={20} /> : 'Save Invoice'}
                     </Button>
                 </Box>
 
-                {/* Show validation warnings */}
                 {!isPartySelected() && (
                     <Box sx={{ mt: 2, p: 1, bgcolor: '#fff3e0', borderRadius: 1 }}>
-                        <Alert severity="warning" sx={{ fontSize: '0.75rem' }}>
-                            Please select a party
-                        </Alert>
+                        <Alert severity="warning" sx={{ fontSize: '0.75rem' }}>Please select a party</Alert>
                     </Box>
                 )}
-
                 {isPartySelected() && !hasItems() && (
                     <Box sx={{ mt: 2, p: 1, bgcolor: '#fff3e0', borderRadius: 1 }}>
-                        <Alert severity="warning" sx={{ fontSize: '0.75rem' }}>
-                            Please add at least one item
-                        </Alert>
+                        <Alert severity="warning" sx={{ fontSize: '0.75rem' }}>Please add at least one item</Alert>
                     </Box>
                 )}
-
                 {hasItems() && !areItemsValid() && (
                     <Box sx={{ mt: 2, p: 1, bgcolor: '#fff3e0', borderRadius: 1 }}>
-                        <Alert severity="warning" sx={{ fontSize: '0.75rem' }}>
-                            Please enter valid quantity for all items
-                        </Alert>
+                        <Alert severity="warning" sx={{ fontSize: '0.75rem' }}>Please enter valid quantity for all items</Alert>
                     </Box>
                 )}
 
-                <Snackbar
-                    open={snackbar.open}
-                    autoHideDuration={6000}
-                    onClose={handleCloseSnackbar}
-                    anchorOrigin={{ vertical: 'top', horizontal: 'right' }}
-                >
-                    <Alert severity={snackbar.severity} onClose={handleCloseSnackbar}>
-                        {snackbar.message}
-                    </Alert>
+                <Snackbar open={snackbar.open} autoHideDuration={6000} onClose={handleCloseSnackbar} anchorOrigin={{ vertical: 'top', horizontal: 'right' }}>
+                    <Alert severity={snackbar.severity} onClose={handleCloseSnackbar}>{snackbar.message}</Alert>
                 </Snackbar>
             </Box>
 
-            {/* PDF Viewer Modal */}
-            <InvoicePDFViewer
-                open={pdfOpen}
-                onClose={() => setPdfOpen(false)}
-                invoiceData={invoiceData}
-            />
+            <InvoicePDFViewer open={pdfOpen} onClose={() => setPdfOpen(false)} invoiceData={invoiceData} />
         </>
     );
 }

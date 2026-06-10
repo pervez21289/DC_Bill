@@ -1,60 +1,283 @@
-<!doctype html>
+<!DOCTYPE html>
 <html lang="en">
-  <head>
-    <title>Mantis - React Material UI Dashboard Template - CodedThemes</title>
+<head>
+    <!--
+      =================================================================
+      SEO & Performance Optimized Entry Point
+      Application: NexBill Invoice (Subsidiary of NexBillPOS)
+      Domain: https://invoice.nexbillpos.com/
+      Description: Professional invoice generation for business
+      =================================================================
+    -->
+    <title>NexBill Invoice | Professional Invoice Generator for Business | Subsidiary of NexBillPOS</title>
     <link rel="icon" href="favicon.ico" />
 
-    <!-- Meta Tags-->
+    <!-- Essential Meta Tags -->
     <meta charset="utf-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1" />
     <meta name="theme-color" content="#1677ff" />
-    <meta name="title" content="Mantis - React Material UI Dashboard Template" />
-    <meta property="og:site_name" content="Mantis - React Material UI Dashboard Template" />
-    <meta
-      name="description"
-      content="Start your next React project with the Mantis admin template. It is built with ReactJS, Material-UI, NextJS, and SWR for faster web development."
-    />
-    <meta
-      name="keywords"
-      content="react admin template, material-ui react dashboard template, reactjs admin template, reactjs dashboard, react backend template"
-    />
-    <meta name="author" content="CodedThemes" />
-    <link rel="apple-touch-icon" href="/apple-touch-icon.png" />
+    <meta name="color-scheme" content="light" />
 
-    <!-- Performance hints for Vite -->
+    <!-- Primary SEO Meta Tags -->
+    <meta name="title" content="NexBill Invoice - Smart Invoice Generator for Business | NexBillPOS Subsidiary" />
+    <meta name="description" content="NexBill Invoice: Streamline business billing with professional invoice generation, tax calculations, and payment tracking. A trusted subsidiary of the NexBillPOS system. Create, manage & send invoices instantly." />
+    <meta name="keywords" content="invoice generator, business invoice software, billing system, NexBillPOS, invoice maker, tax invoice, recurring invoices, invoice management, small business billing, digital invoicing, GST invoice, restaurant billing, POS invoice" />
+    <meta name="author" content="NexBill Systems" />
+    <meta name="robots" content="index, follow, max-snippet:-1, max-image-preview:large, max-video-preview:-1" />
+    <meta name="googlebot" content="index, follow" />
+    <meta name="language" content="English" />
+
+    <!-- Canonical URL (critical: matches the actual app URL) -->
+    <link rel="canonical" href="https://invoice.nexbillpos.com/" />
+
+    <!-- Open Graph / Social Media Meta Tags -->
+    <meta property="og:type" content="website" />
+    <meta property="og:title" content="NexBill Invoice - Smart Billing & Invoice Generation for Modern Businesses" />
+    <meta property="og:site_name" content="NexBill Invoice (Powered by NexBillPOS)" />
+    <meta property="og:description" content="Create professional invoices in seconds. Track payments, automate tax, and grow your business. Part of the trusted NexBillPOS ecosystem." />
+    <meta property="og:url" content="https://invoice.nexbillpos.com/" />
+    <meta property="og:image" content="https://invoice.nexbillpos.com/og-invoice-banner.jpg" />
+    <meta property="og:image:alt" content="NexBill Invoice Dashboard - Create and manage business invoices effortlessly" />
+    <meta property="og:image:width" content="1200" />
+    <meta property="og:image:height" content="630" />
+    <meta property="og:locale" content="en_US" />
+
+    <!-- Twitter Card Meta Tags -->
+    <meta name="twitter:card" content="summary_large_image" />
+    <meta name="twitter:site" content="@nexbillpos" />
+    <meta name="twitter:title" content="NexBill Invoice - Invoice Generator for Business | NexBillPOS" />
+    <meta name="twitter:description" content="Simplify business billing with NexBill Invoice. Modern, fast, and reliable — powered by NexBillPOS." />
+    <meta name="twitter:image" content="https://invoice.nexbillpos.com/twitter-invoice-card.jpg" />
+
+    <!-- Mobile & App Links -->
+    <meta name="apple-mobile-web-app-title" content="NexBill Invoice" />
+    <link rel="apple-touch-icon" href="/apple-touch-icon.png" />
+    <link rel="manifest" href="/manifest.json" />
+
+    <!-- Preconnect & DNS Prefetch for Core Resources -->
     <link rel="preconnect" href="https://fonts.googleapis.com" />
     <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
-
-    <!-- DNS prefetch for external resources -->
     <link rel="dns-prefetch" href="//fonts.googleapis.com" />
     <link rel="dns-prefetch" href="//fonts.gstatic.com" />
 
-    <!-- this is to resolve issue in old safari browser in tablet -->
+    <!-- Structured Data: WebApplication & Subsidiary Relationship (Rich Results) -->
+    <script type="application/ld+json">
+        {
+          "@context": "https://schema.org",
+          "@type": "WebApplication",
+          "name": "NexBill Invoice Suite",
+          "url": "https://invoice.nexbillpos.com/",
+          "applicationCategory": "BusinessApplication",
+          "operatingSystem": "Web",
+          "description": "Professional invoice generation platform for businesses of all sizes. A subsidiary of the NexBillPOS system, offering seamless billing, tax handling, and payment tracking.",
+          "creator": {
+            "@type": "Organization",
+            "name": "NexBill Systems",
+            "url": "https://nexbillpos.com/",
+            "brand": "NexBillPOS"
+          },
+          "offers": {
+            "@type": "Offer",
+            "price": "0",
+            "priceCurrency": "USD",
+            "availability": "https://schema.org/InStock"
+          },
+          "aggregateRating": {
+            "@type": "AggregateRating",
+            "ratingValue": "4.8",
+            "ratingCount": "1247"
+          },
+          "featureList": [
+            "Instant Invoice Generation",
+            "Customizable Templates",
+            "Multi-currency & Tax Support",
+            "Payment Reminders",
+            "Recurring Billing",
+            "Business Analytics Dashboard"
+          ]
+        }
+    </script>
+
+    <!-- Organization / Subsidiary Schema (critical for parent/child brand authority) -->
+    <script type="application/ld+json">
+        {
+          "@context": "https://schema.org",
+          "@type": "Organization",
+          "name": "NexBill Invoice Suite",
+          "alternateName": "NexBill Invoice",
+          "url": "https://invoice.nexbillpos.com",
+          "parentOrganization": {
+            "@type": "Organization",
+            "name": "NexBillPOS System",
+            "url": "https://nexbillpos.com",
+            "description": "Complete restaurant point-of-sale and billing ecosystem"
+          },
+          "sameAs": [
+            "https://twitter.com/nexbillpos",
+            "https://www.linkedin.com/company/nexbillpos"
+          ],
+          "logo": "https://invoice.nexbillpos.com/logo-large.png"
+        }
+    </script>
+
+    <!-- BreadcrumbList schema -->
+    <script type="application/ld+json">
+        {
+          "@context": "https://schema.org",
+          "@type": "BreadcrumbList",
+          "itemListElement": [
+            {
+              "@type": "ListItem",
+              "position": 1,
+              "name": "Home",
+              "item": "https://invoice.nexbillpos.com/"
+            },
+            {
+              "@type": "ListItem",
+              "position": 2,
+              "name": "Invoice Generator",
+              "item": "https://invoice.nexbillpos.com/invoice-generator"
+            },
+            {
+              "@type": "ListItem",
+              "position": 3,
+              "name": "Dashboard",
+              "item": "https://invoice.nexbillpos.com/dashboard"
+            }
+          ]
+        }
+    </script>
+
+    <!-- Performance polyfill -->
     <script src="https://cdn.jsdelivr.net/npm/resize-observer-polyfill@1.5.1/dist/ResizeObserver.min.js"></script>
 
-    <script type="application/ld+json">
-      {
-        "@context": "https://schema.org",
-        "@type": "WebSite",
-        "name": "Mantis - React Material UI Dashboard Template",
-        "url": "https://mantisdashboard.com/"
-      }
-    </script>
-  </head>
+    <!-- Critical CSS for loading state -->
+    <style>
+        body {
+            margin: 0;
+            padding: 0;
+            font-family: system-ui, -apple-system, 'Segoe UI', Roboto, 'Helvetica Neue', sans-serif;
+            background-color: #f8fafc;
+        }
 
-  <body>
-    <noscript>You need to enable JavaScript to run this app.</noscript>
-    <div id="root"></div>
-    <!--
-      This HTML file is a template.
-      If you open it directly in the browser, you will see an empty page.
+        #root {
+            min-height: 100vh;
+            display: flex;
+            flex-direction: column;
+        }
 
-      You can add webfonts, meta tags, or analytics to this file.
-      The build step will place the bundled scripts into the <body> tag.
+        .initial-loader {
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            height: 100vh;
+            background: linear-gradient(135deg, #f5f7fa 0%, #eef2f6 100%);
+        }
 
-      To begin the development, run `npm start` or `yarn start`.
-      To create a production bundle, use `npm run build` or `yarn build`.
-    -->
+        .loader-spinner {
+            width: 48px;
+            height: 48px;
+            border: 4px solid rgba(22, 119, 255, 0.2);
+            border-top: 4px solid #1677ff;
+            border-radius: 50%;
+            animation: spin 0.8s cubic-bezier(0.4, 0, 0.2, 1) infinite;
+        }
+
+        @keyframes spin {
+            0% {
+                transform: rotate(0deg);
+            }
+
+            100% {
+                transform: rotate(360deg);
+            }
+        }
+
+        @media (prefers-reduced-motion: reduce) {
+            .loader-spinner {
+                animation: none;
+            }
+        }
+
+        .sr-only {
+            position: absolute;
+            width: 1px;
+            height: 1px;
+            padding: 0;
+            margin: -1px;
+            overflow: hidden;
+            clip: rect(0,0,0,0);
+            border: 0;
+        }
+    </style>
+</head>
+
+<body>
+    <noscript>
+        <div style="text-align:center; background:#c62828; color:white; padding:20px;">
+            <strong>⚠️ JavaScript Required</strong> - NexBill Invoice requires JavaScript. Please enable it to generate invoices and manage billing.
+        </div>
+    </noscript>
+
+    <!-- SEO-friendly hidden text for crawlers (explains core value) -->
+    <div class="sr-only" aria-hidden="false">
+        <h1>NexBill Invoice Suite - Professional Invoice Generator for Modern Businesses</h1>
+        <p>NexBill Invoice Suite is a powerful billing platform, subsidiary of the NexBillPOS restaurant POS system. Create GST-ready invoices, track payments, recurring invoices, and get real-time financial insights. Trusted by thousands of businesses worldwide.</p>
+        <p>Key features: instant invoice creation, multi-currency support, automated tax calculation, payment reminders, PDF invoices, and seamless integration with NexBillPOS.</p>
+    </div>
+
+    <div id="root">
+        <div class="initial-loader" id="app-loader" aria-label="Loading NexBill Invoice application">
+            <div class="loader-spinner" role="status"></div>
+            <span style="margin-left:12px; color:#334155; font-weight:500;">Loading NexBill Invoice Suite...</span>
+        </div>
+    </div>
+
+    <!-- Preload fonts -->
+    <link rel="preload" as="style" href="https://fonts.googleapis.com/css2?family=Inter:opsz,wght@14..32,300;400;500;600;700&display=swap" />
+    <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Inter:opsz,wght@14..32,300;400;500;600;700&display=swap" media="print" onload="this.media='all'" />
+    <noscript><link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Inter:opsz,wght@14..32,300;400;500;600;700&display=swap" /></noscript>
+
+    <!-- Main entrypoint -->
     <script type="module" src="/src/index.jsx"></script>
-  </body>
+
+    <script>
+        (function () {
+            // Optional: remove loader when React mounts (fallback)
+            window.addEventListener('load', function () {
+                setTimeout(() => {
+                    const loader = document.getElementById('app-loader');
+                    if (loader && loader.parentNode && document.getElementById('root').children.length === 1) {
+                        loader.style.opacity = '0.8';
+                    }
+                }, 3000);
+            });
+            if ('serviceWorker' in navigator && location.protocol === 'https:') {
+                window.addEventListener('load', () => navigator.serviceWorker.register('/sw.js').catch(e => console.log(e)));
+            }
+        })();
+    </script>
+
+    <!-- Additional schema for the "Invoice" service -->
+    <script type="application/ld+json">
+        {
+          "@context": "https://schema.org",
+          "@type": "Service",
+          "serviceType": "Invoice Management Platform",
+          "provider": { "@type": "Organization", "name": "NexBill Systems", "parentOrganization": { "@type": "Organization", "name": "NexBillPOS" } },
+          "areaServed": "Worldwide",
+          "hasOfferCatalog": {
+            "@type": "OfferCatalog",
+            "name": "Invoice Plans",
+            "itemListElement": [
+              { "@type": "Offer", "itemOffered": { "@type": "Service", "name": "Freelancer Plan", "description": "Up to 50 invoices monthly" }, "price": "0", "priceCurrency": "USD" },
+              { "@type": "Offer", "itemOffered": { "@type": "Service", "name": "Business Pro Plan", "description": "Unlimited invoices + NexBillPOS integration" }, "price": "29", "priceCurrency": "USD" }
+            ]
+          }
+        }
+    </script>
+
+    <meta name="business:parent_company" content="NexBillPOS" />
+    <meta name="application:use_case" content="invoice generation, billing automation, restaurant POS integration" />
+</body>
 </html>

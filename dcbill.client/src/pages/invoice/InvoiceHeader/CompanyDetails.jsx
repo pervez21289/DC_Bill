@@ -134,11 +134,17 @@ export default function CompanyDetails({
                     </Box>
                 </Box>
 
-                {/* Date and Invoice No */}
+                {/* Date and Invoice No - Invoice No is READONLY */}
                 <Box sx={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', mt: 1 }}>
                     <Box sx={{ display: 'flex', alignItems: 'center', gap: 1 }}>
                         <Typography sx={{ fontSize: '0.7rem', fontWeight: 'bold', minWidth: '70px' }}>No.:</Typography>
-                        <TextField size="small" value={invoiceData.invoiceNo} disabled sx={{ width: 100, ...readonlyFieldStyles }} variant="outlined" />
+                        <TextField
+                            size="small"
+                            value={invoiceData.invoiceNo}
+                            disabled  // Make it disabled/readonly
+                            sx={{ width: 180, ...readonlyFieldStyles }}
+                            variant="outlined"
+                        />
                     </Box>
                     <Box sx={{ display: 'flex', alignItems: 'center', gap: 1 }}>
                         <Typography sx={{ fontSize: '0.7rem', fontWeight: 'bold', minWidth: '70px' }}>Dated:</Typography>

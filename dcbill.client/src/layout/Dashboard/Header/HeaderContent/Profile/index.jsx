@@ -1,5 +1,6 @@
 import PropTypes from 'prop-types';
-import { useRef, useState } from 'react';
+import { useRef, useState, useEffect } from 'react';
+import { useDispatch, useSelector } from 'react-redux';
 
 // material-ui
 import { useTheme } from '@mui/material/styles';
@@ -26,142 +27,159 @@ import IconButton from 'components/@extended/IconButton';
 // assets
 import LogoutOutlined from '@ant-design/icons/LogoutOutlined';
 import SettingOutlined from '@ant-design/icons/SettingOutlined';
-import UserOutlined from '@ant-design/icons/UserOutlined';
 import avatar1 from 'assets/images/users/avatar-1.png';
+
+// store
+import { fetchBillingSettings } from './../../../../../store/billingSettingsSlice';
 
 // tab panel wrapper
 function TabPanel({ children, value, index, ...other }) {
-  return (
-    <div role="tabpanel" hidden={value !== index} id={`profile-tabpanel-${index}`} aria-labelledby={`profile-tab-${index}`} {...other}>
-      {value === index && children}
-    </div>
-  );
+    return (
+        <div role="tabpanel" hidden={value !== index} id={`profile-tabpanel-${index}`} aria-labelledby={`profile-tab-${index}`} {...other}>
+            {value === index && children}
+        </div>
+    );
 }
 
 function a11yProps(index) {
-  return {
-    id: `profile-tab-${index}`,
-    'aria-controls': `profile-tabpanel-${index}`
-  };
+    return {
+        id: `profile-tab-${index}`,
+        'aria-controls': `profile-tabpanel-${index}`
+    };
 }
 
 // ==============================|| HEADER CONTENT - PROFILE ||============================== //
 
 export default function Profile() {
-  const theme = useTheme();
+    const theme = useTheme();
+    const dispatch = useDispatch();
 
-  const anchorRef = useRef(null);
-  const [open, setOpen] = useState(false);
-  const handleToggle = () => {
-    setOpen((prevOpen) => !prevOpen);
-  };
+    const anchorRef = useRef(null);
+    const [open, setOpen] = useState(false);
 
-  const handleClose = (event) => {
-    if (anchorRef.current && anchorRef.current.contains(event.target)) {
-      return;
-    }
-    setOpen(false);
-  };
+    // Get billing settings from Redux store
+    const { data: billingData, loading: billingLoading } = useSelector((state) => state.billingSettings);
 
-  const [value, setValue] = useState(1);
+    useEffect(() => {
+        // Fetch billing settings if not already loaded
+        if (!billingData && !billingLoading) {
+            dispatch(fetchBillingSettings());
+        }
+    }, [dispatch, billingData, billingLoading]);
 
-  const handleChange = (event, newValue) => {
-    setValue(newValue);
-  };
+    const handleToggle = () => {
+        setOpen((prevOpen) => !prevOpen);
+    };
 
-  return (
-    <Box sx={{ flexShrink: 0, ml: 'auto' }}>
-      <Tooltip title="Profile" disableInteractive>
-        <ButtonBase
-          sx={(theme) => ({
-            p: 0.25,
-            borderRadius: 1,
-            '&:focus-visible': { outline: `2px solid ${theme.vars.palette.secondary.dark}`, outlineOffset: 2 }
-          })}
-          aria-label="open profile"
-          ref={anchorRef}
-          aria-controls={open ? 'profile-grow' : undefined}
-          aria-haspopup="true"
-          onClick={handleToggle}
-        >
-          <Avatar alt="profile user" src={avatar1} size="sm" sx={{ '&:hover': { outline: '1px solid', outlineColor: 'primary.main' } }} />
-        </ButtonBase>
-      </Tooltip>
-      <Popper
-        placement="bottom-end"
-        open={open}
-        anchorEl={anchorRef.current}
-        role={undefined}
-        transition
-        disablePortal
-        popperOptions={{
-          modifiers: [
-            {
-              name: 'offset',
-              options: {
-                offset: [0, 9]
-              }
-            }
-          ]
-        }}
-      >
-        {({ TransitionProps }) => (
-          <Transitions type="grow" position="top-right" in={open} {...TransitionProps}>
-            <Paper sx={(theme) => ({ boxShadow: theme.vars.customShadows.z1, width: 290, minWidth: 240, maxWidth: { xs: 250, md: 290 } })}>
-              <ClickAwayListener onClickAway={handleClose}>
-                <MainCard elevation={0} border={false} content={false}>
-                  <CardContent sx={{ px: 2.5, pt: 3 }}>
-                    <Stack direction="row" sx={{ justifyContent: 'space-between', alignItems: 'center' }}>
-                      <Stack direction="row" sx={{ gap: 1.25, alignItems: 'center' }}>
-                        <Avatar alt="profile user" src={avatar1} sx={{ width: 32, height: 32 }} />
-                        <Stack>
-                          <Typography variant="h6">John Doe</Typography>
-                          <Typography variant="body2" sx={{ color: 'text.secondary' }}>
-                            UI/UX Designer
-                          </Typography>
-                        </Stack>
-                      </Stack>
-                      <Tooltip title="Logout">
-                        <IconButton size="large" sx={{ color: 'text.primary' }}>
-                          <LogoutOutlined />
-                        </IconButton>
-                      </Tooltip>
-                    </Stack>
-                  </CardContent>
+    const handleClose = (event) => {
+        if (anchorRef.current && anchorRef.current.contains(event.target)) {
+            return;
+        }
+        setOpen(false);
+    };
 
-                  <Box sx={{ borderBottom: 1, borderColor: 'divider' }}>
-                    <Tabs variant="fullWidth" value={value} onChange={handleChange} aria-label="profile tabs">
-                     
-                      <Tab
-                        sx={{
-                          display: 'flex',
-                          flexDirection: 'row',
-                          justifyContent: 'center',
-                          alignItems: 'center',
-                          textTransform: 'capitalize',
-                          gap: 1.25,
-                          '& .MuiTab-icon': {
-                            marginBottom: 0
-                          }
-                        }}
-                        icon={<SettingOutlined />}
-                        label="Setting"
-                        {...a11yProps(1)}
-                      />
-                    </Tabs>
-                  </Box>
+    const [value, setValue] = useState(1);
 
-                  <TabPanel value={value} index={1} dir={theme.direction}>
-                    <SettingTab />
-                  </TabPanel>
-                </MainCard>
-              </ClickAwayListener>
-            </Paper>
-          </Transitions>
-        )}
-      </Popper>
-    </Box>
-  );
+    const handleChange = (event, newValue) => {
+        setValue(newValue);
+    };
+
+    // Get company name from billing settings
+    const companyName = billingData?.companyName || 'Loading...';
+    const userRole = billingData?.state || 'User';
+
+    return (
+        <Box sx={{ flexShrink: 0, ml: 'auto' }}>
+            <Tooltip title="Profile" disableInteractive>
+                <ButtonBase
+                    sx={(theme) => ({
+                        p: 0.25,
+                        borderRadius: 1,
+                        '&:focus-visible': { outline: `2px solid ${theme.vars.palette.secondary.dark}`, outlineOffset: 2 }
+                    })}
+                    aria-label="open profile"
+                    ref={anchorRef}
+                    aria-controls={open ? 'profile-grow' : undefined}
+                    aria-haspopup="true"
+                    onClick={handleToggle}
+                >
+                    <Avatar alt="profile user" src={avatar1} size="sm" sx={{ '&:hover': { outline: '1px solid', outlineColor: 'primary.main' } }} />
+                </ButtonBase>
+            </Tooltip>
+            <Popper
+                placement="bottom-end"
+                open={open}
+                anchorEl={anchorRef.current}
+                role={undefined}
+                transition
+                disablePortal
+                popperOptions={{
+                    modifiers: [
+                        {
+                            name: 'offset',
+                            options: {
+                                offset: [0, 9]
+                            }
+                        }
+                    ]
+                }}
+            >
+                {({ TransitionProps }) => (
+                    <Transitions type="grow" position="top-right" in={open} {...TransitionProps}>
+                        <Paper sx={(theme) => ({ boxShadow: theme.vars.customShadows.z1, width: 290, minWidth: 240, maxWidth: { xs: 250, md: 290 } })}>
+                            <ClickAwayListener onClickAway={handleClose}>
+                                <MainCard elevation={0} border={false} content={false}>
+                                    <CardContent sx={{ px: 2.5, pt: 3 }}>
+                                        <Stack direction="row" sx={{ justifyContent: 'space-between', alignItems: 'center' }}>
+                                            <Stack direction="row" sx={{ gap: 1.25, alignItems: 'center' }}>
+                                                <Avatar alt="profile user" src={avatar1} sx={{ width: 32, height: 32 }} />
+                                                <Stack>
+                                                    <Typography variant="h6">{companyName}</Typography>
+                                                    <Typography variant="body2" sx={{ color: 'text.secondary' }}>
+                                                        {userRole}
+                                                    </Typography>
+                                                </Stack>
+                                            </Stack>
+                                            <Tooltip title="Logout">
+                                                <IconButton size="large" sx={{ color: 'text.primary' }}>
+                                                    <LogoutOutlined />
+                                                </IconButton>
+                                            </Tooltip>
+                                        </Stack>
+                                    </CardContent>
+
+                                    <Box sx={{ borderBottom: 1, borderColor: 'divider' }}>
+                                        <Tabs variant="fullWidth" value={value} onChange={handleChange} aria-label="profile tabs">
+                                            <Tab
+                                                sx={{
+                                                    display: 'flex',
+                                                    flexDirection: 'row',
+                                                    justifyContent: 'center',
+                                                    alignItems: 'center',
+                                                    textTransform: 'capitalize',
+                                                    gap: 1.25,
+                                                    '& .MuiTab-icon': {
+                                                        marginBottom: 0
+                                                    }
+                                                }}
+                                                icon={<SettingOutlined />}
+                                                label="Setting"
+                                                {...a11yProps(1)}
+                                            />
+                                        </Tabs>
+                                    </Box>
+
+                                    <TabPanel value={value} index={1} dir={theme.direction}>
+                                        <SettingTab />
+                                    </TabPanel>
+                                </MainCard>
+                            </ClickAwayListener>
+                        </Paper>
+                    </Transitions>
+                )}
+            </Popper>
+        </Box>
+    );
 }
 
 TabPanel.propTypes = { children: PropTypes.node, value: PropTypes.number, index: PropTypes.number, other: PropTypes.any };

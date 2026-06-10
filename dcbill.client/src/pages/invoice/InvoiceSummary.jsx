@@ -1,51 +1,33 @@
-﻿import { Paper, Box, Table, TableBody, TableRow, TableCell, TextField, IconButton, InputAdornment } from '@mui/material';
+﻿// components/InvoiceSummary.jsx
+import { Paper, Box, Table, TableBody, TableRow, TableCell, TextField, IconButton } from '@mui/material';
 import { Edit as EditIcon, Save as SaveIcon, Close as CloseIcon } from '@mui/icons-material';
 import { useState } from 'react';
+import { useInvoiceSummary } from './useInvoiceSummary';
 
 export default function InvoiceSummary({
-    subtotal,
-    totalGST,
-    total,
-    itemsCount,
-    gstPercent = 18,
+    items = [],  // Pass items array directly
+    gstPercent: externalGstPercent = 18,
     onGSTChange,
     readOnly = false
 }) {
     const [isEditingGST, setIsEditingGST] = useState(false);
-    const [localGSTPercent, setLocalGSTPercent] = useState(gstPercent);
-    const [isInterState, setIsInterState] = useState(false); // Will be passed from parent
+    const [localGSTPercent, setLocalGSTPercent] = useState(externalGstPercent);
 
-    // Safe number conversion
-    const safeSubtotal = Number(subtotal) || 0;
-    const safeTotalGST = Number(totalGST) || 0;
-    const safeTotal = Number(total) || 0;
-    const safeItemsCount = Number(itemsCount) || 0;
-    const safeGSTPercent = Number(localGSTPercent) || 18;
-
-    // Calculate CGST and SGST based on transaction type
-    const cgstPercent = isInterState ? 0 : safeGSTPercent / 2;
-    const sgstPercent = isInterState ? 0 : safeGSTPercent / 2;
-    const igstPercent = isInterState ? safeGSTPercent : 0;
-
-    // Calculate GST amounts
-    const calculatedTotalGST = (safeSubtotal * safeGSTPercent) / 100;
-    const calculatedCGST = isInterState ? 0 : calculatedTotalGST / 2;
-    const calculatedSGST = isInterState ? 0 : calculatedTotalGST / 2;
-    const calculatedIGST = isInterState ? calculatedTotalGST : 0;
-    const calculatedGrandTotal = safeSubtotal + calculatedTotalGST;
-
-    // Use passed values or calculated values
-    const displayTotalGST = totalGST || calculatedTotalGST;
-    const displayCGST = isInterState ? 0 : displayTotalGST / 2;
-    const displaySGST = isInterState ? 0 : displayTotalGST / 2;
-    const displayIGST = isInterState ? displayTotalGST : 0;
-    const displayGrandTotal = total || calculatedGrandTotal;
-
-    // Format currency
-    const formatCurrency = (amount) => {
-        const numAmount = Number(amount) || 0;
-        return numAmount % 1 === 0 ? numAmount.toString() : numAmount.toFixed(2);
-    };
+    // Use the custom hook to calculate all values from items
+    const {
+        subtotal,
+        totalGST,
+        cgstAmount,
+        sgstAmount,
+        grandTotal,
+        itemsCount,
+        cgstPercent,
+        sgstPercent,
+        formattedSubtotal,
+        formattedCgstAmount,
+        formattedSgstAmount,
+        formattedGrandTotal,
+    } = useInvoiceSummary(items, localGSTPercent);
 
     const handleGSTSave = () => {
         const newGSTPercent = Number(localGSTPercent);
@@ -53,13 +35,13 @@ export default function InvoiceSummary({
             onGSTChange?.(newGSTPercent);
             setIsEditingGST(false);
         } else {
-            setLocalGSTPercent(safeGSTPercent);
+            setLocalGSTPercent(externalGstPercent);
             setIsEditingGST(false);
         }
     };
 
     const handleGSTCancel = () => {
-        setLocalGSTPercent(safeGSTPercent);
+        setLocalGSTPercent(externalGstPercent);
         setIsEditingGST(false);
     };
 
@@ -90,8 +72,8 @@ export default function InvoiceSummary({
                     <TableBody>
                         <TableRow>
                             <TableCell sx={{ fontWeight: 'bold' }}>Total</TableCell>
-                            <TableCell align="right">{safeItemsCount}</TableCell>
-                            <TableCell align="right">{formatCurrency(safeSubtotal)}</TableCell>
+                            <TableCell align="right">{itemsCount}</TableCell>
+                            <TableCell align="right">{formattedSubtotal}</TableCell>
                         </TableRow>
                         <TableRow>
                             <TableCell>Discount</TableCell>
@@ -101,7 +83,7 @@ export default function InvoiceSummary({
                         <TableRow>
                             <TableCell sx={{ fontWeight: 'bold' }}>Total</TableCell>
                             <TableCell align="right"></TableCell>
-                            <TableCell align="right">{formatCurrency(safeSubtotal)}</TableCell>
+                            <TableCell align="right">{formattedSubtotal}</TableCell>
                         </TableRow>
 
                         <TableRow>
@@ -142,7 +124,7 @@ export default function InvoiceSummary({
                                     </Box>
                                 ) : (
                                     <Box sx={{ display: 'flex', alignItems: 'center', justifyContent: 'flex-end', gap: 1 }}>
-                                        <span>{safeGSTPercent}%</span>
+                                        <span>{localGSTPercent}%</span>
                                         {!readOnly && (
                                             <IconButton size="small" onClick={() => setIsEditingGST(true)} sx={{ p: 0.2 }}>
                                                 <EditIcon sx={{ fontSize: '12px' }} />
@@ -154,31 +136,18 @@ export default function InvoiceSummary({
                         </TableRow>
 
                         {/* CGST Row */}
-                        {!isInterState && cgstPercent > 0 && (
-                            <TableRow>
-                                <TableCell>CGST</TableCell>
-                                <TableCell align="right">{cgstPercent}%</TableCell>
-                                <TableCell align="right">{formatCurrency(displayCGST)}</TableCell>
-                            </TableRow>
-                        )}
+                        <TableRow>
+                            <TableCell>CGST</TableCell>
+                            <TableCell align="right">{cgstPercent}%</TableCell>
+                            <TableCell align="right">{formattedCgstAmount}</TableCell>
+                        </TableRow>
 
                         {/* SGST Row */}
-                        {!isInterState && sgstPercent > 0 && (
-                            <TableRow>
-                                <TableCell>SGST</TableCell>
-                                <TableCell align="right">{sgstPercent}%</TableCell>
-                                <TableCell align="right">{formatCurrency(displaySGST)}</TableCell>
-                            </TableRow>
-                        )}
-
-                        {/* IGST Row */}
-                        {isInterState && igstPercent > 0 && (
-                            <TableRow>
-                                <TableCell>IGST</TableCell>
-                                <TableCell align="right">{igstPercent}%</TableCell>
-                                <TableCell align="right">{formatCurrency(displayIGST)}</TableCell>
-                            </TableRow>
-                        )}
+                        <TableRow>
+                            <TableCell>SGST</TableCell>
+                            <TableCell align="right">{sgstPercent}%</TableCell>
+                            <TableCell align="right">{formattedSgstAmount}</TableCell>
+                        </TableRow>
 
                         <TableRow>
                             <TableCell colSpan={3}><hr style={{ margin: '2px 0' }} /></TableCell>
@@ -194,7 +163,7 @@ export default function InvoiceSummary({
                             <TableCell sx={{ fontWeight: 'bold', fontSize: '12px' }}>GRAND TOTAL</TableCell>
                             <TableCell align="right"></TableCell>
                             <TableCell align="right" sx={{ fontWeight: 'bold', fontSize: '12px' }}>
-                                {formatCurrency(displayGrandTotal)}
+                                {formattedGrandTotal}
                             </TableCell>
                         </TableRow>
                     </TableBody>

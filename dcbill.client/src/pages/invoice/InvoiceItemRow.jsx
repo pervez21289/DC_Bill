@@ -22,7 +22,7 @@ import EditIcon from '@mui/icons-material/Edit';
 export default function InvoiceItemRow({ index }) {
     const dispatch = useDispatch();
     const item = useSelector(state => state.invoiceItems.items[index]);
-    const allItems = useSelector(state => state.invoiceItems.items); // Get all items for duplicate check
+    const allItems = useSelector(state => state.invoiceItems.items);
     const itemMaster = useSelector(state => state.itemMaster.items || []);
     const { loading } = useSelector(state => state.itemMaster);
 
@@ -44,7 +44,6 @@ export default function InvoiceItemRow({ index }) {
     // Check if an item is already selected in other rows
     const isItemAlreadySelected = (itemId) => {
         if (!itemId) return false;
-        // Check all items except the current row
         return allItems.some((existingItem, idx) =>
             idx !== index && existingItem.itemId === itemId
         );
@@ -65,7 +64,6 @@ export default function InvoiceItemRow({ index }) {
 
         if (!selectedItem) return;
 
-        // Check for duplicate item
         if (isItemAlreadySelected(selectedItem.id)) {
             alert(`Item "${selectedItem.itemName}" is already added. Please select a different item.`);
             return;
@@ -78,16 +76,32 @@ export default function InvoiceItemRow({ index }) {
                 itemName: selectedItem.itemName,
                 hsnCode: selectedItem.hsnCode,
                 rate: selectedItem.rate,
-                gst: selectedItem.gst
+                gst: selectedItem.gst,
+                qty: item?.qty || 0,
+                amount: (item?.qty || 0) * selectedItem.rate
             }
         }));
     };
 
+    // Fixed handleChange - recalculates amount when qty or rate changes
     const handleChange = (field, value) => {
+        // First update the field
         dispatch(updateItem({
             index,
             data: { [field]: value }
         }));
+
+        // If quantity or rate changed, recalculate amount
+        if (field === 'qty' || field === 'rate') {
+            const newQty = field === 'qty' ? Number(value) : (item?.qty || 0);
+            const newRate = field === 'rate' ? Number(value) : (item?.rate || 0);
+            const newAmount = newQty * newRate;
+
+            dispatch(updateItem({
+                index,
+                data: { amount: newAmount }
+            }));
+        }
     };
 
     const handleDelete = () => {
@@ -212,7 +226,9 @@ export default function InvoiceItemRow({ index }) {
                             itemName: savedItem.itemName,
                             hsnCode: savedItem.hsnCode,
                             rate: savedItem.rate,
-                            gst: savedItem.gst
+                            gst: savedItem.gst,
+                            qty: item?.qty || 0,
+                            amount: (item?.qty || 0) * savedItem.rate
                         }
                     }));
 
@@ -242,12 +258,10 @@ export default function InvoiceItemRow({ index }) {
     const getAvailableOptions = () => {
         if (!Array.isArray(itemMaster)) return [];
 
-        // Get IDs of items already selected in other rows
         const selectedItemIds = allItems
             .filter((_, idx) => idx !== index && _.itemId)
             .map(_ => _.itemId);
 
-        // Filter out already selected items, but keep "Add New Item" option
         const availableItems = itemMaster.filter(item => !selectedItemIds.includes(item.id));
 
         return [...availableItems, {
@@ -324,7 +338,6 @@ export default function InvoiceItemRow({ index }) {
                     </Box>
                 </TableCell>
 
-                {/* Rest of the table cells remain the same */}
                 <TableCell sx={{ py: 0.5, px: 1 }}>
                     <TextField
                         size="small"
@@ -421,7 +434,7 @@ export default function InvoiceItemRow({ index }) {
                 </TableCell>
             </TableRow>
 
-            {/* Add/Edit Item Dialog - remains the same */}
+            {/* Add/Edit Item Dialog */}
             <Dialog
                 open={isDialogOpen}
                 onClose={() => {

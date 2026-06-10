@@ -1,8 +1,8 @@
 ﻿// components/InvoicePDF.jsx
 import { Page, Document, StyleSheet, View, Text, Font } from '@react-pdf/renderer';
+import { useInvoiceSummary } from './../useInvoiceSummary';
 
 // Register Noto Sans font for proper Unicode support including ₹ symbol
-// Make sure the font file is in your public/fonts/ directory
 Font.register({
     family: 'Noto Sans',
     src: '/fonts/NotoSans-Regular.ttf',
@@ -19,6 +19,7 @@ Font.register({
     family: 'NotoSansLightItalic',
     src: '/fonts/NotoSans-LightItalic.ttf',
 });
+
 // Helper function to get page settings from localStorage
 const getPageSettings = () => {
     if (typeof window !== 'undefined') {
@@ -31,7 +32,6 @@ const getPageSettings = () => {
             }
         }
     }
-    // Default settings
     return {
         pageSize: 'A5',
         orientation: 'portrait',
@@ -245,7 +245,27 @@ export const InvoicePDF = ({ invoiceData }) => {
     const pageSize = currentPageSettings.pageSize || 'A5';
     const orientation = currentPageSettings.orientation || 'portrait';
 
-    // Format currency without Rupee symbol (for regular amounts)
+    // Convert items to the format expected by useInvoiceSummary
+    const itemsForSummary = invoiceData?.items?.map(item => ({
+        amount: item.amount,
+        quantity: item.quantity,
+        rate: item.rate
+    })) || [];
+
+    // Use the hook for calculations
+    const gstPercent = invoiceData?.gstPercent || 18;
+    const {
+        subtotal,
+        totalGST,
+        cgstAmount,
+        sgstAmount,
+        grandTotal,
+        itemsCount,
+        cgstPercent,
+        sgstPercent
+    } = useInvoiceSummary(itemsForSummary, gstPercent);
+
+    // Format currency without Rupee symbol
     const formatCurrency = (amount) => {
         if (!amount && amount !== 0) return '0.00';
         return amount.toLocaleString('en-IN', {
@@ -269,22 +289,14 @@ export const InvoicePDF = ({ invoiceData }) => {
         return new Date(date).toLocaleDateString('en-GB');
     };
 
-    // Calculate CGST and SGST (always half of GST percent)
-    const gstPercent = invoiceData?.gstPercent || 18;
-    const cgstPercent = gstPercent / 2;
-    const sgstPercent = gstPercent / 2;
-    const totalGST = invoiceData?.totalGST || (invoiceData?.subtotal * gstPercent) / 100;
-    const cgstAmount = totalGST / 2;
-    const sgstAmount = totalGST / 2;
-
-    // Get values with fallbacks
+    // Get values
     const gstin = invoiceData?.gstin || '';
     const mobile = invoiceData?.mobile || '';
     const companyName = invoiceData?.companyName || '';
     const address = invoiceData?.address || '';
 
-    // Get amount in words
-    const amountInWords = numberToWords(invoiceData?.grandTotal || 0);
+    // Get amount in words using calculated grandTotal
+    const amountInWords = numberToWords(grandTotal);
 
     return (
         <Document>
@@ -300,7 +312,7 @@ export const InvoicePDF = ({ invoiceData }) => {
                     </View>
                 </View>
 
-                {/* Company Details - Only show if company name exists */}
+                {/* Company Details */}
                 {companyName && (
                     <>
                         <Text style={styles.companyName}>{companyName}</Text>
@@ -373,7 +385,7 @@ export const InvoicePDF = ({ invoiceData }) => {
                     <View style={styles.summaryRight}>
                         <View style={styles.summaryRow}>
                             <Text style={styles.summaryLabel}>Total</Text>
-                            <Text style={styles.summaryValue}>{formatCurrency(invoiceData?.subtotal)}</Text>
+                            <Text style={styles.summaryValue}>{formatCurrency(subtotal)}</Text>
                         </View>
                         <View style={styles.summaryRow}>
                             <Text style={styles.summaryLabel}>Discount</Text>
@@ -381,7 +393,7 @@ export const InvoicePDF = ({ invoiceData }) => {
                         </View>
                         <View style={styles.summaryRow}>
                             <Text style={styles.summaryLabel}>Total</Text>
-                            <Text style={styles.summaryValue}>{formatCurrency(invoiceData?.subtotal)}</Text>
+                            <Text style={styles.summaryValue}>{formatCurrency(subtotal)}</Text>
                         </View>
 
                         {/* Always show CGST and SGST */}
@@ -401,7 +413,7 @@ export const InvoicePDF = ({ invoiceData }) => {
 
                         <View style={styles.grandTotalRow}>
                             <Text style={styles.summaryLabel}>GRAND TOTAL</Text>
-                            <Text style={styles.summaryValue}>{formatGrandTotal(invoiceData?.grandTotal)}</Text>
+                            <Text style={styles.summaryValue}>{formatGrandTotal(grandTotal)}</Text>
                         </View>
                     </View>
                 </View>
