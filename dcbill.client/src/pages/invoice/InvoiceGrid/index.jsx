@@ -15,47 +15,60 @@ export default function InvoiceGrid() {
     const navigate = useNavigate();
     const { invoices, loading, totalCount } = useSelector(state => state.invoice);
 
-    const [paginationModel, setPaginationModel] = useState({
-        page: 0,
-        pageSize: 10,
-    });
+    const [paginationModel, setPaginationModel] = useState({ page: 0, pageSize: 10 });
     const [searchTerm, setSearchTerm] = useState('');
     const [startDate, setStartDate] = useState(null);
     const [endDate, setEndDate] = useState(null);
     const [exportAnchorEl, setExportAnchorEl] = useState(null);
 
+    const debounceRef = useRef(null);
     const filtersRef = useRef({});
+    const isSearching = useRef(false); // add this
 
-    // Create a function to fetch invoices
-    const fetchInvoicesData = useCallback(() => {
+    const fetchInvoicesData = useCallback((search, page, pageSize, start, end) => {
         const filters = {
-            page: paginationModel.page + 1,
-            pageSize: paginationModel.pageSize,
-            search: searchTerm,
-            startDate: startDate ? startDate.toISOString().split('T')[0] : null,
-            endDate: endDate ? endDate.toISOString().split('T')[0] : null
+            page: page + 1,
+            pageSize,
+            search,
+            startDate: start ? start.toISOString().split('T')[0] : null,
+            endDate: end ? end.toISOString().split('T')[0] : null
         };
 
-        // Only fetch if filters changed
         const filtersStr = JSON.stringify(filters);
         if (filtersStr !== filtersRef.current) {
             filtersRef.current = filtersStr;
             dispatch(fetchInvoices(filters));
         }
-    }, [dispatch, paginationModel.page, paginationModel.pageSize, searchTerm, startDate, endDate]);
+    }, [dispatch]);
 
-    // Fetch when dependencies change
+    // Fetch on pagination/date changes — skip if triggered by search
     useEffect(() => {
-        fetchInvoicesData();
-    }, [fetchInvoicesData]);
+        if (isSearching.current) {
+            isSearching.current = false;
+            return;
+        }
+        fetchInvoicesData(searchTerm, paginationModel.page, paginationModel.pageSize, startDate, endDate);
+    }, [paginationModel, startDate, endDate]);
 
-    // Handle search with debounce
     const handleSearchChange = (value) => {
         setSearchTerm(value);
-        // Reset page after debounce
-        setTimeout(() => {
+
+        if (debounceRef.current) clearTimeout(debounceRef.current);
+
+        if (value === '') {
+            isSearching.current = true;
             setPaginationModel(prev => ({ ...prev, page: 0 }));
-        }, 500);
+            fetchInvoicesData('', 0, paginationModel.pageSize, startDate, endDate);
+            return;
+        }
+
+        if (value.length <= 1) return;
+
+        debounceRef.current = setTimeout(() => {
+            isSearching.current = true;
+            setPaginationModel(prev => ({ ...prev, page: 0 }));
+            fetchInvoicesData(value, 0, paginationModel.pageSize, startDate, endDate);
+        }, 400);
     };
 
     const handleStartDateChange = (date) => {
@@ -69,15 +82,19 @@ export default function InvoiceGrid() {
     };
 
     const handleClearFilters = () => {
+        if (debounceRef.current) clearTimeout(debounceRef.current);
         setSearchTerm('');
         setStartDate(null);
         setEndDate(null);
-        setPaginationModel({ ...paginationModel, page: 0 });
+        setPaginationModel({ page: 0, pageSize: 10 });
+        fetchInvoicesData('', 0, 10, null, null);
     };
 
     const handleAddNewInvoice = () => {
         navigate('/invoice/create');
     };
+
+    // rest of JSX unchanged...
 
     return (
         <LocalizationProvider dateAdapter={AdapterDateFns}>

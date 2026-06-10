@@ -355,15 +355,27 @@ export default function InvoiceItemRow({ index }) {
                         size="small"
                         type="number"
                         value={item?.qty || ''}
-                        onChange={(e) =>
-                            handleChange('qty', e.target.value)
+                        onChange={(e) => handleChange('qty', e.target.value)}
+                        error={!item?.qty || Number(item?.qty) <= 0}
+                        helperText={
+                            item?.qty && Number(item?.qty) <= 0 ? 'Must be > 0' : ''
                         }
-                        sx={textFieldStyles}
+                        sx={{
+                            ...textFieldStyles,
+                            '& .MuiInputBase-root': {
+                                ...textFieldStyles['& .MuiInputBase-root'],
+                                backgroundColor:
+                                    !item?.qty || Number(item?.qty) <= 0
+                                        ? '#fff4f4'
+                                        : 'transparent'
+                            }
+                        }}
                         InputProps={{
                             sx: { fontSize: '0.75rem' }
                         }}
                         inputProps={{
-                            style: { textAlign: 'right' }
+                            style: { textAlign: 'right' },
+                            min: 1
                         }}
                     />
                 </TableCell>

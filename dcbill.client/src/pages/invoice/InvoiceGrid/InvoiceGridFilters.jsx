@@ -78,6 +78,7 @@ export default function InvoiceGridFilters({
                     label="From Date"
                     value={startDate}
                     onChange={(newValue) => setStartDate(newValue)}
+                    format="dd/MM/yyyy"
                     slotProps={{
                         textField: {
                             fullWidth: true,
@@ -93,6 +94,7 @@ export default function InvoiceGridFilters({
                     label="To Date"
                     value={endDate}
                     onChange={(newValue) => setEndDate(newValue)}
+                    format="dd/MM/yyyy"
                     slotProps={{
                         textField: {
                             fullWidth: true,
