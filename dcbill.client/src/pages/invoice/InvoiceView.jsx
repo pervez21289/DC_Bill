@@ -6,7 +6,7 @@ import { Box, Button, Paper, Typography, CircularProgress, Grid, Divider, Table,
 import { ArrowBack as ArrowBackIcon, PictureAsPdf as PdfIcon, Print as PrintIcon } from '@mui/icons-material';
 import { pdf } from '@react-pdf/renderer';
 
-import { fetchInvoiceById } from '../../store/invoiceSlice';
+import { fetchInvoiceById, clearCurrentInvoice } from '../../store/invoiceSlice';
 import { fetchBillingSettings } from '../../store/billingSettingsSlice';
 import { InvoicePDF } from './Pdf/InvoicePDF';
 import InvoicePDFViewer from './Pdf/InvoicePDFViewer';
@@ -39,8 +39,12 @@ export default function InvoiceView() {
 
     useEffect(() => {
         if (id) {
+            dispatch(clearCurrentInvoice()); // ← clear stale data first
             dispatch(fetchInvoiceById(id));
         }
+        return () => {
+            dispatch(clearCurrentInvoice()); // ← also clear on unmount
+        };
     }, [dispatch, id]);
 
     // Convert invoice details to items array for the summary hook
