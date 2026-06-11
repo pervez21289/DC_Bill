@@ -1,11 +1,14 @@
 // assets
 import { DashboardOutlined } from '@ant-design/icons';
-import { LoginOutlined, ProfileOutlined } from '@ant-design/icons';
+import { LoginOutlined, ProfileOutlined, AppstoreAddOutlined, OrderedListOutlined } from '@ant-design/icons';
 // icons
 const icons = {
     DashboardOutlined,
-    ProfileOutlined
+    ProfileOutlined,
+    AppstoreAddOutlined,
+    OrderedListOutlined
 };
+
 
 // ==============================|| MENU ITEMS - DASHBOARD ||============================== //
 
@@ -21,13 +24,22 @@ const dashboard = {
     //   url: '/',
     //   icon: icons.DashboardOutlined,
     //   breadcrumbs: false
-    //   },
+      //   },
       {
-          id: 'invocie',
+          id: 'invoice',
+          title: 'Add Invoice',
+          type: 'item',
+          url: '/invoice/create',
+          icon: icons.AppstoreAddOutlined,
+          breadcrumbs: false,
+          external: true,
+      },
+      {
+          id: 'invoices',
           title: 'Invoices',
           type: 'item',
           url: '/invoices',
-          icon: icons.ProfileOutlined,
+          icon: icons.OrderedListOutlined,
           breadcrumbs: false,
           external: true,
       }
