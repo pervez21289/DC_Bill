@@ -6,16 +6,18 @@ import invoiceReducer from './invoiceSlice';
 import billingReducer from "./billingSettingsSlice";
 import itemMasterReducer from './itemMasterSlice';
 import invoiceItemsReducer from './invoiceItemsSlice';
-import partyReducer from './partySlice'; // Add this
+import partyReducer from './partySlice';
+import authReducer from './authSlice'; // Add this
 
 export const store = configureStore({
     reducer: {
+        auth: authReducer,           // Add this
         customer: customerReducer,
         item: itemReducer,
         invoice: invoiceReducer,
         billingSettings: billingReducer,
         itemMaster: itemMasterReducer,
         invoiceItems: invoiceItemsReducer,
-        parties: partyReducer // Add this
+        parties: partyReducer
     }
 });

@@ -3,6 +3,7 @@ import { lazy } from 'react';
 // project imports
 import Loadable from 'components/Loadable';
 import DashboardLayout from 'layout/Dashboard';
+import ProtectedRoute from './ProtectedRoute';
 
 // render- Dashboard
 const DashboardDefault = Loadable(lazy(() => import('pages/dashboard/default')));
@@ -25,43 +26,48 @@ const InvoiceGrid = Loadable(lazy(() => import('../pages/invoice/InvoiceGrid')))
 
 const MainRoutes = {
     path: '/',
-    element: <DashboardLayout />,
+    element: <ProtectedRoute />,       // 🔒 Guards all children below
     children: [
         {
-            path: '/',
-            element: <DashboardDefault />
-        },
-        {
-            path: 'dashboard',
-            element: <InvoiceGrid />
-        },
-        {
-            path: 'invoices',
-            element: <InvoiceGrid />
-        },
-        {
-            path: 'invoice/create',
-            element: <InvoicePage />
-        },
-        {
-            path: 'invoice/:id',
-            element: <InvoiceView />
-        },
-        {
-            path: 'profile',
-            element: <BillingSettings />
-        },
-        {
-            path: 'color',
-            element: <Color />
-        },
-        {
-            path: 'shadow',
-            element: <Shadow />
-        },
-        {
-            path: 'sample-page',
-            element: <SamplePage />
+            element: <DashboardLayout />,
+            children: [
+                {
+                    path: '/',
+                    element: <DashboardDefault />
+                },
+                {
+                    path: 'dashboard',
+                    element: <InvoiceGrid />
+                },
+                {
+                    path: 'invoices',
+                    element: <InvoiceGrid />
+                },
+                {
+                    path: 'invoice/create',
+                    element: <InvoicePage />
+                },
+                {
+                    path: 'invoice/:id',
+                    element: <InvoiceView />
+                },
+                {
+                    path: 'profile',
+                    element: <BillingSettings />
+                },
+                {
+                    path: 'color',
+                    element: <Color />
+                },
+                {
+                    path: 'shadow',
+                    element: <Shadow />
+                },
+                {
+                    path: 'sample-page',
+                    element: <SamplePage />
+                }
+            ]
         }
     ]
 };

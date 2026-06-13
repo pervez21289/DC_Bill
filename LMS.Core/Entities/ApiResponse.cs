@@ -12,8 +12,9 @@ namespace LMS.Core.Entities
             public string Message { get; set; }
             public T Data { get; set; }
             public string Error { get; set; }
+        public List<string>? Errors { get; set; }
 
-            public static ApiResponse<T> Ok(T data, string message = "Success")
+        public static ApiResponse<T> Ok(T data, string message = "Success")
             {
                 return new ApiResponse<T>
                 {

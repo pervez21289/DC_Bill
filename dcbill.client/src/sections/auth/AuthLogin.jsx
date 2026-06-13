@@ -1,152 +1,211 @@
-import PropTypes from 'prop-types';
-import React from 'react';
-import { Link as RouterLink } from 'react-router-dom';
+import { useState, useEffect } from 'react';
+import { Link, useLocation, useNavigate } from 'react-router-dom';
+import { useDispatch, useSelector } from 'react-redux';
+import { authService } from 'services/authService';
 
 // material-ui
+import Box from '@mui/material/Box';
 import Button from '@mui/material/Button';
 import Checkbox from '@mui/material/Checkbox';
+import CircularProgress from '@mui/material/CircularProgress';
+import FormControl from '@mui/material/FormControl';
 import FormControlLabel from '@mui/material/FormControlLabel';
 import FormHelperText from '@mui/material/FormHelperText';
-import Grid from '@mui/material/Grid';
-import Link from '@mui/material/Link';
+import IconButton from '@mui/material/IconButton';
 import InputAdornment from '@mui/material/InputAdornment';
 import InputLabel from '@mui/material/InputLabel';
 import OutlinedInput from '@mui/material/OutlinedInput';
 import Stack from '@mui/material/Stack';
 import Typography from '@mui/material/Typography';
+import Alert from '@mui/material/Alert';
 
-// third-party
-import * as Yup from 'yup';
-import { Formik } from 'formik';
+// icons
+import Visibility from '@mui/icons-material/Visibility';
+import VisibilityOff from '@mui/icons-material/VisibilityOff';
 
 // project imports
-import IconButton from 'components/@extended/IconButton';
-import AnimateButton from 'components/@extended/AnimateButton';
+import {
+    loginStart,
+    loginSuccess,
+    loginFailure,
+    clearError,
+    selectAuthLoading,
+    selectAuthError
+} from 'store/authSlice';
 
-// assets
-import EyeOutlined from '@ant-design/icons/EyeOutlined';
-import EyeInvisibleOutlined from '@ant-design/icons/EyeInvisibleOutlined';
+export default function AuthLogin() {
+    const dispatch = useDispatch();
+    const navigate = useNavigate();
+    const location = useLocation();
 
-// ============================|| JWT - LOGIN ||============================ //
+    const loading = useSelector(selectAuthLoading);
+    const authError = useSelector(selectAuthError);
 
-export default function AuthLogin({ isDemo = false }) {
-  const [checked, setChecked] = React.useState(false);
+    const from = location.state?.from?.pathname || '/dashboard';
 
-  const [showPassword, setShowPassword] = React.useState(false);
-  const handleClickShowPassword = () => {
-    setShowPassword(!showPassword);
-  };
+    const [emailOrUsername, setEmailOrUsername] = useState('');
+    const [password, setPassword] = useState('');
+    const [rememberMe, setRememberMe] = useState(false);
+    const [showPassword, setShowPassword] = useState(false);
+    const [errors, setErrors] = useState({});
 
-  const handleMouseDownPassword = (event) => {
-    event.preventDefault();
-  };
+    // Load saved credentials if remember me was checked
+    useEffect(() => {
+        const savedIdentifier = localStorage.getItem('remembered_user');
+        if (savedIdentifier) {
+            setEmailOrUsername(savedIdentifier);
+            setRememberMe(true);
+        }
+    }, []);
 
-  return (
-    <>
-      <Formik
-        initialValues={{
-          email: 'info@codedthemes.com',
-          password: '123456',
-          submit: null
-        }}
-        validationSchema={Yup.object().shape({
-          email: Yup.string().email('Must be a valid email').max(255).required('Email is required'),
-          password: Yup.string()
-            .required('Password is required')
-            .test('no-leading-trailing-whitespace', 'Password cannot start or end with spaces', (value) => value === value.trim())
-            .max(10, 'Password must be less than 10 characters')
-        })}
-      >
-        {({ errors, handleBlur, handleChange, touched, values }) => (
-          <form noValidate>
-            <Grid container spacing={3}>
-              <Grid size={12}>
-                <Stack sx={{ gap: 1 }}>
-                  <InputLabel htmlFor="email-login">Email Address</InputLabel>
-                  <OutlinedInput
-                    id="email-login"
-                    type="email"
-                    value={values.email}
-                    name="email"
-                    onBlur={handleBlur}
-                    onChange={handleChange}
-                    placeholder="Enter email address"
-                    fullWidth
-                    error={Boolean(touched.email && errors.email)}
-                  />
-                </Stack>
-                {touched.email && errors.email && (
-                  <FormHelperText error id="standard-weight-helper-text-email-login">
-                    {errors.email}
-                  </FormHelperText>
-                )}
-              </Grid>
-              <Grid size={12}>
-                <Stack sx={{ gap: 1 }}>
-                  <InputLabel htmlFor="password-login">Password</InputLabel>
-                  <OutlinedInput
-                    fullWidth
-                    error={Boolean(touched.password && errors.password)}
-                    id="-password-login"
-                    type={showPassword ? 'text' : 'password'}
-                    value={values.password}
-                    name="password"
-                    onBlur={handleBlur}
-                    onChange={handleChange}
-                    endAdornment={
-                      <InputAdornment position="end">
-                        <IconButton
-                          aria-label="toggle password visibility"
-                          onClick={handleClickShowPassword}
-                          onMouseDown={handleMouseDownPassword}
-                          edge="end"
-                          color="secondary"
-                        >
-                          {showPassword ? <EyeOutlined /> : <EyeInvisibleOutlined />}
-                        </IconButton>
-                      </InputAdornment>
+    const validate = () => {
+        const newErrors = {};
+        if (!emailOrUsername.trim()) {
+            newErrors.emailOrUsername = 'Email or Username is required';
+        }
+        if (!password) {
+            newErrors.password = 'Password is required';
+        } else if (password.length < 6) {
+            newErrors.password = 'Password must be at least 6 characters';
+        }
+        setErrors(newErrors);
+        return Object.keys(newErrors).length === 0;
+    };
+
+    const handleSubmit = async (e) => {
+        e.preventDefault();
+        dispatch(clearError());
+        if (!validate()) return;
+        dispatch(loginStart());
+
+        try {
+            const response = await authService.login(emailOrUsername, password);
+
+            if (response.success) {
+                const { token, user } = response.data;
+
+                dispatch(loginSuccess({
+                    token: token,
+                    user: {
+                        id: user.id,
+                        username: user.username,
+                        email: user.email,
+                        fullName: user.fullName,
+                        company: user.company,
+                        role: user.role,
+                        isActive: user.isActive
                     }
-                    placeholder="Enter password"
-                  />
-                </Stack>
-                {touched.password && errors.password && (
-                  <FormHelperText error id="standard-weight-helper-text-password-login">
-                    {errors.password}
-                  </FormHelperText>
+                }));
+
+                // Store remember me preference
+                if (rememberMe) {
+                    localStorage.setItem('remembered_user', emailOrUsername);
+                } else {
+                    localStorage.removeItem('remembered_user');
+                }
+
+                navigate(from, { replace: true });
+            } else {
+                throw new Error(response.message || 'Login failed');
+            }
+        } catch (err) {
+            dispatch(loginFailure(err.message || 'Login failed. Please try again.'));
+        }
+    };
+
+    const handleEmailOrUsernameChange = (e) => {
+        setEmailOrUsername(e.target.value);
+        if (errors.emailOrUsername) setErrors((prev) => ({ ...prev, emailOrUsername: '' }));
+    };
+
+    const handlePasswordChange = (e) => {
+        setPassword(e.target.value);
+        if (errors.password) setErrors((prev) => ({ ...prev, password: '' }));
+    };
+
+    return (
+        <Box component="form" onSubmit={handleSubmit} noValidate>
+            <Stack spacing={2.5}>
+                {authError && (
+                    <Alert severity="error" onClose={() => dispatch(clearError())}>
+                        {authError}
+                    </Alert>
                 )}
-              </Grid>
-              <Grid sx={{ mt: -1 }} size={12}>
-                <Stack direction="row" sx={{ gap: 2, alignItems: 'baseline', justifyContent: 'space-between' }}>
-                  <FormControlLabel
-                    control={
-                      <Checkbox
-                        checked={checked}
-                        onChange={(event) => setChecked(event.target.checked)}
-                        name="checked"
-                        color="primary"
-                        size="small"
-                      />
-                    }
-                    label={<Typography variant="h6">Keep me sign in</Typography>}
-                  />
-                  <Link variant="h6" component={RouterLink} to="#" color="text.primary">
-                    Forgot Password?
-                  </Link>
+
+                <FormControl fullWidth error={Boolean(errors.emailOrUsername)}>
+                    <InputLabel htmlFor="emailOrUsername">Email or Username</InputLabel>
+                    <OutlinedInput
+                        id="emailOrUsername"
+                        type="text"
+                        value={emailOrUsername}
+                        onChange={handleEmailOrUsernameChange}
+                        label="Email or Username"
+                        autoComplete="username"
+                        autoFocus
+                        disabled={loading}
+                    />
+                    {errors.emailOrUsername && <FormHelperText>{errors.emailOrUsername}</FormHelperText>}
+                </FormControl>
+
+                <FormControl fullWidth error={Boolean(errors.password)}>
+                    <InputLabel htmlFor="password">Password</InputLabel>
+                    <OutlinedInput
+                        id="password"
+                        type={showPassword ? 'text' : 'password'}
+                        value={password}
+                        onChange={handlePasswordChange}
+                        label="Password"
+                        autoComplete="current-password"
+                        disabled={loading}
+                        endAdornment={
+                            <InputAdornment position="end">
+                                <IconButton
+                                    onClick={() => setShowPassword((prev) => !prev)}
+                                    edge="end"
+                                    aria-label={showPassword ? 'Hide password' : 'Show password'}
+                                >
+                                    {showPassword ? <VisibilityOff /> : <Visibility />}
+                                </IconButton>
+                            </InputAdornment>
+                        }
+                    />
+                    {errors.password && <FormHelperText>{errors.password}</FormHelperText>}
+                </FormControl>
+
+                <Stack direction="row" sx={{ alignItems: 'center', justifyContent: 'space-between' }}>
+                    <FormControlLabel
+                        control={
+                            <Checkbox
+                                checked={rememberMe}
+                                onChange={(e) => setRememberMe(e.target.checked)}
+                                color="primary"
+                                size="small"
+                                disabled={loading}
+                            />
+                        }
+                        label={<Typography variant="body2">Remember me</Typography>}
+                    />
+                    <Typography
+                        component={Link}
+                        to="/forgot-password"
+                        variant="body2"
+                        sx={{ textDecoration: 'none', color: 'primary.main' }}
+                    >
+                        Forgot password?
+                    </Typography>
                 </Stack>
-              </Grid>
-              <Grid size={12}>
-                <AnimateButton>
-                  <Button fullWidth size="large" variant="contained" color="primary">
-                    Login
-                  </Button>
-                </AnimateButton>
-              </Grid>
-            </Grid>
-          </form>
-        )}
-      </Formik>
-    </>
-  );
+
+                <Button
+                    type="submit"
+                    variant="contained"
+                    fullWidth
+                    size="large"
+                    disabled={loading}
+                    startIcon={loading ? <CircularProgress size={18} color="inherit" /> : null}
+                >
+                    {loading ? 'Signing in…' : 'Sign in'}
+                </Button>
+            </Stack>
+        </Box>
+    );
 }
-
-AuthLogin.propTypes = { isDemo: PropTypes.bool };

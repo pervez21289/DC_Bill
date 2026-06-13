@@ -4,6 +4,7 @@ using System.Data;
 using System.Text;
 using System.Threading.Tasks;
 using LMS.Core.Entities;
+using LMS.Core.Models;
 using Microsoft.AspNetCore.Http;
 
 namespace LMS.Core.Interfaces
@@ -12,11 +13,11 @@ namespace LMS.Core.Interfaces
     {
         Task<CreateUserResult> RegisterCompanyWithAdminAsync(RegisterRequest request);
         Task<LoginResponse?> LoginAsync(string email, string password);
-        Task<int> CreateUserAsync(User user);
+        Task<int> CreateUserAsync(UpdateUserRequest user);
         Task DeleteUserAsync(int userId);
-        Task<IEnumerable<User>> GetUsersAsync(int CompanyID);
+        Task<IEnumerable<UpdateUserRequest>> GetUsersAsync(int CompanyID);
         Task<IEnumerable<ApiLog>> GetApiLogsAsync(int CompanyId,string search, DateTime? startDate, DateTime? endDate);
-        Task<LoginResponse?> ValidateOTP(User user);
+        Task<LoginResponse?> ValidateOTP(UpdateUserRequest user);
         Task<bool> ForgotPasswordAsync(string email);
         Task<bool> ResetPasswordAsync(string token, string newPassword);
     }

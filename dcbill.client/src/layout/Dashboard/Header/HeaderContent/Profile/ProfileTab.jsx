@@ -8,14 +8,20 @@ import {
   LogoutOutlined,
 } from '@mui/icons-material';
 
-export default function ProfileTab() {
-  const navigate = useNavigate();
+// project imports
+import { logout, selectAuthUser } from 'store/authSlice';
+import { useDispatch, useSelector } from 'react-redux';
 
-  const handleLogout = () => {
-    localStorage.removeItem('accessToken');
-    localStorage.removeItem('refreshToken');
-    navigate('/login');
-  };
+export default function ProfileTab() {
+    const dispatch = useDispatch();
+    const navigate = useNavigate();
+    const user = useSelector(selectAuthUser);
+
+    const handleLogout = () => {
+        dispatch(logout());
+        navigate('/login', { replace: true });
+    };
+
 
   return (
     <List component="nav" sx={{ p: 0, '& .MuiListItemIcon-root': { minWidth: 32 } }}>
