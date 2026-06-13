@@ -49,7 +49,6 @@ export default function AuthLogin() {
     const [showPassword, setShowPassword] = useState(false);
     const [errors, setErrors] = useState({});
 
-    // Load saved credentials if remember me was checked
     useEffect(() => {
         const savedIdentifier = localStorage.getItem('remembered_user');
         if (savedIdentifier) {
@@ -73,17 +72,30 @@ export default function AuthLogin() {
     };
 
     const handleSubmit = async (e) => {
-        e.preventDefault();
+        // Prevent page refresh
+        if (e) {
+            e.preventDefault();
+            e.stopPropagation();
+        }
+
+        // Clear previous errors
         dispatch(clearError());
+
+        // Validate form
         if (!validate()) return;
+
+        // Start loading
         dispatch(loginStart());
 
         try {
+            // Call login - now returns response object (doesn't throw)
             const response = await authService.login(emailOrUsername, password);
 
-            if (response.success) {
+            // Check if login was successful
+            if (response && response.success) {
                 const { token, user } = response.data;
 
+                // Dispatch success
                 dispatch(loginSuccess({
                     token: token,
                     user: {
@@ -97,37 +109,49 @@ export default function AuthLogin() {
                     }
                 }));
 
-                // Store remember me preference
+                // Save remember me preference
                 if (rememberMe) {
                     localStorage.setItem('remembered_user', emailOrUsername);
                 } else {
                     localStorage.removeItem('remembered_user');
                 }
 
+                // Navigate to dashboard
                 navigate(from, { replace: true });
             } else {
-                throw new Error(response.message || 'Login failed');
+                // Show error message from backend
+                const errorMessage = response?.message || 'Invalid email/username or password';
+                dispatch(loginFailure(errorMessage));
             }
-        } catch (err) {
-            dispatch(loginFailure(err.message || 'Login failed. Please try again.'));
+        } catch (error) {
+            // This catch is now for unexpected errors only
+            console.error('Unexpected error:', error);
+            dispatch(loginFailure('An unexpected error occurred. Please try again.'));
         }
     };
 
     const handleEmailOrUsernameChange = (e) => {
         setEmailOrUsername(e.target.value);
         if (errors.emailOrUsername) setErrors((prev) => ({ ...prev, emailOrUsername: '' }));
+        if (authError) dispatch(clearError());
     };
 
     const handlePasswordChange = (e) => {
         setPassword(e.target.value);
         if (errors.password) setErrors((prev) => ({ ...prev, password: '' }));
+        if (authError) dispatch(clearError());
     };
 
     return (
         <Box component="form" onSubmit={handleSubmit} noValidate>
             <Stack spacing={2.5}>
+                {/* Display error from backend */}
                 {authError && (
-                    <Alert severity="error" onClose={() => dispatch(clearError())}>
+                    <Alert
+                        severity="error"
+                        onClose={() => dispatch(clearError())}
+                        sx={{ mb: 2 }}
+                    >
                         {authError}
                     </Alert>
                 )}
@@ -144,7 +168,9 @@ export default function AuthLogin() {
                         autoFocus
                         disabled={loading}
                     />
-                    {errors.emailOrUsername && <FormHelperText>{errors.emailOrUsername}</FormHelperText>}
+                    {errors.emailOrUsername && (
+                        <FormHelperText>{errors.emailOrUsername}</FormHelperText>
+                    )}
                 </FormControl>
 
                 <FormControl fullWidth error={Boolean(errors.password)}>
@@ -163,16 +189,19 @@ export default function AuthLogin() {
                                     onClick={() => setShowPassword((prev) => !prev)}
                                     edge="end"
                                     aria-label={showPassword ? 'Hide password' : 'Show password'}
+                                    disabled={loading}
                                 >
                                     {showPassword ? <VisibilityOff /> : <Visibility />}
                                 </IconButton>
                             </InputAdornment>
                         }
                     />
-                    {errors.password && <FormHelperText>{errors.password}</FormHelperText>}
+                    {errors.password && (
+                        <FormHelperText>{errors.password}</FormHelperText>
+                    )}
                 </FormControl>
 
-                <Stack direction="row" sx={{ alignItems: 'center', justifyContent: 'space-between' }}>
+                <Stack direction="row" sx={{ alignItems: 'center', justifyContent: 'space-between', mt: 1 }}>
                     <FormControlLabel
                         control={
                             <Checkbox
@@ -202,8 +231,9 @@ export default function AuthLogin() {
                     size="large"
                     disabled={loading}
                     startIcon={loading ? <CircularProgress size={18} color="inherit" /> : null}
+                    sx={{ mt: 2 }}
                 >
-                    {loading ? 'Signing in…' : 'Sign in'}
+                    {loading ? 'Signing in...' : 'Sign in'}
                 </Button>
             </Stack>
         </Box>

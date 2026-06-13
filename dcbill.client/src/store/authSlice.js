@@ -1,3 +1,4 @@
+// src/store/authSlice.js
 import { createSlice } from '@reduxjs/toolkit';
 
 const TOKEN_KEY = 'auth_token';
