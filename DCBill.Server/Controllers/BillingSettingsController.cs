@@ -1,11 +1,12 @@
 using Microsoft.AspNetCore.Mvc;
 using LMS.Core.Entities;
 using LMS.Core.Interfaces;
+using Microsoft.AspNetCore.Authorization;
 
 namespace DCBill.Server.Controllers
 {
 
-
+    [Authorize]
     [ApiController]
     [Route("api/[controller]")]
     public class BillingSettingsController : ControllerBase

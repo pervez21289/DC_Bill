@@ -9,7 +9,7 @@ namespace LMS.API.Repositories.Interfaces
         /// Get all invoices
         /// </summary>
         Task<(IEnumerable<InvoiceMaster> Invoices, int TotalCount)> GetAllAsync(
-            int pageNumber, int pageSize, string search, DateTime? startDate, DateTime? endDate);
+            int pageNumber, int pageSize, string search, DateTime? startDate, DateTime? endDate, int companyId);
 
         /// <summary>
         /// Get invoice by ID with details

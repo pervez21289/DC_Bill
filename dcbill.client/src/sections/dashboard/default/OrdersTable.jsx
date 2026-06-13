@@ -1,4 +1,6 @@
-import PropTypes from 'prop-types';
+import { useEffect } from 'react';
+import { useDispatch, useSelector } from 'react-redux';
+import { useNavigate } from 'react-router-dom';
 
 // material-ui
 import Link from '@mui/material/Link';
@@ -11,194 +13,129 @@ import TableHead from '@mui/material/TableHead';
 import TableRow from '@mui/material/TableRow';
 import Typography from '@mui/material/Typography';
 import Box from '@mui/material/Box';
+import CircularProgress from '@mui/material/CircularProgress';
 
 // third-party
 import { NumericFormat } from 'react-number-format';
 
 // project imports
 import Dot from 'components/@extended/Dot';
-
-function createData(tracking_no, name, fat, carbs, protein) {
-  return { tracking_no, name, fat, carbs, protein };
-}
-
-const rows = [
-  createData(84564564, 'Camera Lens', 40, 2, 40570),
-  createData(98764564, 'Laptop', 300, 0, 180139),
-  createData(98756325, 'Mobile', 355, 1, 90989),
-  createData(98652366, 'Handset', 50, 1, 10239),
-  createData(13286564, 'Computer Accessories', 100, 1, 83348),
-  createData(86739658, 'TV', 99, 0, 410780),
-  createData(13256498, 'Keyboard', 125, 2, 70999),
-  createData(98753263, 'Mouse', 89, 2, 10570),
-  createData(98753275, 'Desktop', 185, 1, 98063),
-  createData(98753291, 'Chair', 100, 0, 14001)
-];
-
-function descendingComparator(a, b, orderBy) {
-  if (b[orderBy] < a[orderBy]) {
-    return -1;
-  }
-  if (b[orderBy] > a[orderBy]) {
-    return 1;
-  }
-  return 0;
-}
-
-function getComparator(order, orderBy) {
-  return order === 'desc' ? (a, b) => descendingComparator(a, b, orderBy) : (a, b) => -descendingComparator(a, b, orderBy);
-}
-
-function stableSort(array, comparator) {
-  const stabilizedThis = [...array.map((el, index) => [el, index])];
-  stabilizedThis.sort((a, b) => {
-    const order = comparator(a[0], b[0]);
-    if (order !== 0) {
-      return order;
-    }
-    return a[1] - b[1];
-  });
-  return stabilizedThis.map((el) => el[0]);
-}
-
-const headCells = [
-  {
-    id: 'tracking_no',
-    align: 'left',
-    disablePadding: false,
-    label: 'Tracking No.'
-  },
-  {
-    id: 'name',
-    align: 'left',
-    disablePadding: true,
-    label: 'Product Name'
-  },
-  {
-    id: 'fat',
-    align: 'right',
-    disablePadding: false,
-    label: 'Total Order'
-  },
-  {
-    id: 'carbs',
-    align: 'left',
-    disablePadding: false,
-
-    label: 'Status'
-  },
-  {
-    id: 'protein',
-    align: 'right',
-    disablePadding: false,
-    label: 'Total Amount'
-  }
-];
-
-// ==============================|| ORDER TABLE - HEADER ||============================== //
-
-function OrderTableHead({ order, orderBy }) {
-  return (
-    <TableHead>
-      <TableRow>
-        {headCells.map((headCell) => (
-          <TableCell
-            key={headCell.id}
-            align={headCell.align}
-            padding={headCell.disablePadding ? 'none' : 'normal'}
-            sortDirection={orderBy === headCell.id ? order : false}
-          >
-            {headCell.label}
-          </TableCell>
-        ))}
-      </TableRow>
-    </TableHead>
-  );
-}
+import { fetchRecentInvoices, selectRecentInvoices, selectReportLoading } from 'store/reportSlice';
 
 function OrderStatus({ status }) {
-  let color;
-  let title;
+    let color;
+    let title;
 
-  switch (status) {
-    case 0:
-      color = 'warning';
-      title = 'Pending';
-      break;
-    case 1:
-      color = 'success';
-      title = 'Approved';
-      break;
-    case 2:
-      color = 'error';
-      title = 'Rejected';
-      break;
-    default:
-      color = 'primary';
-      title = 'None';
-  }
+    switch (status?.toLowerCase()) {
+        case 'paid':
+            color = 'success';
+            title = 'Paid';
+            break;
+        case 'pending':
+            color = 'warning';
+            title = 'Pending';
+            break;
+        case 'cancelled':
+            color = 'error';
+            title = 'Cancelled';
+            break;
+        default:
+            color = 'primary';
+            title = status || 'Draft';
+    }
 
-  return (
-    <Stack direction="row" sx={{ gap: 1, alignItems: 'center' }}>
-      <Dot color={color} />
-      <Typography>{title}</Typography>
-    </Stack>
-  );
+    return (
+        <Stack direction="row" sx={{ gap: 1, alignItems: 'center' }}>
+            <Dot color={color} />
+            <Typography>{title}</Typography>
+        </Stack>
+    );
 }
-
-// ==============================|| ORDER TABLE ||============================== //
 
 export default function OrderTable() {
-  const order = 'asc';
-  const orderBy = 'tracking_no';
+    const dispatch = useDispatch();
+    const navigate = useNavigate();
+    const recentInvoices = useSelector(selectRecentInvoices);
+    const loading = useSelector(selectReportLoading);
 
-  return (
-    <Box>
-      <TableContainer
-        sx={{
-          width: '100%',
-          overflowX: 'auto',
-          position: 'relative',
-          display: 'block',
-          maxWidth: '100%',
-          '& td, & th': { whiteSpace: 'nowrap' }
-        }}
-      >
-        <Table aria-labelledby="tableTitle">
-          <OrderTableHead order={order} orderBy={orderBy} />
-          <TableBody>
-            {stableSort(rows, getComparator(order, orderBy)).map((row, index) => {
-              const labelId = `enhanced-table-checkbox-${index}`;
+    useEffect(() => {
+        dispatch(fetchRecentInvoices({ count: 10 }));
+    }, [dispatch]);
 
-              return (
-                <TableRow
-                  hover
-                  role="checkbox"
-                  sx={{ '&:last-child td, &:last-child th': { border: 0 } }}
-                  tabIndex={-1}
-                  key={row.tracking_no}
-                >
-                  <TableCell component="th" id={labelId} scope="row">
-                    <Link sx={{ color: 'secondary.main' }}>{row.tracking_no}</Link>
-                  </TableCell>
-                  <TableCell>{row.name}</TableCell>
-                  <TableCell align="right">{row.fat}</TableCell>
-                  <TableCell>
-                    <OrderStatus status={row.carbs} />
-                  </TableCell>
-                  <TableCell align="right">
-                    <NumericFormat value={row.protein} displayType="text" thousandSeparator prefix="$" />
-                  </TableCell>
-                </TableRow>
-              );
-            })}
-          </TableBody>
-        </Table>
-      </TableContainer>
-    </Box>
-  );
+    const handleRowClick = (invoiceId) => {
+        navigate(`/invoice/${invoiceId}`);
+    };
+
+    if (loading) {
+        return (
+            <Box sx={{ display: 'flex', justifyContent: 'center', alignItems: 'center', height: 400 }}>
+                <CircularProgress />
+            </Box>
+        );
+    }
+
+    return (
+        <Box>
+            <TableContainer
+                sx={{
+                    width: '100%',
+                    overflowX: 'auto',
+                    position: 'relative',
+                    display: 'block',
+                    maxWidth: '100%',
+                    '& td, & th': { whiteSpace: 'nowrap' }
+                }}
+            >
+                <Table aria-labelledby="tableTitle">
+                    <TableHead>
+                        <TableRow>
+                            <TableCell>Invoice No.</TableCell>
+                            <TableCell>Customer Name</TableCell>
+                            <TableCell align="right">Items</TableCell>
+                            <TableCell>Status</TableCell>
+                            <TableCell align="right">Total Amount</TableCell>
+                        </TableRow>
+                    </TableHead>
+                    <TableBody>
+                        {recentInvoices.map((row, index) => (
+                            <TableRow
+                                hover
+                                onClick={() => handleRowClick(row.id)}
+                                sx={{
+                                    '&:last-child td, &:last-child th': { border: 0 },
+                                    cursor: 'pointer'
+                                }}
+                                tabIndex={-1}
+                                key={row.invoiceNo}
+                            >
+                                <TableCell component="th" scope="row">
+                                    <Link sx={{ color: 'secondary.main' }}>{row.invoiceNo}</Link>
+                                </TableCell>
+                                <TableCell>{row.partyName}</TableCell>
+                                <TableCell align="right">{row.itemCount}</TableCell>
+                                <TableCell>
+                                    <OrderStatus status={row.status} />
+                                </TableCell>
+                                <TableCell align="right">
+                                    <NumericFormat
+                                        value={row.totalAmount}
+                                        displayType="text"
+                                        thousandSeparator
+                                        prefix="₹"
+                                    />
+                                </TableCell>
+                            </TableRow>
+                        ))}
+                        {recentInvoices.length === 0 && (
+                            <TableRow>
+                                <TableCell colSpan={5} align="center" sx={{ py: 4 }}>
+                                    <Typography sx={{ color: 'text.secondary' }}>No invoices found</Typography>
+                                </TableCell>
+                            </TableRow>
+                        )}
+                    </TableBody>
+                </Table>
+            </TableContainer>
+        </Box>
+    );
 }
-
-OrderTableHead.propTypes = { order: PropTypes.any, orderBy: PropTypes.string };
-
-OrderStatus.propTypes = { status: PropTypes.number };

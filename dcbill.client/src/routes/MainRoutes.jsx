@@ -7,6 +7,7 @@ import ProtectedRoute from './ProtectedRoute';
 
 // render- Dashboard
 const DashboardDefault = Loadable(lazy(() => import('pages/dashboard/default')));
+// const DashboardDefault = Loadable(lazy(() => import('sections/dashboard/default/Dashboard')));
 
 // render - color
 const Color = Loadable(lazy(() => import('pages/component-overview/color')));

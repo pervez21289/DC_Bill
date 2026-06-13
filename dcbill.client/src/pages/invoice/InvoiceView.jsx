@@ -118,6 +118,7 @@ export default function InvoiceView() {
     const [fetchInitiated, setFetchInitiated] = useState(false);
 
     useEffect(() => {
+        debugger;
         if (!billingData && !billingLoading) dispatch(fetchBillingSettings());
     }, [dispatch, billingData, billingLoading]);
 

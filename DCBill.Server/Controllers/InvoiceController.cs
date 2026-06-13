@@ -1,21 +1,22 @@
-using LMS.Core.Entities;
-using LMS.API.Repositories;
 using LMS.API.Repositories.Interfaces;
 using LMS.Core.Entities;
+using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
-using System.Threading.Tasks;
 
 namespace LMS.API.Controllers
 {
+    [Authorize]
     [Route("api/[controller]")]
     [ApiController]
     public class InvoiceController : ControllerBase
     {
         private readonly IInvoiceRepository _invoiceRepository;
+        private readonly CompanyResolver _companyResolver;
 
-        public InvoiceController(IInvoiceRepository invoiceRepository)
+        public InvoiceController(IInvoiceRepository invoiceRepository, CompanyResolver companyResolver)
         {
             _invoiceRepository = invoiceRepository;
+            _companyResolver = companyResolver;
         }
 
         [HttpGet]
@@ -29,7 +30,7 @@ namespace LMS.API.Controllers
             try
             {
                 (IEnumerable<InvoiceMaster> invoices, int totalCount) = await _invoiceRepository.GetAllAsync(
-                    page, pageSize, search, startDate, endDate);
+                    page, pageSize, search, startDate, endDate, _companyResolver.CurrentCompanyId);
 
                 return Ok(ApiResponse<object>.Ok(new
                 {
@@ -74,6 +75,7 @@ namespace LMS.API.Controllers
                 }
 
                 // Create Invoice Master
+                request.CompanyId = _companyResolver.CurrentCompanyId;
                 var invoiceId = await _invoiceRepository.CreateInvoiceAsync(request);
 
                 if (invoiceId <= 0)

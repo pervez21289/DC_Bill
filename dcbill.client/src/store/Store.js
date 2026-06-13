@@ -8,6 +8,7 @@ import itemMasterReducer from './itemMasterSlice';
 import invoiceItemsReducer from './invoiceItemsSlice';
 import partyReducer from './partySlice';
 import authReducer from './authSlice'; // Add this
+import reportReducer from './reportSlice'; // Add this
 
 export const store = configureStore({
     reducer: {
@@ -18,6 +19,7 @@ export const store = configureStore({
         billingSettings: billingReducer,
         itemMaster: itemMasterReducer,
         invoiceItems: invoiceItemsReducer,
-        parties: partyReducer
+        parties: partyReducer,
+        report: reportReducer
     }
 });

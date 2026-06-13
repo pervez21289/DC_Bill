@@ -76,10 +76,11 @@ export default function Profile() {
 
     useEffect(() => {
         // Fetch billing settings if not already loaded
+     
         if (!billingData && !billingLoading) {
             dispatch(fetchBillingSettings());
         }
-    }, [dispatch, billingData, billingLoading]);
+    }, [dispatch]);
 
     const handleToggle = () => {
         setOpen((prevOpen) => !prevOpen);

@@ -9,7 +9,7 @@ namespace LMS.Repository.Repo
     public class InvoiceRepository : BaseRepository, IInvoiceRepository
     {
         public async Task<(IEnumerable<InvoiceMaster> Invoices, int TotalCount)> GetAllAsync(
-            int pageNumber, int pageSize, string search, DateTime? startDate, DateTime? endDate)
+            int pageNumber, int pageSize, string search, DateTime? startDate, DateTime? endDate, int companyId)
         {
             var parameters = new
             {
@@ -17,7 +17,8 @@ namespace LMS.Repository.Repo
                 PageSize = pageSize,
                 Search = string.IsNullOrEmpty(search) ? null : search,
                 StartDate = startDate,
-                EndDate = endDate
+                EndDate = endDate,
+                CompanyId = companyId
             };
 
             var sql = "USP_GetAllInvoices";
@@ -73,6 +74,7 @@ namespace LMS.Repository.Repo
                 request.Subtotal,
                 request.GSTPercent,
                 request.Notes,
+                request.CompanyId
                 
             };
 

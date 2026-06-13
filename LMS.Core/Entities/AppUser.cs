@@ -16,6 +16,7 @@ namespace LMS.Core.Entities
         public DateTime? LastLogin { get; set; }
         public DateTime CreatedAt { get; set; }
         public DateTime UpdatedAt { get; set; }
+        public int CompanyId { get; set; }
     }
 
     public class RefreshToken

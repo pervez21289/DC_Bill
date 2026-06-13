@@ -253,7 +253,7 @@ namespace LMS.API.Controllers
                 new Claim(ClaimTypes.Email, user.Email),
                 new Claim(ClaimTypes.GivenName, user.FullName),
                 new Claim(ClaimTypes.Role, user.Role ?? "User"),
-                new Claim("Company", user.Company ?? "")
+                new Claim("CompanyId", user.CompanyId.ToString())
             };
 
             var tokenDescriptor = new SecurityTokenDescriptor

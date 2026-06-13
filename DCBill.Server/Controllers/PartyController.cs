@@ -1,9 +1,11 @@
 using LMS.Core.Entities;
 using LMS.Core.Interfaces;
+using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
 
 namespace LMS.API.Controllers
 {
+    [Authorize]
     [Route("api/[controller]")]
     [ApiController]
     public class PartyController : ControllerBase

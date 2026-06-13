@@ -20,6 +20,9 @@ builder.Services.AddScoped<IInvoiceRepository, InvoiceRepository>();
 builder.Services.AddScoped<IUserRepository, UserRepository>();
 builder.Services.AddSingleton<BaseRepository>();
 builder.Services.AddScoped<IPasswordService, PasswordService>();
+builder.Services.AddScoped<IReportRepository, ReportRepository>();
+builder.Services.AddHttpContextAccessor();
+builder.Services.AddScoped<CompanyResolver>();
 builder.Services.AddControllers();
 
 // Add CORS for React app

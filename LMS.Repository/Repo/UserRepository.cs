@@ -168,7 +168,8 @@ namespace LMS.API.Repositories
                 FullName = result.FullName,
                 Company = result.Company,
                 Role = result.Role,
-                IsActive = result.IsActive
+                IsActive = result.IsActive,
+                CompanyId=result.CompanyId
             };
 
             return (user, result.PasswordHash, result.IsActive, result.Message);

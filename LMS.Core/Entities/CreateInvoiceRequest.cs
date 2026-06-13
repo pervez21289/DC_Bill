@@ -24,6 +24,7 @@ namespace LMS.Core.Entities
         public decimal TotalGST { get; set; }
         public decimal GrandTotal { get; set; }
         public string Notes { get; set; }
+        public int CompanyId { get; set; }
         public List<CreateInvoiceDetailRequest> Details { get; set; }
     }
 
