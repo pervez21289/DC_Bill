@@ -1,6 +1,6 @@
 // components/InvoiceGrid/InvoiceGridColumns.jsx
 import { Box, Typography, Chip, IconButton } from '@mui/material';
-import { Visibility as ViewIcon, Print as PrintIcon } from '@mui/icons-material';
+import { Visibility as ViewIcon } from '@mui/icons-material';
 import { useNavigate } from 'react-router-dom';
 import InvoicePDFButton from './../Pdf/InvoicePDFButton';
 
@@ -16,39 +16,35 @@ const formatDate = (date) => {
     return new Date(date).toLocaleDateString('en-GB');
 };
 
-// Helper function to get payment status color and label
 const getPaymentStatusConfig = (paymentStatus) => {
-    // Payment status mapping: 1 = Paid, 2 = Partially Paid, 3 = Not Paid
     switch (paymentStatus) {
-        case 1:
-            return {
-                label: 'Paid',
-                color: 'success',
-                bgColor: '#e8f5e9',
-                textColor: '#2e7d32'
-            };
-        case 2:
-            return {
-                label: 'Partially Paid',
-                color: 'warning',
-                bgColor: '#fff3e0',
-                textColor: '#ed6c02'
-            };
-        case 3:
-            return {
-                label: 'Not Paid',
-                color: 'error',
-                bgColor: '#ffebee',
-                textColor: '#d32f2f'
-            };
-        default:
-            return {
-                label: 'Not Paid',
-                color: 'error',
-                bgColor: '#ffebee',
-                textColor: '#d32f2f'
-            };
+        case 1: return { label: 'Paid', bgColor: '#e8f5e9', textColor: '#2e7d32' };
+        case 2: return { label: 'Partially Paid', bgColor: '#fff3e0', textColor: '#ed6c02' };
+        case 3: return { label: 'Not Paid', bgColor: '#ffebee', textColor: '#d32f2f' };
+        default: return { label: 'Not Paid', bgColor: '#ffebee', textColor: '#d32f2f' };
     }
+};
+
+// Wraps every cell so its content is vertically + horizontally aligned
+// DataGrid cells are display:flex but don't always center children by default
+const Cell = ({ children, justify = 'flex-start' }) => (
+    <Box sx={{
+        display: 'flex',
+        alignItems: 'center',
+        justifyContent: justify,
+        width: '100%',
+        height: '100%',
+    }}>
+        {children}
+    </Box>
+);
+
+const cellText = {
+    fontSize: '0.78rem',
+    lineHeight: 1,          // prevents text from pushing the row taller
+    whiteSpace: 'nowrap',
+    overflow: 'hidden',
+    textOverflow: 'ellipsis',
 };
 
 export const useInvoiceColumns = (billingData = null) => {
@@ -58,140 +54,167 @@ export const useInvoiceColumns = (billingData = null) => {
         {
             field: 'sno',
             headerName: 'S.No',
-            width: 70,
+            width: 65,
             headerAlign: 'center',
             align: 'center',
-            renderCell: (params) => params.api.getAllRowIds().indexOf(params.id) + 1
+            renderCell: (params) => (
+                <Cell justify="center">
+                    <Typography sx={cellText}>
+                        {params.api.getAllRowIds().indexOf(params.id) + 1}
+                    </Typography>
+                </Cell>
+            ),
         },
         {
             field: 'invoiceNo',
             headerName: 'Invoice No',
             width: 150,
             headerAlign: 'center',
+            align: 'center',
             renderCell: (params) => (
-                <Typography sx={{ fontWeight: 'bold', fontSize: '0.75rem' }}>
-                    {params.value}
-                </Typography>
-            )
+                <Cell justify="center">
+                    <Typography sx={{ ...cellText, fontWeight: 700 }}>
+                        {params.value}
+                    </Typography>
+                </Cell>
+            ),
         },
         {
             field: 'invoiceDate',
             headerName: 'Date',
             width: 110,
             headerAlign: 'center',
+            align: 'center',
             renderCell: (params) => (
-                <Typography sx={{ fontSize: '0.75rem' }}>
-                    {formatDate(params.value)}
-                </Typography>
-            )
+                <Cell justify="center">
+                    <Typography sx={cellText}>
+                        {formatDate(params.value)}
+                    </Typography>
+                </Cell>
+            ),
         },
         {
             field: 'partyName',
             headerName: 'Party Name',
-            width: 250,
-            headerAlign: 'center',
+            flex: 1,
+            minWidth: 200,
+            headerAlign: 'left',
+            align: 'left',
             renderCell: (params) => (
-                <Typography sx={{ fontSize: '0.75rem' }}>
-                    {params.value}
-                </Typography>
-            )
+                <Cell justify="flex-start">
+                    <Typography sx={cellText} title={params.value}>
+                        {params.value}
+                    </Typography>
+                </Cell>
+            ),
         },
         {
             field: 'partyGSTIN',
             headerName: 'Party GSTIN',
-            width: 150,
+            width: 155,
             headerAlign: 'center',
+            align: 'center',
             renderCell: (params) => (
-                <Typography sx={{ fontSize: '0.75rem' }}>
-                    {params.value || '—'}
-                </Typography>
-            )
+                <Cell justify="center">
+                    <Typography sx={{ ...cellText, fontFamily: 'monospace' }}>
+                        {params.value || '—'}
+                    </Typography>
+                </Cell>
+            ),
         },
         {
             field: 'subtotal',
             headerName: 'Subtotal',
-            width: 120,
+            width: 125,
             headerAlign: 'right',
             align: 'right',
             renderCell: (params) => (
-                <Typography sx={{ fontSize: '0.75rem' }}>
-                    {formatCurrency(params.value)}
-                </Typography>
-            )
+                <Cell justify="flex-end">
+                    <Typography sx={{ ...cellText, fontVariantNumeric: 'tabular-nums' }}>
+                        {formatCurrency(params.value)}
+                    </Typography>
+                </Cell>
+            ),
         },
         {
             field: 'totalGST',
             headerName: 'GST',
-            width: 100,
+            width: 105,
             headerAlign: 'right',
             align: 'right',
             renderCell: (params) => (
-                <Typography sx={{ fontSize: '0.75rem' }}>
-                    {formatCurrency(params.value)}
-                </Typography>
-            )
+                <Cell justify="flex-end">
+                    <Typography sx={{ ...cellText, fontVariantNumeric: 'tabular-nums' }}>
+                        {formatCurrency(params.value)}
+                    </Typography>
+                </Cell>
+            ),
         },
         {
             field: 'grandTotal',
             headerName: 'Grand Total',
-            width: 130,
+            width: 135,
             headerAlign: 'right',
             align: 'right',
             renderCell: (params) => (
-                <Typography sx={{ fontSize: '0.75rem', fontWeight: 'bold' }}>
-                    {formatCurrency(params.value)}
-                </Typography>
-            )
+                <Cell justify="flex-end">
+                    <Typography sx={{ ...cellText, fontWeight: 700, fontVariantNumeric: 'tabular-nums' }}>
+                        {formatCurrency(params.value)}
+                    </Typography>
+                </Cell>
+            ),
         },
         {
             field: 'paymentStatus',
-            headerName: 'Payment Status',
-            width: 130,
+            headerName: 'Status',
+            width: 125,
             headerAlign: 'center',
             align: 'center',
             renderCell: (params) => {
-                const statusConfig = getPaymentStatusConfig(params.value);
+                const s = getPaymentStatusConfig(params.value);
                 return (
-                    <Chip
-                        label={statusConfig.label}
-                        size="small"
-                        sx={{
-                            fontSize: '0.7rem',
-                            bgcolor: statusConfig.bgColor,
-                            color: statusConfig.textColor,
-                            height: '24px',
-                            fontWeight: 500
-                        }}
-                    />
+                    <Cell justify="center">
+                        <Chip
+                            label={s.label}
+                            size="small"
+                            sx={{
+                                fontSize: '0.7rem',
+                                fontWeight: 600,
+                                bgcolor: s.bgColor,
+                                color: s.textColor,
+                                height: 22,
+                                '& .MuiChip-label': { px: 1 },
+                            }}
+                        />
+                    </Cell>
                 );
-            }
+            },
         },
         {
             field: 'actions',
             headerName: 'Actions',
-            width: 120,
+            width: 100,
             headerAlign: 'center',
             align: 'center',
             sortable: false,
             filterable: false,
             renderCell: (params) => (
-                <Box sx={{ display: 'flex', gap: 0.5, justifyContent: 'center' }}>
+                <Cell justify="center">
                     <IconButton
                         size="small"
                         onClick={() => navigate(`/invoice/${params.row.id}`)}
-                        sx={{ padding: 0.5 }}
+                        sx={{ p: 0.5 }}
                         title="View Invoice"
                     >
-                        <ViewIcon sx={{ fontSize: '1rem' }} />
+                        <ViewIcon sx={{ fontSize: '1.1rem' }} />
                     </IconButton>
-
                     <InvoicePDFButton
                         invoiceId={params.row.id}
                         invoiceNo={params.row.invoiceNo}
                         billingData={billingData}
                     />
-                </Box>
-            )
-        }
+                </Cell>
+            ),
+        },
     ];
 };

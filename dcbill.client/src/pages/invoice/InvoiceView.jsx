@@ -14,7 +14,10 @@ import {
     ReceiptLong as ReceiptIcon,
     Person as PersonIcon,
     CalendarToday as CalendarIcon,
-    Tag as TagIcon
+    Tag as TagIcon,
+    CheckCircle as PaidIcon,
+    Schedule as PartialIcon,
+    Cancel as UnpaidIcon,
 } from '@mui/icons-material';
 import { pdf } from '@react-pdf/renderer';
 
@@ -33,6 +36,14 @@ const T = {
     faint: '#94a3b8', green: '#16a34a', greenSoft: '#dcfce7',
     tableHead: '#f8faff', stripe: '#fafcff',
 };
+
+// Payment status: 1 = Paid, 2 = Partially Paid, 3 = Not Paid
+const PAYMENT_STATUS = {
+    1: { label: 'Paid', bg: '#dcfce7', color: '#15803d', border: '#86efac', Icon: PaidIcon },
+    2: { label: 'Partially Paid', bg: '#fef3c7', color: '#b45309', border: '#fcd34d', Icon: PartialIcon },
+    3: { label: 'Not Paid', bg: '#fee2e2', color: '#b91c1c', border: '#fca5a5', Icon: UnpaidIcon },
+};
+const getPaymentStatus = (val) => PAYMENT_STATUS[val] ?? PAYMENT_STATUS[3];
 
 const sx = {
     page: { minHeight: '100vh', bgcolor: T.bg, p: { xs: 2, sm: 3 } },
@@ -104,6 +115,23 @@ function PageLoader({ message = 'Loading…' }) {
     );
 }
 
+// Inline payment status badge shown in the header band
+function PaymentStatusBadge({ status }) {
+    const s = getPaymentStatus(status);
+    return (
+        <Box sx={{
+            display: 'inline-flex', alignItems: 'center', gap: 0.6,
+            bgcolor: s.bg, border: `1px solid ${s.border}`,
+            borderRadius: '6px', px: 1.4, py: 0.45,
+        }}>
+            <s.Icon sx={{ fontSize: '0.85rem', color: s.color }} />
+            <Typography sx={{ fontSize: '0.78rem', fontWeight: 700, color: s.color, lineHeight: 1 }}>
+                {s.label}
+            </Typography>
+        </Box>
+    );
+}
+
 export default function InvoiceView() {
     const dispatch = useDispatch();
     const navigate = useNavigate();
@@ -112,9 +140,6 @@ export default function InvoiceView() {
     const { currentInvoice, loading } = useSelector(s => s.invoice);
     const { data: billingData, loading: billingLoading } = useSelector(s => s.billingSettings);
 
-    // Tracks whether the fetch for the current id has settled (resolved or rejected).
-    // Stays false from the moment clearCurrentInvoice fires until the thunk finishes,
-    // so we never briefly flash "Invoice not found" between the clear and the response.
     const [fetchInitiated, setFetchInitiated] = useState(false);
 
     useEffect(() => {
@@ -180,14 +205,10 @@ export default function InvoiceView() {
         if (currentInvoice) { await getPdfData(currentInvoice); setPdfOpen(true); }
     };
 
-    // ── Guards ──────────────────────────────────────────────────────────────
-    // Show loader while billing is loading, the invoice fetch is in flight,
-    // OR fetchInitiated is still false (i.e. we just cleared and haven't resolved yet).
     if (loading || billingLoading || !fetchInitiated) {
         return <PageLoader message="Loading invoice…" />;
     }
 
-    // Only show "not found" once fetch has settled with no result
     if (!currentInvoice) {
         return (
             <Box sx={{ p: 4, textAlign: 'center', bgcolor: T.bg, minHeight: '100vh' }}>
@@ -252,6 +273,7 @@ export default function InvoiceView() {
 
                     {/* Header band */}
                     <Box sx={sx.docHeader}>
+                        {/* Left: company info */}
                         <Box>
                             <Box sx={{ display: 'flex', alignItems: 'center', gap: 1, mb: 1.5 }}>
                                 <Box sx={{ width: 32, height: 32, bgcolor: 'rgba(255,255,255,0.15)', borderRadius: '8px', display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
@@ -272,7 +294,9 @@ export default function InvoiceView() {
                                 </Typography>
                             )}
                         </Box>
-                        <Box sx={{ display: 'flex', flexDirection: 'column', alignItems: { xs: 'flex-start', sm: 'flex-end' }, gap: 1.5 }}>
+
+                        {/* Right: invoice meta + payment status */}
+                        <Box sx={{ display: 'flex', flexDirection: 'column', alignItems: { xs: 'flex-start', sm: 'flex-end' }, gap: 1.2 }}>
                             <Box sx={sx.pill}>
                                 <TagIcon sx={{ fontSize: '0.8rem', color: 'rgba(255,255,255,0.6)' }} />
                                 <Typography sx={{ fontSize: '0.82rem', fontWeight: 700, color: '#fff' }}>{currentInvoice.invoiceNo}</Typography>
@@ -284,8 +308,8 @@ export default function InvoiceView() {
                             {billingData?.gstin && (
                                 <Typography sx={{ fontSize: '0.72rem', color: 'rgba(255,255,255,0.5)' }}>GSTIN: {billingData.gstin}</Typography>
                             )}
-                            <Chip label="Paid" size="small"
-                                sx={{ bgcolor: T.greenSoft, color: T.green, fontWeight: 700, fontSize: '0.7rem', height: 22, border: `1px solid ${T.green}` }} />
+                            {/* Payment status badge — replaces the hardcoded "Paid" chip */}
+                            <PaymentStatusBadge status={currentInvoice.paymentStatus} />
                         </Box>
                     </Box>
 
@@ -367,8 +391,39 @@ export default function InvoiceView() {
                             </TableContainer>
                         </Box>
 
-                        {/* Summary */}
-                        <Box sx={{ display: 'flex', justifyContent: 'flex-end', mb: 3 }}>
+                        {/* Summary + Payment Status side by side */}
+                        <Box sx={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start', gap: 2, mb: 3, flexWrap: 'wrap' }}>
+
+                            {/* Payment status detail card */}
+                            <Box sx={{
+                                border: `1px solid ${getPaymentStatus(currentInvoice.paymentStatus).border}`,
+                                borderRadius: '10px',
+                                bgcolor: getPaymentStatus(currentInvoice.paymentStatus).bg,
+                                p: 2,
+                                minWidth: 180,
+                                display: 'flex',
+                                flexDirection: 'column',
+                                gap: 0.6,
+                            }}>
+                                <Typography sx={{ fontSize: '0.68rem', fontWeight: 700, color: T.faint, textTransform: 'uppercase', letterSpacing: '0.07em' }}>
+                                    Payment Status
+                                </Typography>
+                                <Box sx={{ display: 'flex', alignItems: 'center', gap: 0.8, mt: 0.5 }}>
+                                    {(() => {
+                                        const s = getPaymentStatus(currentInvoice.paymentStatus);
+                                        return (
+                                            <>
+                                                <s.Icon sx={{ fontSize: '1.4rem', color: s.color }} />
+                                                <Typography sx={{ fontSize: '1rem', fontWeight: 700, color: s.color }}>
+                                                    {s.label}
+                                                </Typography>
+                                            </>
+                                        );
+                                    })()}
+                                </Box>
+                            </Box>
+
+                            {/* Financial summary */}
                             <Box sx={sx.summaryBox}>
                                 <Box sx={{ ...sx.summaryRow, borderBottom: `1px solid ${T.blueBorder}` }}>
                                     <Typography sx={{ fontSize: '0.82rem', color: T.muted }}>Subtotal</Typography>
