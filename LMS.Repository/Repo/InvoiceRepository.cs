@@ -106,24 +106,12 @@ namespace LMS.Repository.Repo
         {
             var parameters = new
             {
-                request.Id,
-                request.InvoiceNo,
-                request.InvoiceDate,
-                request.PartyId,
-                request.PartyName,
-                request.PartyAddress,
-                request.PartyCity,
-                request.PartyState,
-                request.PartyPinCode,
-                request.PartyGSTIN,
-                request.Subtotal,
-                request.TotalGST,
-                request.GrandTotal,
-                request.Notes
+                request.InvoiceId,
+                request.PaymentStatus
             };
 
             var sql = "USP_UpdateInvoice";
-            return await ExecuteAsync(sql, parameters, CommandType.StoredProcedure);
+            return await ExecuteScalarAsync<int>(sql, parameters, CommandType.StoredProcedure);
         }
 
         public async Task<int> DeleteInvoiceAsync(long id)

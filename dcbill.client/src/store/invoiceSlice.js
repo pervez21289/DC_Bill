@@ -37,6 +37,20 @@ export const fetchInvoiceById = createAsyncThunk(
     }
 );
 
+// ── Update Payment Status ────────────────────────────────────────────────────
+export const updateInvoicePaymentStatus = createAsyncThunk(
+    "invoice/updatePaymentStatus",
+    async ({ invoiceId, paymentStatus }, { rejectWithValue }) => {
+        try {
+            debugger;
+            const response = await invoiceService.update(invoiceId, { paymentStatus: paymentStatus });
+            return response;
+        } catch (error) {
+            return rejectWithValue(error.response?.data || error.message);
+        }
+    }
+);
+
 const initialState = {
     invoices: [],
     currentInvoice: null,
@@ -45,8 +59,9 @@ const initialState = {
     totalCount: 0,
     currentPage: 1,
     pageSize: 10,
-    pdfLoading: false,        // Separate loading for PDF operations
-    pdfData: null,            // Store PDF data temporarily
+    pdfLoading: false,
+    pdfData: null,
+    statusUpdating: false,   // tracks payment status update in progress
 };
 
 const invoiceSlice = createSlice({
@@ -69,7 +84,7 @@ const invoiceSlice = createSlice({
     },
     extraReducers: (builder) => {
         builder
-            // Save Invoice
+            // ── Save Invoice ─────────────────────────────────────────────────
             .addCase(saveInvoice.pending, (state) => {
                 state.loading = true;
                 state.error = null;
@@ -83,16 +98,14 @@ const invoiceSlice = createSlice({
                 state.error = action.payload;
             })
 
-            // Fetch All Invoices
+            // ── Fetch All Invoices ───────────────────────────────────────────
             .addCase(fetchInvoices.pending, (state) => {
                 state.loading = true;
                 state.error = null;
             })
             .addCase(fetchInvoices.fulfilled, (state, action) => {
                 state.loading = false;
-
                 const response = action.payload;
-
                 if (response && response.success && response.data) {
                     state.invoices = response.data.data || [];
                     state.totalCount = response.data.totalCount || 0;
@@ -113,14 +126,13 @@ const invoiceSlice = createSlice({
                 state.totalCount = 0;
             })
 
-            // Fetch Invoice By Id (for PDF)
+            // ── Fetch Invoice By Id ──────────────────────────────────────────
             .addCase(fetchInvoiceById.pending, (state) => {
                 state.pdfLoading = true;
                 state.error = null;
             })
             .addCase(fetchInvoiceById.fulfilled, (state, action) => {
                 state.pdfLoading = false;
-                // Extract the invoice data from response
                 const response = action.payload;
                 if (response && response.success && response.data) {
                     state.currentInvoice = response.data;
@@ -134,6 +146,33 @@ const invoiceSlice = createSlice({
                 state.pdfLoading = false;
                 state.error = action.payload;
                 state.currentInvoice = null;
+            })
+
+            // ── Update Payment Status ────────────────────────────────────────
+            .addCase(updateInvoicePaymentStatus.pending, (state) => {
+                state.statusUpdating = true;
+                state.error = null;
+            })
+            .addCase(updateInvoicePaymentStatus.fulfilled, (state, action) => {
+                state.statusUpdating = false;
+                const { invoiceId, paymentStatus } = action.meta.arg;
+
+                // // Update in the invoices list (for list pages)
+                // const idx = state.invoices.findIndex(inv => inv.id === invoiceId);
+                // if (idx !== -1) {
+                //     state.invoices[idx].paymentStatus = paymentStatus;
+                // }
+
+                // // Update currentInvoice if it's the same one (for detail/view page)
+                // if (state.currentInvoice && state.currentInvoice.id === invoiceId) {
+                //     state.currentInvoice.paymentStatus = paymentStatus;
+                // }
+
+                state.currentInvoice.paymentStatus = paymentStatus;
+            })
+            .addCase(updateInvoicePaymentStatus.rejected, (state, action) => {
+                state.statusUpdating = false;
+                state.error = action.payload;
             });
     }
 });

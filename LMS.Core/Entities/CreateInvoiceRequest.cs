@@ -43,22 +43,10 @@ namespace LMS.Core.Entities
 
     public class UpdateInvoiceRequest
     {
-        public long Id { get; set; }
-        public string InvoiceNo { get; set; }
-        public DateTime InvoiceDate { get; set; }
-        public long PartyId { get; set; }
-        public string PartyName { get; set; }
-        public string PartyAddress { get; set; }
-        public string PartyCity { get; set; }
-        public string PartyState { get; set; }
-        public string PartyPinCode { get; set; }
-        public string PartyGSTIN { get; set; }
-        public decimal Subtotal { get; set; }
-        public decimal GSTPercent { get; set; }
-        public decimal TotalGST { get; set; }
-        public decimal GrandTotal { get; set; }
-        public string Notes { get; set; }
-        
+        public long InvoiceId { get; set; }
+        public int PaymentStatus { get; set; }
+        public int? CompanyId { get; set; }
+
     }
 
     public class InvoiceMaster

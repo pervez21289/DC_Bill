@@ -97,6 +97,37 @@ namespace LMS.API.Controllers
             }
         }
 
-        
+
+        [HttpPut("{id}")]
+        public async Task<ActionResult<ApiResponse<int>>> UpdateInvoice(long id, [FromBody] UpdateInvoiceRequest request)
+        {
+            try
+            {
+                if (!ModelState.IsValid)
+                {
+                    return BadRequest(ApiResponse<int>.Fail("Invalid model state"));
+                }
+
+                // Create Invoice Master
+                request.CompanyId = _companyResolver.CurrentCompanyId;
+                request.InvoiceId = id;
+                
+                var invoiceId = await _invoiceRepository.UpdateInvoiceAsync(request);
+
+                if (invoiceId <= 0)
+                {
+                    return BadRequest(ApiResponse<int>.Fail("Failed to update invoice"));
+                }
+
+
+                return Ok(ApiResponse<long>.Ok(invoiceId, "Invoice updated successfully"));
+            }
+            catch (System.Exception ex)
+            {
+                return BadRequest(ApiResponse<int>.Fail(ex.Message));
+            }
+        }
+
+
     }
 }

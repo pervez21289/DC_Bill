@@ -5,7 +5,10 @@ export const invoiceService = {
         const response = await api.post("/Invoice", invoiceData);
         return response.data;
     },
-
+    async update(id, data) {
+        const response = await api.put(`/Invoice/${id}`, data);
+        return response.data; // Return response.data
+    },
     async getAll(filters) {
         const params = new URLSearchParams();
         if (filters) {
