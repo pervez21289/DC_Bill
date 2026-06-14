@@ -74,7 +74,8 @@ namespace LMS.Repository.Repo
                 request.Subtotal,
                 request.GSTPercent,
                 request.Notes,
-                request.CompanyId
+                request.CompanyId,
+                request.PaymentStatus
                 
             };
 

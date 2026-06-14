@@ -16,6 +16,41 @@ const formatDate = (date) => {
     return new Date(date).toLocaleDateString('en-GB');
 };
 
+// Helper function to get payment status color and label
+const getPaymentStatusConfig = (paymentStatus) => {
+    // Payment status mapping: 1 = Paid, 2 = Partially Paid, 3 = Not Paid
+    switch (paymentStatus) {
+        case 1:
+            return {
+                label: 'Paid',
+                color: 'success',
+                bgColor: '#e8f5e9',
+                textColor: '#2e7d32'
+            };
+        case 2:
+            return {
+                label: 'Partially Paid',
+                color: 'warning',
+                bgColor: '#fff3e0',
+                textColor: '#ed6c02'
+            };
+        case 3:
+            return {
+                label: 'Not Paid',
+                color: 'error',
+                bgColor: '#ffebee',
+                textColor: '#d32f2f'
+            };
+        default:
+            return {
+                label: 'Not Paid',
+                color: 'error',
+                bgColor: '#ffebee',
+                textColor: '#d32f2f'
+            };
+    }
+};
+
 export const useInvoiceColumns = (billingData = null) => {
     const navigate = useNavigate();
 
@@ -109,18 +144,27 @@ export const useInvoiceColumns = (billingData = null) => {
             )
         },
         {
-            field: 'status',
-            headerName: 'Status',
-            width: 100,
+            field: 'paymentStatus',
+            headerName: 'Payment Status',
+            width: 130,
             headerAlign: 'center',
             align: 'center',
-            renderCell: () => (
-                <Chip
-                    label="Paid"
-                    size="small"
-                    sx={{ fontSize: '0.7rem', bgcolor: '#e8f5e9', color: '#2e7d32', height: '24px' }}
-                />
-            )
+            renderCell: (params) => {
+                const statusConfig = getPaymentStatusConfig(params.value);
+                return (
+                    <Chip
+                        label={statusConfig.label}
+                        size="small"
+                        sx={{
+                            fontSize: '0.7rem',
+                            bgcolor: statusConfig.bgColor,
+                            color: statusConfig.textColor,
+                            height: '24px',
+                            fontWeight: 500
+                        }}
+                    />
+                );
+            }
         },
         {
             field: 'actions',

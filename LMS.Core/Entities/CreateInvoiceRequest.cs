@@ -25,6 +25,7 @@ namespace LMS.Core.Entities
         public decimal GrandTotal { get; set; }
         public string Notes { get; set; }
         public int CompanyId { get; set; }
+        public int PaymentStatus { get; set; } = 3;
         public List<CreateInvoiceDetailRequest> Details { get; set; }
     }
 
@@ -80,6 +81,7 @@ namespace LMS.Core.Entities
         public DateTime CreatedDate { get; set; }
         public DateTime? UpdatedDate { get; set; }
         public bool IsDeleted { get; set; }
+        public int PaymentStatus { get; set; } = 3;
 
         // Calculated properties (not stored in DB, calculated on the fly)
         public decimal CGSTPercent { get; set; }

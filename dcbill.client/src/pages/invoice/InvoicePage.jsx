@@ -2,8 +2,8 @@
 import { useEffect, useState } from "react";
 import { useDispatch, useSelector } from 'react-redux';
 import { useNavigate } from 'react-router-dom';
-import { Box, Button, Snackbar, Alert, CircularProgress } from "@mui/material";
-import { PictureAsPdf as PdfIcon } from '@mui/icons-material';
+import { Box, Button, Snackbar, Alert, CircularProgress, Menu, MenuItem, ButtonGroup, Chip } from "@mui/material";
+import { PictureAsPdf as PdfIcon, ArrowDropDown as ArrowDropDownIcon, Payment as PaymentIcon } from '@mui/icons-material';
 
 import InvoiceHeader from "./InvoiceHeader";
 import InvoiceItemsTable from "./InvoiceItemsTable";
@@ -28,6 +28,18 @@ export default function InvoicePage() {
     const [gstPercent, setGstPercent] = useState(18);
     const [snackbar, setSnackbar] = useState({ open: false, message: '', severity: 'success' });
     const [resetFormFlag, setResetFormFlag] = useState(false);
+
+    // Payment status states (1 = Paid, 2 = Partially Paid, 3 = Not Paid)
+    const [paymentStatus, setPaymentStatus] = useState(3); // Default to Not Paid (3)
+    const [anchorEl, setAnchorEl] = useState(null);
+    const paymentMenuOpen = Boolean(anchorEl);
+
+    // Payment status mapping
+    const paymentStatusMap = {
+        1: { label: 'Paid', color: 'success', value: 1 },
+        2: { label: 'Partially Paid', color: 'warning', value: 2 },
+        3: { label: 'Not Paid', color: 'error', value: 3 }
+    };
 
     // Generate invoice number based on today's date
     const generateInvoiceNumber = () => {
@@ -86,6 +98,28 @@ export default function InvoicePage() {
         setTimeout(() => setResetFormFlag(false), 100);
     };
 
+    // Handle payment status selection
+    const handlePaymentStatusClick = (event) => {
+        setAnchorEl(event.currentTarget);
+    };
+
+    const handlePaymentStatusClose = (statusValue) => {
+        if (statusValue) {
+            setPaymentStatus(statusValue);
+        }
+        setAnchorEl(null);
+    };
+
+    // Get color for payment status chip
+    const getPaymentStatusColor = () => {
+        return paymentStatusMap[paymentStatus]?.color || 'default';
+    };
+
+    // Get payment status label
+    const getPaymentStatusLabel = () => {
+        return paymentStatusMap[paymentStatus]?.label || 'Not Paid';
+    };
+
     // Prepare invoice data for PDF
     const invoiceData = {
         gstin: billingData?.gstin || '',
@@ -103,6 +137,8 @@ export default function InvoicePage() {
         partyPinCode: selectedParty?.pinCode || "",
         partyState: selectedParty?.state || "",
         partyGstin: selectedParty?.gstin || "",
+        paymentStatus: paymentStatus, // Add payment status (1, 2, or 3) to invoice data
+        paymentStatusLabel: getPaymentStatusLabel(),
         items: items.map(item => ({
             itemName: item.itemName,
             hsnCode: item.hsnCode,
@@ -151,6 +187,7 @@ export default function InvoicePage() {
             gstPercent: gstPercent,
             totalGST: totalGST,
             grandTotal: grandTotal,
+            paymentStatus: paymentStatus, // Save payment status (1, 2, or 3)
             notes: '',
             details: items.map(item => ({
                 itemId: item.itemId,
@@ -170,6 +207,8 @@ export default function InvoicePage() {
                 dispatch(clearItems());
                 // Reset form after successful save
                 handleResetForm();
+                // Reset payment status to default (3 = Not Paid)
+                setPaymentStatus(3);
                 // Generate new invoice number for next invoice
                 setTimeout(() => {
                     setInvoiceNumber(generateInvoiceNumber());
@@ -218,11 +257,54 @@ export default function InvoicePage() {
                     <Button variant="outlined" onClick={() => setPdfOpen(true)} startIcon={<PdfIcon />} disabled={!hasItems()} sx={{ fontSize: '0.75rem', textTransform: 'none' }}>
                         Preview PDF
                     </Button>
-                    <InvoicePDFDownload invoiceData={invoiceData} buttonText="Download PDF" />
+
+                    {/* Payment Status Dropdown Button */}
+                    <Button
+                        variant="outlined"
+                        onClick={handlePaymentStatusClick}
+                        disabled={!hasItems()}
+                        sx={{ fontSize: '0.75rem', textTransform: 'none' }}
+                        endIcon={<ArrowDropDownIcon />}
+                        startIcon={<PaymentIcon />}
+                    >
+                        Payment: {getPaymentStatusLabel()}
+                    </Button>
+
+                    <Menu
+                        anchorEl={anchorEl}
+                        open={paymentMenuOpen}
+                        onClose={() => handlePaymentStatusClose()}
+                    >
+                        <MenuItem onClick={() => handlePaymentStatusClose(1)}>
+                            <Chip label="Paid" size="small" color="success" sx={{ mr: 1 }} />
+                            Paid (1)
+                        </MenuItem>
+                        <MenuItem onClick={() => handlePaymentStatusClose(2)}>
+                            <Chip label="Partially Paid" size="small" color="warning" sx={{ mr: 1 }} />
+                            Partially Paid (2)
+                        </MenuItem>
+                        <MenuItem onClick={() => handlePaymentStatusClose(3)}>
+                            <Chip label="Not Paid" size="small" color="error" sx={{ mr: 1 }} />
+                            Not Paid (3)
+                        </MenuItem>
+                    </Menu>
+
                     <Button variant="contained" onClick={handleSaveInvoice} disabled={saving || !validForm} sx={{ fontSize: '0.75rem', textTransform: 'none' }}>
                         {saving ? <CircularProgress size={20} /> : 'Save Invoice'}
                     </Button>
                 </Box>
+
+                {/* Display selected payment status */}
+                {hasItems() && (
+                    <Box sx={{ mt: 2, display: 'flex', justifyContent: 'flex-end' }}>
+                        <Chip
+                            label={`Payment Status: ${getPaymentStatusLabel()} (${paymentStatus})`}
+                            color={getPaymentStatusColor()}
+                            size="small"
+                            icon={<PaymentIcon />}
+                        />
+                    </Box>
+                )}
 
                 {!isPartySelected() && (
                     <Box sx={{ mt: 2, p: 1, bgcolor: '#fff3e0', borderRadius: 1 }}>
