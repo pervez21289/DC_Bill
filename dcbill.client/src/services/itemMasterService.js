@@ -18,7 +18,6 @@ export const itemMasterService = {
     },
 
     async update(data) {
-        debugger;
         const response = await api.put(`/ItemMaster`, data);
         return response.data;
     },

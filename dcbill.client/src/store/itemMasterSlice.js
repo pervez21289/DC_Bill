@@ -148,7 +148,6 @@ const itemMasterSlice = createSlice({
                 state.error = null;
             })
             .addCase(updateItemInMaster.fulfilled, (state, action) => {
-                debugger;
                 state.loading = false;
                 const index = state.items.findIndex(item => item.id === action.payload.id);
                 if (index !== -1) {

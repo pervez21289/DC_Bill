@@ -37,6 +37,10 @@ const MainRoutes = {
                     element: <DashboardDefault />
                 },
                 {
+                    path: 'dashboard/default',
+                    element: <DashboardDefault />
+                },
+                {
                     path: 'dashboard',
                     element: <InvoiceGrid />
                 },

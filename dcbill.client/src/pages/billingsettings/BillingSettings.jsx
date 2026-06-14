@@ -29,7 +29,7 @@ export default function BillingSettings() {
     });
 
     useEffect(() => {
-        debugger;
+       
         dispatch(fetchBillingSettings());
     }, [dispatch]);
 
