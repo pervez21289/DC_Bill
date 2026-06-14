@@ -4,14 +4,11 @@ using LMS.Core.Interfaces;
 using LMS.Core.Models;
 using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
-
 using Microsoft.IdentityModel.Tokens;
-
 using System.IdentityModel.Tokens.Jwt;
-
 using System.Security.Claims;
+using System.Security.Cryptography;
 using System.Text;
-
 
 namespace LMS.API.Controllers
 {
@@ -68,12 +65,17 @@ namespace LMS.API.Controllers
                 // Update last login
                 await _userRepository.UpdateLastLoginAsync(user.Id, GetIpAddress());
 
-                // Generate JWT token
+                // Generate JWT token and Refresh Token
                 var token = GenerateJwtToken(user);
+                var refreshToken = GenerateRefreshToken();
+
+                // Save refresh token to database
+                await _userRepository.SaveRefreshTokenAsync(user.Id, refreshToken, DateTime.UtcNow.AddDays(7));
 
                 var response = new LoginResponse
                 {
                     Token = token,
+                    RefreshToken = refreshToken,
                     User = new UserDto
                     {
                         Id = user.Id,
@@ -105,74 +107,88 @@ namespace LMS.API.Controllers
             }
         }
 
-        [HttpPost("register")]
-        public async Task<IActionResult> Register([FromBody] RegisterRequest request)
+        [HttpPost("refresh-token")]
+        public async Task<IActionResult> RefreshToken([FromBody] RefreshTokenRequest request)
         {
             try
             {
-                if (!ModelState.IsValid)
+                if (string.IsNullOrEmpty(request.RefreshToken))
                 {
                     return BadRequest(new ApiResponse<object>
                     {
                         Success = false,
-                        Message = "Invalid request",
-                        Errors = ModelState.Values.SelectMany(v => v.Errors).Select(e => e.ErrorMessage).ToList()
+                        Message = "Refresh token is required"
                     });
                 }
 
-                // Check if email exists
-                if (await _userRepository.EmailExistsAsync(request.Email))
+                // Validate refresh token from database
+                var refreshTokenData = await _userRepository.GetRefreshTokenAsync(request.RefreshToken);
+
+                if (refreshTokenData == null)
                 {
-                    return BadRequest(new ApiResponse<object>
+                    return Unauthorized(new ApiResponse<object>
                     {
                         Success = false,
-                        Message = "Email already registered"
+                        Message = "Invalid refresh token"
                     });
                 }
 
-                // Check if username exists
-                if (await _userRepository.UsernameExistsAsync(request.Username))
+                if (refreshTokenData.ExpiryDate < DateTime.UtcNow)
                 {
-                    return BadRequest(new ApiResponse<object>
+                    // Token expired, remove it from database
+                    await _userRepository.RemoveRefreshTokenAsync(request.RefreshToken);
+                    return Unauthorized(new ApiResponse<object>
                     {
                         Success = false,
-                        Message = "Username already taken"
+                        Message = "Refresh token has expired. Please login again."
                     });
                 }
 
-                // Hash password
-                var passwordHash = BCrypt.Net.BCrypt.HashPassword(request.Password);
-
-                // Create user object
-                var user = new AppUser
+                if (refreshTokenData.IsRevoked)
                 {
-                    Username = request.Username,
-                    Email = request.Email,
-                    FullName = request.FullName,
-                    Company = request.Company,
-                    Role = "User",
-                    IsActive = true,
-                    CreatedAt = DateTime.UtcNow,
-                    UpdatedAt = DateTime.UtcNow
-                };
-
-                // Register user
-                (int userId, string message) = await _userRepository.RegisterUserAsync(user, passwordHash);
-
-                if (userId <= 0)
-                {
-                    return BadRequest(new ApiResponse<object>
+                    return Unauthorized(new ApiResponse<object>
                     {
                         Success = false,
-                        Message = message ?? "Registration failed"
+                        Message = "Refresh token has been revoked"
                     });
                 }
+
+                // Get user details
+                var user = await _userRepository.GetByIdAsync(refreshTokenData.UserId);
+                if (user == null)
+                {
+                    return Unauthorized(new ApiResponse<object>
+                    {
+                        Success = false,
+                        Message = "User not found"
+                    });
+                }
+
+                if (!user.IsActive)
+                {
+                    return Unauthorized(new ApiResponse<object>
+                    {
+                        Success = false,
+                        Message = "Account is deactivated"
+                    });
+                }
+
+                // Generate new tokens
+                var newToken = GenerateJwtToken(user);
+                var newRefreshToken = GenerateRefreshToken();
+
+                // Update refresh token in database
+                await _userRepository.UpdateRefreshTokenAsync(request.RefreshToken, newRefreshToken, DateTime.UtcNow.AddDays(7));
 
                 return Ok(new ApiResponse<object>
                 {
                     Success = true,
-                    Message = "Registration successful. Please login.",
-                    Data = new { UserId = userId }
+                    Message = "Token refreshed successfully",
+                    Data = new
+                    {
+                        Token = newToken,
+                        RefreshToken = newRefreshToken
+                    }
                 });
             }
             catch (Exception ex)
@@ -180,14 +196,41 @@ namespace LMS.API.Controllers
                 return StatusCode(500, new ApiResponse<object>
                 {
                     Success = false,
-                    Message = $"Registration failed: {ex.Message}"
+                    Message = $"Failed to refresh token: {ex.Message}"
                 });
             }
         }
 
         [Authorize]
-        [HttpGet("me")]
-        public async Task<IActionResult> GetCurrentUser()
+        [HttpPost("logout")]
+        public async Task<IActionResult> Logout([FromBody] LogoutRequest request)
+        {
+            try
+            {
+                if (!string.IsNullOrEmpty(request.RefreshToken))
+                {
+                    await _userRepository.RemoveRefreshTokenAsync(request.RefreshToken);
+                }
+
+                return Ok(new ApiResponse<object>
+                {
+                    Success = true,
+                    Message = "Logged out successfully"
+                });
+            }
+            catch (Exception ex)
+            {
+                return StatusCode(500, new ApiResponse<object>
+                {
+                    Success = false,
+                    Message = $"Logout failed: {ex.Message}"
+                });
+            }
+        }
+
+        [Authorize]
+        [HttpPost("revoke-all-tokens")]
+        public async Task<IActionResult> RevokeAllTokens()
         {
             try
             {
@@ -201,33 +244,12 @@ namespace LMS.API.Controllers
                     });
                 }
 
-                var user = await _userRepository.GetByIdAsync(userId.Value);
-                if (user == null)
-                {
-                    return NotFound(new ApiResponse<object>
-                    {
-                        Success = false,
-                        Message = "User not found"
-                    });
-                }
+                await _userRepository.RevokeAllRefreshTokensAsync(userId.Value);
 
-                var userDto = new UserDto
-                {
-                    Id = user.Id,
-                    Username = user.Username,
-                    Email = user.Email,
-                    FullName = user.FullName,
-                    Company = user.Company,
-                    Role = user.Role,
-                    IsActive = user.IsActive,
-                    LastLogin = user.LastLogin,
-                    CreatedAt = user.CreatedAt
-                };
-
-                return Ok(new ApiResponse<UserDto>
+                return Ok(new ApiResponse<object>
                 {
                     Success = true,
-                    Data = userDto
+                    Message = "All refresh tokens revoked successfully"
                 });
             }
             catch (Exception ex)
@@ -235,7 +257,7 @@ namespace LMS.API.Controllers
                 return StatusCode(500, new ApiResponse<object>
                 {
                     Success = false,
-                    Message = $"Failed to get user: {ex.Message}"
+                    Message = $"Failed to revoke tokens: {ex.Message}"
                 });
             }
         }
@@ -267,6 +289,14 @@ namespace LMS.API.Controllers
 
             var token = tokenHandler.CreateToken(tokenDescriptor);
             return tokenHandler.WriteToken(token);
+        }
+
+        private string GenerateRefreshToken()
+        {
+            var randomNumber = new byte[32];
+            using var rng = RandomNumberGenerator.Create();
+            rng.GetBytes(randomNumber);
+            return Convert.ToBase64String(randomNumber);
         }
 
         private int? GetCurrentUserId()

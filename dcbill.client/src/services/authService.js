@@ -134,23 +134,39 @@ export const authService = {
         }
     },
 
+    // services/authService.js - Update the refreshToken method
     async refreshToken() {
         try {
+
+
             const refreshToken = localStorage.getItem('refreshToken');
-            if (!refreshToken) throw new Error('No refresh token');
+            if (!refreshToken) {
+                console.error('No refresh token found in localStorage');
+                throw new Error('No refresh token');
+            }
 
             const response = await api.post("/Auth/refresh-token", {
                 refreshToken
             });
 
+            
+
             if (response.data.success && response.data.data.token) {
+                // Store new access token
                 tokenService.setToken(response.data.data.token);
+
+                // Store new refresh token if provided
                 if (response.data.data.refreshToken) {
                     localStorage.setItem('refreshToken', response.data.data.refreshToken);
                 }
+
+                return response.data;
+            } else {
+                console.error('Refresh token failed:', response.data);
+                throw new Error('Refresh token failed');
             }
-            return response.data;
         } catch (error) {
+            console.error(' Refresh token error:', error);
             this.logout();
             throw error;
         }

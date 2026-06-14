@@ -212,5 +212,60 @@ namespace LMS.API.Repositories
             var sql = "USP_GetUserWithDetails";
             return await QueryFirstOrDefaultAsync<AppUser>(sql, parameters, CommandType.StoredProcedure);
         }
+
+        // Refresh Token Methods
+        public async Task SaveRefreshTokenAsync(int userId, string refreshToken, DateTime expiryDate)
+        {
+            const string sql = @"
+                INSERT INTO RefreshTokens (UserId, Token, ExpiryDate, IsRevoked, CreatedAt)
+                VALUES (@UserId, @Token, @ExpiryDate, 0, @CreatedAt)";
+
+            await ExecuteTextAsync(sql, new
+            {
+                UserId = userId,
+                Token = refreshToken,
+                ExpiryDate = expiryDate,
+                CreatedAt = DateTime.UtcNow
+            });
+        }
+
+        public async Task<RefreshToken> GetRefreshTokenAsync(string refreshToken)
+        {
+            const string sql = "SELECT * FROM RefreshTokens WHERE Token = @Token";
+            return await QueryFirstOrDefaultAsync<RefreshToken>(sql, new { Token = refreshToken });
+        }
+
+        public async Task UpdateRefreshTokenAsync(string oldRefreshToken, string newRefreshToken, DateTime expiryDate)
+        {
+            const string sql = @"
+                UPDATE RefreshTokens 
+                SET Token = @NewToken, ExpiryDate = @ExpiryDate, UpdatedAt = @UpdatedAt
+                WHERE Token = @OldToken";
+
+            await ExecuteAsync(sql, new
+            {
+                OldToken = oldRefreshToken,
+                NewToken = newRefreshToken,
+                ExpiryDate = expiryDate,
+                UpdatedAt = DateTime.UtcNow
+            });
+        }
+
+        public async Task RemoveRefreshTokenAsync(string refreshToken)
+        {
+            const string sql = "DELETE FROM RefreshTokens WHERE Token = @Token";
+            await ExecuteAsync(sql, new { Token = refreshToken });
+        }
+
+        public async Task RevokeAllRefreshTokensAsync(int userId)
+        {
+            const string sql = @"
+                UPDATE RefreshTokens 
+                SET IsRevoked = 1, RevokedAt = @RevokedAt
+                WHERE UserId = @UserId AND IsRevoked = 0";
+
+            await ExecuteAsync(sql, new { UserId = userId, RevokedAt = DateTime.UtcNow });
+        }
+
     }
 }

@@ -101,6 +101,11 @@ namespace LMS.Core.Models
         public string Email { get; set; } = string.Empty;
     }
 
+    public class LogoutRequest
+    {
+        public string RefreshToken { get; set; }
+    }
+
     // Reset Password Request
     public class ResetPasswordRequest
     {

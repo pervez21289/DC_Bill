@@ -30,5 +30,13 @@ namespace LMS.Core.Interfaces
         Task<int> GetUserCountAsync(bool? isActive = null);
         Task<int> UpdateUserStatusAsync(int userId, bool isActive);
         Task<AppUser> GetUserWithDetailsAsync(int id);
+
+
+        // Refresh Token methods
+        Task SaveRefreshTokenAsync(int userId, string refreshToken, DateTime expiryDate);
+        Task<RefreshToken> GetRefreshTokenAsync(string refreshToken);
+        Task UpdateRefreshTokenAsync(string oldRefreshToken, string newRefreshToken, DateTime expiryDate);
+        Task RemoveRefreshTokenAsync(string refreshToken);
+        Task RevokeAllRefreshTokensAsync(int userId);
     }
 }
