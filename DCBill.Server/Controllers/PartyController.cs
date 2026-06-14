@@ -11,10 +11,12 @@ namespace LMS.API.Controllers
     public class PartyController : ControllerBase
     {
         private readonly IPartyRepository _repository;
+        private readonly CompanyResolver _companyResolver;
 
-        public PartyController(IPartyRepository repository)
+        public PartyController(IPartyRepository repository, CompanyResolver companyResolver)
         {
             _repository = repository;
+            _companyResolver = companyResolver;
         }
 
         [HttpGet]
@@ -22,7 +24,7 @@ namespace LMS.API.Controllers
         {
             try
             {
-                var parties = await _repository.GetAsync();
+                var parties = await _repository.GetAsync(_companyResolver.CurrentCompanyId);
                 return Ok(ApiResponse<IEnumerable<Party>>.Ok(parties));
             }
             catch (System.Exception ex)
@@ -90,7 +92,7 @@ namespace LMS.API.Controllers
                 {
                     return BadRequest(ApiResponse<int>.Fail("Invalid model state"));
                 }
-
+                model.CompanyId = _companyResolver.CurrentCompanyId;
                 var id = await _repository.CreateAsync(model);
                 if (id == -1)
                 {

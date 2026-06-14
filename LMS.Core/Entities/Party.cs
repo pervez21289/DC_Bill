@@ -21,5 +21,6 @@ namespace LMS.Core.Entities
         public DateTime CreatedDate { get; set; }
         public DateTime? UpdatedDate { get; set; }
         public bool IsDeleted { get; set; }  // Added this
+        public int CompanyId { get; set; }  // Added this
     }
 }

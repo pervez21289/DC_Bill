@@ -9,7 +9,7 @@ namespace LMS.Core.Interfaces
 {
     public interface IPartyRepository
     {
-        Task<IEnumerable<Party>> GetAsync();
+        Task<IEnumerable<Party>> GetAsync(int CompanyId);
         Task<Party> GetByIdAsync(int id);
         Task<Party> GetByGSTINAsync(string gstin);
         Task<int> CreateAsync(Party model);

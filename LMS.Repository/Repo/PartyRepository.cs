@@ -13,10 +13,10 @@ namespace LMS.API.Repositories
     {
      
 
-        public async Task<IEnumerable<Party>> GetAsync()
+        public async Task<IEnumerable<Party>> GetAsync(int CompanyId)
         {
             var sql = "USP_GetParties";
-            return await QueryAsync<Party>(sql, null, CommandType.StoredProcedure);
+            return await QueryAsync<Party>(sql, new { CompanyId = CompanyId }, CommandType.StoredProcedure);
         }
 
         public async Task<Party> GetByIdAsync(int id)
@@ -44,7 +44,8 @@ namespace LMS.API.Repositories
                 model.PinCode,
                 model.GSTIN,
                 model.Mobile,
-                model.Email
+                model.Email,
+                model.CompanyId
             };
 
             var sql = "USP_CreateParty";
