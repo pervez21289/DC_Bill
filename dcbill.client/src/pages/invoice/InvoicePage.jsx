@@ -322,8 +322,8 @@ export default function InvoicePage() {
                     </Box>
                 )}
 
-                <Snackbar open={snackbar.open} autoHideDuration={6000} onClose={handleCloseSnackbar} anchorOrigin={{ vertical: 'top', horizontal: 'right' }}>
-                    <Alert severity={snackbar.severity} onClose={handleCloseSnackbar}>{snackbar.message}</Alert>
+                <Snackbar open={snackbar.open} autoHideDuration={6000} onClose={handleCloseSnackbar} anchorOrigin={{ vertical: 'bottom', horizontal: 'right' }}>
+                    <Alert variant="filled" severity={snackbar.severity} onClose={handleCloseSnackbar}>{snackbar.message}</Alert>
                 </Snackbar>
             </Box>
 

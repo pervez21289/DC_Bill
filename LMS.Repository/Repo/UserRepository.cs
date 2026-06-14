@@ -231,16 +231,13 @@ namespace LMS.API.Repositories
 
         public async Task<RefreshToken> GetRefreshTokenAsync(string refreshToken)
         {
-            const string sql = "SELECT * FROM RefreshTokens WHERE Token = @Token";
+            const string sql = "USP_GetRefreshToken";
             return await QueryFirstOrDefaultAsync<RefreshToken>(sql, new { Token = refreshToken });
         }
 
         public async Task UpdateRefreshTokenAsync(string oldRefreshToken, string newRefreshToken, DateTime expiryDate)
         {
-            const string sql = @"
-                UPDATE RefreshTokens 
-                SET Token = @NewToken, ExpiryDate = @ExpiryDate, UpdatedAt = @UpdatedAt
-                WHERE Token = @OldToken";
+            const string sql = "sp_UpdateRefreshToken";
 
             await ExecuteAsync(sql, new
             {
