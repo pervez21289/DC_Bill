@@ -1,27 +1,23 @@
-import { lazy } from 'react';
-
 // project imports
-import Loadable from 'components/Loadable';
 import DashboardLayout from 'layout/Dashboard';
 import ProtectedRoute from './ProtectedRoute';
 
-// render- Dashboard
-const DashboardDefault = Loadable(lazy(() => import('pages/dashboard/default')));
-// const DashboardDefault = Loadable(lazy(() => import('sections/dashboard/default/Dashboard')));
+// render - Dashboard
+import DashboardDefault from 'pages/dashboard/default';
 
 // render - color
-const Color = Loadable(lazy(() => import('pages/component-overview/color')));
-const Typography = Loadable(lazy(() => import('pages/component-overview/typography')));
-const Shadow = Loadable(lazy(() => import('pages/component-overview/shadows')));
+import Color from 'pages/component-overview/color';
+import Typography from 'pages/component-overview/typography';
+import Shadow from 'pages/component-overview/shadows';
 
 // render - sample page
-const SamplePage = Loadable(lazy(() => import('pages/extra-pages/sample-page')));
+import SamplePage from 'pages/extra-pages/sample-page';
 
 // render - invoice page
-const InvoicePage = Loadable(lazy(() => import('../pages/invoice/InvoicePage')));
-const InvoiceView = Loadable(lazy(() => import('../pages/invoice/InvoiceView')));
-const BillingSettings = Loadable(lazy(() => import('../pages/billingsettings/BillingSettings')));
-const InvoiceGrid = Loadable(lazy(() => import('../pages/invoice/InvoiceGrid')));
+import InvoicePage from '../pages/invoice/InvoicePage';
+import InvoiceView from '../pages/invoice/InvoiceView';
+import BillingSettings from '../pages/billingsettings/BillingSettings';
+import InvoiceGrid from '../pages/invoice/InvoiceGrid';
 
 // ==============================|| MAIN ROUTING ||============================== //
 

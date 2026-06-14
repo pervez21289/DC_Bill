@@ -1,7 +1,6 @@
 // services/axiosConfig.js
 import axios from 'axios';
 import { tokenService } from './tokenService';
-import { authService } from './authService';
 
 let isRefreshing = false;
 let failedQueue = [];
@@ -17,13 +16,18 @@ const processQueue = (error, token = null) => {
     failedQueue = [];
 };
 
-// Create axios instance
+// Dedicated axios instance ONLY for refresh token (bypasses interceptor)
+const refreshApi = axios.create({
+    baseURL: import.meta.env.VITE_BASE_URL || 'http://localhost:5000/api',
+    timeout: 30000,
+    headers: { 'Content-Type': 'application/json' }
+});
+
+// Create main axios instance
 const api = axios.create({
     baseURL: import.meta.env.VITE_BASE_URL || 'http://localhost:5000/api',
     timeout: 30000,
-    headers: {
-        'Content-Type': 'application/json',
-    }
+    headers: { 'Content-Type': 'application/json' }
 });
 
 // Request interceptor
@@ -35,28 +39,17 @@ api.interceptors.request.use(
         }
         return config;
     },
-    (error) => {
-        return Promise.reject(error);
-    }
+    (error) => Promise.reject(error)
 );
 
-// Response interceptor - THIS IS WHERE refreshToken() IS CALLED
+// Response interceptor
 api.interceptors.response.use(
-    (response) => {
-        return response;
-    },
+    (response) => response,
     async (error) => {
         const originalRequest = error.config;
-
-        // If not 401 error or already retried, reject
+        debugger;
+        // If not 401 or already retried, reject immediately
         if (!error.response || error.response.status !== 401 || originalRequest._retry) {
-            return Promise.reject(error);
-        }
-
-        // Prevent infinite loop on refresh token endpoint
-        if (originalRequest.url?.includes('/Auth/refresh-token')) {
-            // Refresh token failed, redirect to login
-            authService.logout();
             return Promise.reject(error);
         }
 
@@ -77,27 +70,39 @@ api.interceptors.response.use(
         isRefreshing = true;
 
         try {
-            // ✅ HERE IS WHERE refreshToken() IS CALLED!
-            const response = await authService.refreshToken();
+            const refreshToken = localStorage.getItem('refreshToken');
 
-            if (response && response.success) {
-                const newToken = response.data.token;
+            if (!refreshToken) {
+                throw new Error('No refresh token available');
+            }
+            debugger;
+            // ✅ Use dedicated refreshApi — NOT the main api instance
+            const response = await refreshApi.post('/Auth/refresh-token', { refreshToken });
 
-                // Process queued requests
+            if (response.data?.success && response.data?.data?.token) {
+                const newToken = response.data.data.token;
+
+                tokenService.setToken(newToken);
+
+                if (response.data.data.refreshToken) {
+                    localStorage.setItem('refreshToken', response.data.data.refreshToken);
+                }
+
                 processQueue(null, newToken);
 
-                // Retry original request with new token
                 originalRequest.headers.Authorization = `Bearer ${newToken}`;
                 return api(originalRequest);
             } else {
-                throw new Error('Refresh token failed');
+                throw new Error('Refresh token response invalid');
             }
         } catch (refreshError) {
-            // Process queue with error
             processQueue(refreshError, null);
 
-            // Clear tokens and redirect to login
-            authService.logout();
+            // ✅ Single logout point — only here, not in authService.refreshToken()
+            tokenService.removeToken();
+            localStorage.removeItem('refreshToken');
+            localStorage.removeItem('user');
+            //window.location.href = '/login';
 
             return Promise.reject(refreshError);
         } finally {

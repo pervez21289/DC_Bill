@@ -5,91 +5,51 @@ import { tokenService } from "./tokenService";
 export const authService = {
     async login(emailOrUsername, password) {
         try {
-            console.log('Attempting login for:', emailOrUsername); // Debug log
+            const response = await api.post("/Auth/login", { emailOrUsername, password });
 
-            // Make sure to await properly
-            const response = await api.post("/Auth/login", {
-                emailOrUsername,
-                password
-            });
-
-            console.log('Login response received:', response); // Debug log
-
-            // Check if response exists
             if (!response || !response.data) {
-                console.error('No response data received');
-                return {
-                    success: false,
-                    message: 'No response from server'
-                };
+                return { success: false, message: 'No response from server' };
             }
 
-            // Check if login was successful
             if (response.data.success && response.data.data?.token) {
-                // Store tokens
                 tokenService.setToken(response.data.data.token);
 
                 if (response.data.data.refreshToken) {
                     localStorage.setItem('refreshToken', response.data.data.refreshToken);
                 }
-
                 if (response.data.data.user) {
                     localStorage.setItem('user', JSON.stringify(response.data.data.user));
                 }
 
                 return response.data;
             } else {
-                // Login failed but got response
                 return {
                     success: false,
                     message: response.data?.message || 'Login failed'
                 };
             }
         } catch (error) {
-            console.error('Login API error details:', error);
-
-            // Handle different error types
             if (error.code === 'ECONNABORTED') {
-                return {
-                    success: false,
-                    message: 'Request timeout. Please try again.'
-                };
+                return { success: false, message: 'Request timeout. Please try again.' };
             }
-
             if (error.response) {
-                // Server responded with error status
-                console.error('Error response:', error.response.data);
-                const errorMessage = error.response.data?.message ||
-                    error.response.data?.Message ||
-                    'Invalid email/username or password';
                 return {
                     success: false,
-                    message: errorMessage,
+                    message: error.response.data?.message ||
+                        error.response.data?.Message ||
+                        'Invalid email/username or password',
                     status: error.response.status
                 };
             } else if (error.request) {
-                // Request was made but no response
-                console.error('No response received:', error.request);
-                return {
-                    success: false,
-                    message: 'Unable to connect to server. Please check your connection.'
-                };
+                return { success: false, message: 'Unable to connect to server. Please check your connection.' };
             } else {
-                // Something else happened
-                console.error('Error message:', error.message);
-                return {
-                    success: false,
-                    message: error.message || 'An unexpected error occurred'
-                };
+                return { success: false, message: error.message || 'An unexpected error occurred' };
             }
         }
     },
 
-    // Other methods remain the same...
-
     async register(userData) {
         try {
-            // Transform data to match backend expectations
             const payload = {
                 username: userData.username || `${userData.firstname.toLowerCase()}${userData.lastname.toLowerCase()}${Math.floor(Math.random() * 1000)}`,
                 email: userData.email,
@@ -97,7 +57,6 @@ export const authService = {
                 fullName: `${userData.firstname} ${userData.lastname}`,
                 company: userData.company || null
             };
-
             const response = await api.post("/Auth/register", payload);
             return response.data;
         } catch (error) {
@@ -105,6 +64,7 @@ export const authService = {
         }
     },
 
+    // ✅ Logout is now only a local cleanup — redirect is handled by axiosConfig
     logout() {
         tokenService.removeToken();
         localStorage.removeItem('refreshToken');
@@ -124,9 +84,7 @@ export const authService = {
     async changePassword(currentPassword, newPassword, confirmPassword) {
         try {
             const response = await api.post("/Auth/change-password", {
-                currentPassword,
-                newPassword,
-                confirmPassword
+                currentPassword, newPassword, confirmPassword
             });
             return response.data;
         } catch (error) {
@@ -134,43 +92,7 @@ export const authService = {
         }
     },
 
-    // services/authService.js - Update the refreshToken method
-    async refreshToken() {
-        try {
-
-
-            const refreshToken = localStorage.getItem('refreshToken');
-            if (!refreshToken) {
-                console.error('No refresh token found in localStorage');
-                throw new Error('No refresh token');
-            }
-
-            const response = await api.post("/Auth/refresh-token", {
-                refreshToken
-            });
-
-            
-
-            if (response.data.success && response.data.data.token) {
-                // Store new access token
-                tokenService.setToken(response.data.data.token);
-
-                // Store new refresh token if provided
-                if (response.data.data.refreshToken) {
-                    localStorage.setItem('refreshToken', response.data.data.refreshToken);
-                }
-
-                return response.data;
-            } else {
-                console.error('Refresh token failed:', response.data);
-                throw new Error('Refresh token failed');
-            }
-        } catch (error) {
-            console.error(' Refresh token error:', error);
-            this.logout();
-            throw error;
-        }
-    },
+    // ✅ refreshToken() removed from authService — logic moved into axiosConfig only
 
     async forgotPassword(email) {
         try {
@@ -184,10 +106,7 @@ export const authService = {
     async resetPassword(token, email, newPassword, confirmPassword) {
         try {
             const response = await api.post("/Auth/reset-password", {
-                token,
-                email,
-                newPassword,
-                confirmPassword
+                token, email, newPassword, confirmPassword
             });
             return response.data;
         } catch (error) {
