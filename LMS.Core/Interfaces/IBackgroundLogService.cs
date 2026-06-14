@@ -9,10 +9,9 @@ using Microsoft.AspNetCore.Http;
 
 namespace LMS.Core.Interfaces
 {
-    public interface IBackgroundJobQueue
+    public interface IBackgroundLogService
     {
-        ValueTask EnqueueAsync(BackgroundJob job);
-        ValueTask<BackgroundJob> DequeueAsync(CancellationToken cancellationToken);
+        void Enqueue(RequestInfo requestInfo);
     }
 
 }

@@ -1,3 +1,4 @@
+using LMS.API.Filters;
 using LMS.API.Repositories;
 using LMS.API.Repositories.Interfaces;
 using LMS.API.Services;
@@ -12,6 +13,16 @@ using System.Text;
 
 var builder = WebApplication.CreateBuilder(args);
 
+// Add services
+builder.Services.AddHttpContextAccessor();
+
+// Register background logging service as singleton
+builder.Services.AddSingleton<IErrorLogger, ErrorLogger>();
+builder.Services.AddSingleton<IBackgroundLogService, BackgroundLogService>();
+builder.Services.AddHostedService<BackgroundLogService>(provider =>
+    (BackgroundLogService)provider.GetRequiredService<IBackgroundLogService>());
+
+
 // Add services to the container.
 builder.Services.AddScoped<IBillingSettingsRepository, BillingSettingsRepository>();
 builder.Services.AddScoped<IItemMasterRepository, ItemMasterRepository>();
@@ -21,9 +32,16 @@ builder.Services.AddScoped<IUserRepository, UserRepository>();
 builder.Services.AddSingleton<BaseRepository>();
 builder.Services.AddScoped<IPasswordService, PasswordService>();
 builder.Services.AddScoped<IReportRepository, ReportRepository>();
+
 builder.Services.AddHttpContextAccessor();
 builder.Services.AddScoped<CompanyResolver>();
-builder.Services.AddControllers();
+
+// Add controllers with global filter
+builder.Services.AddControllers(options =>
+{
+    // Apply logging filter to ALL controllers automatically
+    options.Filters.Add<AutoLoggingFilter>();
+});
 
 // Add CORS for React app
 builder.Services.AddCors(options =>
