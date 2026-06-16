@@ -32,6 +32,7 @@ builder.Services.AddScoped<IUserRepository, UserRepository>();
 builder.Services.AddSingleton<BaseRepository>();
 builder.Services.AddScoped<IPasswordService, PasswordService>();
 builder.Services.AddScoped<IReportRepository, ReportRepository>();
+builder.Services.AddScoped<IActivityLogRepository, ActivityLogRepository>();
 
 builder.Services.AddHttpContextAccessor();
 builder.Services.AddScoped<CompanyResolver>();

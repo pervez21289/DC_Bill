@@ -18,7 +18,7 @@ import InvoicePage from '../pages/invoice/InvoicePage';
 import InvoiceView from '../pages/invoice/InvoiceView';
 import BillingSettings from '../pages/billingsettings/BillingSettings';
 import InvoiceGrid from '../pages/invoice/InvoiceGrid';
-
+import ActivityLogReport from '../pages/activityLog/ActivityLogReport';
 // ==============================|| MAIN ROUTING ||============================== //
 
 const MainRoutes = {
@@ -57,8 +57,8 @@ const MainRoutes = {
                     element: <BillingSettings />
                 },
                 {
-                    path: 'color',
-                    element: <Color />
+                    path: 'history',
+                    element: <ActivityLogReport />
                 },
                 {
                     path: 'shadow',

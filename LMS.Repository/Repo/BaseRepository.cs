@@ -111,6 +111,22 @@ namespace LMS.Repo.Repository
             }
         }
 
+        public async Task<(IEnumerable<T1> First, IEnumerable<T2> Second)> QueryMultipleIenumAsync<T1, T2>(string sql, object param = null, CommandType commandType = CommandType.StoredProcedure)
+        {
+            using (var conn = new SqlConnection(ConnectionString))
+            {
+                await conn.OpenAsync();
+
+                using (var reader = await conn.QueryMultipleAsync(sql, param, commandType: commandType))
+                {
+                    var first = await reader.ReadAsync<T1>();
+                    var second = await reader.ReadAsync<T2>();
+
+                    return (first, second);
+                }
+            }
+        }
+
 
         public async Task<T> QueryFirstOrDefaultAsync<T>(string sql, object param = null, CommandType commandType = CommandType.StoredProcedure)
         {

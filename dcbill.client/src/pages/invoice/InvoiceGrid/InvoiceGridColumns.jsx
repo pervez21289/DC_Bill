@@ -54,7 +54,7 @@ export const useInvoiceColumns = (billingData = null) => {
         {
             field: 'sno',
             headerName: 'S.No',
-            width: 65,
+            width: 25,
             headerAlign: 'center',
             align: 'center',
             renderCell: (params) => (
@@ -68,7 +68,7 @@ export const useInvoiceColumns = (billingData = null) => {
         {
             field: 'invoiceNo',
             headerName: 'Invoice No',
-            width: 150,
+            width: 140,
             headerAlign: 'center',
             align: 'center',
             renderCell: (params) => (
@@ -96,8 +96,7 @@ export const useInvoiceColumns = (billingData = null) => {
         {
             field: 'partyName',
             headerName: 'Party Name',
-            flex: 1,
-            minWidth: 200,
+            width: 200,
             headerAlign: 'left',
             align: 'left',
             renderCell: (params) => (
@@ -125,7 +124,7 @@ export const useInvoiceColumns = (billingData = null) => {
         {
             field: 'subtotal',
             headerName: 'Subtotal',
-            width: 125,
+            width: 150,
             headerAlign: 'right',
             align: 'right',
             renderCell: (params) => (

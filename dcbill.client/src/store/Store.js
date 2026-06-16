@@ -9,6 +9,7 @@ import invoiceItemsReducer from './invoiceItemsSlice';
 import partyReducer from './partySlice';
 import authReducer from './authSlice'; // Add this
 import reportReducer from './reportSlice'; // Add this
+import activityLogReducer from './activityLogSlice';
 
 export const store = configureStore({
     reducer: {
@@ -20,6 +21,7 @@ export const store = configureStore({
         itemMaster: itemMasterReducer,
         invoiceItems: invoiceItemsReducer,
         parties: partyReducer,
+        activityLog: activityLogReducer,
         report: reportReducer
     }
 });

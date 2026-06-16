@@ -81,7 +81,7 @@ export default function SettingTab() {
                         <ListItemText primary="Feedback" />
                     </ListItemButton>
                 </Link>
-                <ListItemButton>
+                <ListItemButton onClick={() => navigate('/history')}>
                     <ListItemIcon>
                         <UnorderedListOutlined />
                     </ListItemIcon>
