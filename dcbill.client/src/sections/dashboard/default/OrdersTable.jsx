@@ -26,18 +26,18 @@ function OrderStatus({ status }) {
     let color;
     let title;
 
-    switch (status?.toLowerCase()) {
-        case 'paid':
+    switch (status) {
+        case 'Paid':
             color = 'success';
             title = 'Paid';
             break;
-        case 'pending':
+        case 'Partially Paid':
             color = 'warning';
-            title = 'Pending';
+            title = 'Partially Paid';
             break;
-        case 'cancelled':
+        case 'Unpaid':
             color = 'error';
-            title = 'Cancelled';
+            title = 'Unpaid';
             break;
         default:
             color = 'primary';
@@ -118,7 +118,7 @@ export default function OrderTable() {
                                 </TableCell>
                                 <TableCell align="right">
                                     <NumericFormat
-                                        value={row.totalAmount}
+                                        value={row.grandTotal}
                                         displayType="text"
                                         thousandSeparator
                                         prefix="₹"

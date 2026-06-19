@@ -17,8 +17,8 @@ export default function AuthFooter() {
       >
         <Typography variant="subtitle2" sx={{ color: 'secondary.main' }}>
           © Made with love by Team{' '}
-          <Link href="https://codedthemes.com/" target="_blank" underline="hover">
-            CodedThemes
+          <Link href="https://invoice.nexbillpos.com/" target="_blank" underline="hover">
+                      NexBill POS
           </Link>
         </Typography>
 
@@ -26,7 +26,7 @@ export default function AuthFooter() {
           <Typography
             variant="subtitle2"
             component={Link}
-            href="https://mui.com/store/terms/"
+                      href="https://invoice.nexbillpos.com/"
             target="_blank"
             underline="hover"
             sx={{ color: 'secondary.main' }}
@@ -36,7 +36,7 @@ export default function AuthFooter() {
           <Typography
             variant="subtitle2"
             component={Link}
-            href="https://mui.com/legal/privacy/"
+                      href="https://invoice.nexbillpos.com/"
             target="_blank"
             underline="hover"
             sx={{ color: 'secondary.main' }}

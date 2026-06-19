@@ -41,7 +41,7 @@ namespace LMS.Core.Entities
             public string PartyName { get; set; }
             public string PartyGSTIN { get; set; }
             public DateTime InvoiceDate { get; set; }
-            public decimal TotalAmount { get; set; }
+            public decimal GrandTotal { get; set; }
             public decimal TotalGST { get; set; }
             public string Status { get; set; }
             public int ItemCount { get; set; }

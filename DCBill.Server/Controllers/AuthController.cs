@@ -107,6 +107,87 @@ namespace LMS.API.Controllers
             }
         }
 
+
+        [HttpPost("register")]
+        public async Task<IActionResult> Register([FromBody] RegisterRequest request)
+        {
+            try
+            {
+                if (!ModelState.IsValid)
+                {
+                    return BadRequest(new ApiResponse<object>
+                    {
+                        Success = false,
+                        Message = "Invalid request",
+                        Errors = ModelState.Values.SelectMany(v => v.Errors).Select(e => e.ErrorMessage).ToList()
+                    });
+                }
+
+                // Check if email exists
+                if (await _userRepository.EmailExistsAsync(request.Email))
+                {
+                    return BadRequest(new ApiResponse<object>
+                    {
+                        Success = false,
+                        Message = "Email already registered"
+                    });
+                }
+
+                // Check if username exists
+                if (await _userRepository.UsernameExistsAsync(request.Username))
+                {
+                    return BadRequest(new ApiResponse<object>
+                    {
+                        Success = false,
+                        Message = "Username already taken"
+                    });
+                }
+
+                // Hash password
+                var passwordHash = BCrypt.Net.BCrypt.HashPassword(request.Password);
+
+                // Create user object
+                var user = new AppUser
+                {
+                    Username = request.Username,
+                    Email = request.Email,
+                    FullName = request.FullName,
+                    Company = request.Company,
+                    Role = "User",
+                    IsActive = true,
+                    CreatedAt = DateTime.UtcNow,
+                    UpdatedAt = DateTime.UtcNow
+                };
+
+                // Register user
+                (int userId, string message) = await _userRepository.RegisterUserAsync(user, passwordHash);
+
+                if (userId <= 0)
+                {
+                    return BadRequest(new ApiResponse<object>
+                    {
+                        Success = false,
+                        Message = message ?? "Registration failed"
+                    });
+                }
+
+                return Ok(new ApiResponse<object>
+                {
+                    Success = true,
+                    Message = "Registration successful. Please login.",
+                    Data = new { UserId = userId }
+                });
+            }
+            catch (Exception ex)
+            {
+                return StatusCode(500, new ApiResponse<object>
+                {
+                    Success = false,
+                    Message = $"Registration failed: {ex.Message}"
+                });
+            }
+        }
+
         [HttpPost("refresh-token")]
         public async Task<IActionResult> RefreshToken([FromBody] RefreshTokenRequest request)
         {
