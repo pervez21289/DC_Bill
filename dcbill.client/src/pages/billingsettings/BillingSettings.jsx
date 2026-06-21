@@ -20,6 +20,7 @@ export default function BillingSettings() {
         pinCode: "",
         state: "",
         country: "",
+        upi: ""
     });
 
     const [snackbar, setSnackbar] = useState({
@@ -45,6 +46,7 @@ export default function BillingSettings() {
                 pinCode: data.pinCode || "",
                 state: data.state || "",
                 country: data.country || "",
+                upi: data.upi || ""
             });
         }
     }, [data]);

@@ -319,7 +319,7 @@ export default function InvoiceView() {
             gstin: billingData?.gstin || '', mobile: billingData?.mobileNumber || '',
             companyName: billingData?.companyName || '', address: billingData?.address || '',
             city: billingData?.city || '', pinCode: billingData?.pinCode || '',
-            state: billingData?.state || '',
+            state: billingData?.state || '', upi: billingData?.upi || '',
             invoiceDate: currentInvoice.invoiceDate, invoiceNo: currentInvoice.invoiceNo,
             partyName: currentInvoice.partyName, partyAddress: currentInvoice.partyAddress || '',
             partyCity: currentInvoice.partyCity || '', partyPinCode: currentInvoice.partyPinCode || '',
@@ -334,6 +334,7 @@ export default function InvoiceView() {
         setPrintLoading(true);
         try {
             const invoiceData = await preparePdfData();
+            debugger;
             if (!invoiceData) return;
             const blob = await pdf(<InvoicePDF invoiceData={invoiceData} />).toBlob();
             const url = URL.createObjectURL(blob);

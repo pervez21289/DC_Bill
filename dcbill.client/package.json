@@ -36,6 +36,7 @@
     "formik": "2.4.9",
     "framer-motion": "12.39.0",
     "lodash-es": "4.18.1",
+    "qrcode": "^1.5.4",
     "react": "19.2.6",
     "react-device-detect": "2.2.3",
     "react-dom": "19.2.6",

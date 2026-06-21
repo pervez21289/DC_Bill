@@ -1,7 +1,7 @@
 ﻿// components/InvoicePDF.jsx
 import { Page, Document, StyleSheet, View, Text, Font } from '@react-pdf/renderer';
 import { useInvoiceSummary } from './../useInvoiceSummary';
-
+import { QRCodeComponent, UPIQRCode } from './QRCodeComponent';
 // Register Noto Sans font for proper Unicode support including ₹ symbol
 Font.register({
     family: 'Noto Sans',
@@ -379,6 +379,14 @@ export const InvoicePDF = ({ invoiceData }) => {
                             <Text style={styles.amountInWordsTitle}>Amount in Words:</Text>
                             <Text style={styles.amountInWordsText}>{amountInWords}</Text>
                         </View>
+                        <UPIQRCode
+                            upiId={invoiceData?.upi} // Replace with your UPI ID
+                            amount={grandTotal}
+                            payeeName={invoiceData?.companyName}
+                            invoiceNo={invoiceData?.invoiceNo}
+                            qrSize={70}
+                            showAmount={true}
+                        />
                     </View>
 
                     {/* Right Side - Financial Summary */}

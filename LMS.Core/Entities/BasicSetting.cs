@@ -36,6 +36,7 @@ namespace LMS.Core.Entities
         public string? State { get; set; }
 
         public string? Country { get; set; }
+        public string? UPI { get; set; }
 
         public DateTime CreatedDate { get; set; }
 

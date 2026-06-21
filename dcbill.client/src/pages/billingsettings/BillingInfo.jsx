@@ -1,6 +1,12 @@
 // BillingInfo.jsx
-import { Paper, Box, Typography, TextField, Button, Grid, Snackbar, Alert } from "@mui/material";
-import { Save as SaveIcon } from "@mui/icons-material";
+import {
+    Paper, Box, Typography, TextField, Button, Grid, Snackbar, Alert, InputAdornment } from "@mui/material";
+// In BillingSettings.jsx, update the imports
+import {
+    Save as SaveIcon,
+    PictureAsPdf as PdfIcon,
+    AccountBalanceWallet as WalletIcon  // Add this line
+} from '@mui/icons-material';
 
 export default function BillingInfo({ formData, handleChange, handleSubmit, snackbar, handleCloseSnackbar }) {
     return (
@@ -123,6 +129,26 @@ export default function BillingInfo({ formData, handleChange, handleSubmit, snac
                                 onChange={handleChange}
                                 variant="outlined"
                                 placeholder="Enter country"
+                            />
+                        </Grid>
+                        {/* UPI Field */}
+                        <Grid item xs={12}>
+                            <TextField
+                                fullWidth
+                                label="UPI ID"
+                                name="upi"
+                                value={formData.upi}
+                                onChange={handleChange}
+                                variant="outlined"
+                                placeholder="company@upi"
+                                helperText="e.g., company@upi, name@bank, or phone@upi"
+                                InputProps={{
+                                    startAdornment: (
+                                        <InputAdornment position="start">
+                                            <WalletIcon sx={{ color: '#6c63ff' }} />
+                                        </InputAdornment>
+                                    ),
+                                }}
                             />
                         </Grid>
                     </Grid>

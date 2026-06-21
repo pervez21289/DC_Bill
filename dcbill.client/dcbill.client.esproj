@@ -9,7 +9,6 @@
     <BuildOutputFolder>$(MSBuildProjectDirectory)\dist</BuildOutputFolder>
   </PropertyGroup>
   <ItemGroup>
-    <Folder Include="public\" />
     <Folder Include="src\pages\invoice\InvoiceHeader\" />
     <Folder Include="src\pages\activityLog\" />
   </ItemGroup>

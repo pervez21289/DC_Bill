@@ -28,7 +28,8 @@ namespace LMS.Repository.Repo
                 model.City,
                 model.PinCode,
                 model.State,
-                model.Country
+                model.Country,
+                model.UPI
             };
 
             var sql = "USP_CreateBillingSettings";
@@ -47,7 +48,8 @@ namespace LMS.Repository.Repo
                 model.City,
                 model.PinCode,
                 model.State,
-                model.Country
+                model.Country,
+                model.UPI
             };
 
             var sql = "USP_UpdateBillingSettings";
