@@ -330,6 +330,7 @@ export default function InvoiceView() {
     };
 
     const handlePrintPDF = async () => {
+        debugger;
         if (!currentInvoice) return;
         setPrintLoading(true);
         try {

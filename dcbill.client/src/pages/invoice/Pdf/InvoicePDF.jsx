@@ -1,7 +1,8 @@
 ﻿// components/InvoicePDF.jsx
 import { Page, Document, StyleSheet, View, Text, Font } from '@react-pdf/renderer';
 import { useInvoiceSummary } from './../useInvoiceSummary';
-import { QRCodeComponent, UPIQRCode } from './QRCodeComponent';
+import { UPIQRCode } from './QRCodeComponent';
+import { UPI_QR_BASE64 } from './QRImage';
 // Register Noto Sans font for proper Unicode support including ₹ symbol
 Font.register({
     family: 'Noto Sans',
@@ -289,6 +290,15 @@ export const InvoicePDF = ({ invoiceData }) => {
         return new Date(date).toLocaleDateString('en-GB');
     };
 
+    const getQRImageUrl = () => {
+        // For web/development
+        if (typeof window !== 'undefined') {
+            return `${window.location.origin}/images/upi-qr-code.png`;
+        }
+        // For production/PDF generation
+        return `${window.location.origin}/images/qR.png`;
+    };
+
     // Get values
     const gstin = invoiceData?.gstin || '';
     const mobile = invoiceData?.mobile || '';
@@ -379,13 +389,11 @@ export const InvoicePDF = ({ invoiceData }) => {
                             <Text style={styles.amountInWordsTitle}>Amount in Words:</Text>
                             <Text style={styles.amountInWordsText}>{amountInWords}</Text>
                         </View>
+                  
                         <UPIQRCode
-                            upiId={invoiceData?.upi} // Replace with your UPI ID
                             amount={grandTotal}
-                            payeeName={invoiceData?.companyName}
-                            invoiceNo={invoiceData?.invoiceNo}
-                            qrSize={70}
                             showAmount={true}
+                            qrSize={70}
                         />
                     </View>
 

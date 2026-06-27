@@ -1,9 +1,7 @@
 // components/QRCodeComponent.jsx
-import React, { useEffect, useState } from 'react';
+import React from 'react';
 import { View, Text, StyleSheet, Image } from '@react-pdf/renderer';
-import QRCode from 'qrcode';
 
-// Export the formatCurrency function so it can be imported elsewhere
 export const formatCurrency = (amount) => {
     if (!amount && amount !== 0) return '0.00';
     return amount.toLocaleString('en-IN', {
@@ -12,123 +10,30 @@ export const formatCurrency = (amount) => {
     });
 };
 
-export const QRCodeComponent = ({
-    amount,
-    qrSize = 70,
-    showAmount = true,
-    showLabel = true,
-    backgroundColor = '#ffffff',
-    foregroundColor = '#000000'
-}) => {
-    const [qrImage, setQrImage] = useState(null);
+// Environment-aware URL generation for Vite
+const getQRImageUrl = () => {
 
-    useEffect(() => {
-        const generateQR = async () => {
-            try {
-                const data = `₹${formatCurrency(amount || 0)}`;
+    debugger;
+    // Browser
+    if (typeof window !== 'undefined') {
+        // In Vite, public files are served from root
+        return '/images/qR.png';
+    }
 
-                const dataUrl = await QRCode.toDataURL(data, {
-                    width: qrSize,
-                    margin: 2,
-                    errorCorrectionLevel: 'H',
-                    color: {
-                        dark: foregroundColor,
-                        light: backgroundColor
-                    }
-                });
-                setQrImage(dataUrl);
-            } catch (error) {
-                console.error('Error generating QR code:', error);
-            }
-        };
+    // Server-side / PDF generation
+    // For Vite, use import.meta.env instead of process.env
+    const baseUrl = import.meta.env.VITE_BASE_URL ||
+        import.meta.env.VITE_SITE_URL ||
+        (import.meta.env.MODE === 'production' ? 'https://yourdomain.com' : 'http://localhost:5173');
 
-        if (amount !== undefined && amount !== null) {
-            generateQR();
-        }
-    }, [amount, qrSize, backgroundColor, foregroundColor]);
-
-    const styles = StyleSheet.create({
-        qrContainer: {
-            alignItems: 'center',
-            padding: 8,
-            border: '1px solid #000',
-            marginTop: 5,
-            backgroundColor: backgroundColor,
-        },
-        qrLabel: {
-            fontSize: 7,
-            fontWeight: 'bold',
-            marginBottom: 4,
-        },
-        qrAmount: {
-            fontSize: 9,
-            fontWeight: 'bold',
-            marginTop: 4,
-        },
-        qrImage: {
-            width: qrSize,
-            height: qrSize,
-        }
-    });
-
-    return (
-        <View style={styles.qrContainer}>
-            {showLabel && (
-                <Text style={styles.qrLabel}>Scan to Pay</Text>
-            )}
-
-            {qrImage ? (
-                <Image src={qrImage} style={styles.qrImage} />
-            ) : (
-                <Text style={{ fontSize: 6 }}>Generating QR...</Text>
-            )}
-
-            {showAmount && (
-                <Text style={styles.qrAmount}>
-                    ₹ {formatCurrency(amount || 0)}
-                </Text>
-            )}
-        </View>
-    );
+    return `${baseUrl}/images/qR.png`;
 };
 
-// UPI Payment QR Code Component
 export const UPIQRCode = ({
-    upiId ,
     amount,
-    payeeName,
-    invoiceNo,
-    qrSize = 70,
-    showAmount = true
+    showAmount = true,
+    qrSize = 70
 }) => {
-    const [qrImage, setQrImage] = useState(null);
-
-    useEffect(() => {
-        debugger;
-        const generateUPIQR = async () => {
-            try {
-                const upiString = `upi://pay?pa=${upiId}&pn=${encodeURIComponent(payeeName || '')}&am=${amount || 0}&cu=INR&tn=INV${invoiceNo || ''}`;
-                debugger;
-                const dataUrl = await QRCode.toDataURL(upiString, {
-                    width: qrSize,
-                    margin: 2,
-                    errorCorrectionLevel: 'H',
-                    color: {
-                        dark: '#000000',
-                        light: '#ffffff'
-                    }
-                });
-                setQrImage(dataUrl);
-            } catch (error) {
-                console.error('Error generating UPI QR code:', error);
-            }
-        };
-
-        if (upiId && amount !== undefined) {
-            generateUPIQR();
-        }
-    }, [upiId, amount, payeeName, invoiceNo, qrSize]);
-
     const styles = StyleSheet.create({
         qrContainer: {
             alignItems: 'center',
@@ -136,6 +41,8 @@ export const UPIQRCode = ({
             border: '1px solid #000',
             marginTop: 5,
             backgroundColor: '#ffffff',
+            minHeight: qrSize + 40,
+            justifyContent: 'center',
         },
         qrLabel: {
             fontSize: 7,
@@ -150,17 +57,25 @@ export const UPIQRCode = ({
         qrImage: {
             width: qrSize,
             height: qrSize,
+        },
+        noImageText: {
+            fontSize: 6,
+            color: '#666666',
         }
     });
+
+    const qrImageUrl = getQRImageUrl();
 
     return (
         <View style={styles.qrContainer}>
             <Text style={styles.qrLabel}>Pay with UPI</Text>
-            {qrImage ? (
-                <Image src={qrImage} style={styles.qrImage} />
+
+            {qrImageUrl ? (
+                <Image src={qrImageUrl} style={styles.qrImage} />
             ) : (
-                <Text style={{ fontSize: 6 }}>Generating QR...</Text>
+                <Text style={styles.noImageText}>QR Image not available</Text>
             )}
+
             {showAmount && (
                 <Text style={styles.qrAmount}>
                     ₹ {formatCurrency(amount || 0)}

@@ -28,7 +28,7 @@ namespace LMS.Core.Entities
         public class TopProductDto
         {
             public string ProductName { get; set; }
-            public int TotalQuantity { get; set; }
+            public long TotalQuantity { get; set; }
             public decimal TotalRevenue { get; set; }
             public int InvoiceCount { get; set; }
             public decimal AvgPrice { get; set; }
