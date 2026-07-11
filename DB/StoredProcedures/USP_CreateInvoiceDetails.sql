@@ -23,12 +23,12 @@ BEGIN
     INSERT INTO InvoiceDetails
     (
         InvoiceId, ItemId, ItemName, HsnCode, Quantity,
-        Rate, Amount, GSTPercent, GSTAmount,CGSTAmount,SGSTAmount , CreatedDate
+        Rate, Amount, GSTPercent, GSTAmount, CGSTAmount, SGSTAmount, IGSTAmount, CreatedDate
     )
     VALUES
     (
         @InvoiceId, @ItemId, @ItemName, @HsnCode, @Quantity,
-        @Rate, @Amount, @GSTPercent, @GSTAmount,(@GSTAmount/2),(@GSTAmount/2), GETDATE()
+        @Rate, @Amount, @GSTPercent, @GSTAmount, (@GSTAmount / 2), (@GSTAmount / 2), 0, GETDATE()
     );
     
     SELECT CAST(SCOPE_IDENTITY() AS BIGINT) AS Id;

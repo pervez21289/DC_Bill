@@ -186,5 +186,23 @@ export const reportService = {
                 message: error.response?.data?.message || 'Failed to fetch sales analytics'
             };
         }
+    },
+
+    // Get GST report
+    async getGSTReport(startDate, endDate) {
+        try {
+            const params = new URLSearchParams();
+            params.append('startDate', startDate);
+            params.append('endDate', endDate);
+
+            const response = await api.get(`/Report/gst-report?${params.toString()}`);
+            return response.data;
+        } catch (error) {
+            console.error('GST report error:', error);
+            return {
+                success: false,
+                message: error.response?.data?.message || 'Failed to fetch GST report'
+            };
+        }
     }
 };

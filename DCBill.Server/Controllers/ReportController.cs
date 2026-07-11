@@ -577,5 +577,219 @@ namespace LMS.API.Controllers
                 });
             }
         }
+
+        /// <summary>
+        /// Get GST Report for GSTR-1 filing
+        /// </summary>
+        [HttpGet("gst-report")]
+        public async Task<IActionResult> GetGSTReport(
+            [FromQuery] DateTime startDate,
+            [FromQuery] DateTime endDate)
+        {
+            try
+            {
+                var companyId = _companyResolver.CurrentCompanyId;
+
+                if (companyId == 0)
+                {
+                    return Unauthorized(new ApiResponse<object>
+                    {
+                        Success = false,
+                        Message = "Company not found for this user"
+                    });
+                }
+
+                if (startDate > endDate)
+                {
+                    return BadRequest(new ApiResponse<object>
+                    {
+                        Success = false,
+                        Message = "Start date must be less than or equal to end date"
+                    });
+                }
+
+                var gstReport = await _reportRepository.GetGSTReportAsync(startDate, endDate, companyId);
+
+                return Ok(new ApiResponse<object>
+                {
+                    Success = true,
+                    Message = "GST report retrieved successfully",
+                    Data = gstReport
+                });
+            }
+            catch (Exception ex)
+            {
+                return StatusCode(500, new ApiResponse<object>
+                {
+                    Success = false,
+                    Message = $"Error retrieving GST report: {ex.Message}"
+                });
+            }
+        }
+
+        /// <summary>
+        /// Get Sales by Payment Mode Report
+        /// </summary>
+        [HttpGet("sales-by-payment-mode")]
+        public async Task<IActionResult> GetSalesByPaymentMode(
+            [FromQuery] DateTime? startDate = null,
+            [FromQuery] DateTime? endDate = null)
+        {
+            try
+            {
+                var companyId = _companyResolver.CurrentCompanyId;
+
+                if (companyId == 0)
+                {
+                    return Unauthorized(new ApiResponse<object>
+                    {
+                        Success = false,
+                        Message = "Company not found for this user"
+                    });
+                }
+
+                var report = await _reportRepository.GetSalesByPaymentModeAsync(startDate, endDate, companyId);
+
+                return Ok(new ApiResponse<object>
+                {
+                    Success = true,
+                    Message = "Sales by payment mode retrieved successfully",
+                    Data = report
+                });
+            }
+            catch (Exception ex)
+            {
+                return StatusCode(500, new ApiResponse<object>
+                {
+                    Success = false,
+                    Message = $"Error retrieving sales by payment mode: {ex.Message}"
+                });
+            }
+        }
+
+        /// <summary>
+        /// Get Customer Purchase History Report
+        /// </summary>
+        [HttpGet("customer-purchase-history/{customerId}")]
+        public async Task<IActionResult> GetCustomerPurchaseHistory(int customerId)
+        {
+            try
+            {
+                var companyId = _companyResolver.CurrentCompanyId;
+
+                if (companyId == 0)
+                {
+                    return Unauthorized(new ApiResponse<object>
+                    {
+                        Success = false,
+                        Message = "Company not found for this user"
+                    });
+                }
+
+                if (customerId <= 0)
+                {
+                    return BadRequest(new ApiResponse<object>
+                    {
+                        Success = false,
+                        Message = "Invalid customer ID"
+                    });
+                }
+
+                var report = await _reportRepository.GetCustomerPurchaseHistoryAsync(customerId, companyId);
+
+                return Ok(new ApiResponse<object>
+                {
+                    Success = true,
+                    Message = "Customer purchase history retrieved successfully",
+                    Data = report
+                });
+            }
+            catch (Exception ex)
+            {
+                return StatusCode(500, new ApiResponse<object>
+                {
+                    Success = false,
+                    Message = $"Error retrieving customer purchase history: {ex.Message}"
+                });
+            }
+        }
+
+        /// <summary>
+        /// Get Daily Sales Report
+        /// </summary>
+        [HttpGet("daily-sales")]
+        public async Task<IActionResult> GetDailySalesReport([FromQuery] DateTime? reportDate = null)
+        {
+            try
+            {
+                var companyId = _companyResolver.CurrentCompanyId;
+
+                if (companyId == 0)
+                {
+                    return Unauthorized(new ApiResponse<object>
+                    {
+                        Success = false,
+                        Message = "Company not found for this user"
+                    });
+                }
+
+                var report = await _reportRepository.GetDailySalesReportAsync(reportDate, companyId);
+
+                return Ok(new ApiResponse<object>
+                {
+                    Success = true,
+                    Message = "Daily sales report retrieved successfully",
+                    Data = report
+                });
+            }
+            catch (Exception ex)
+            {
+                return StatusCode(500, new ApiResponse<object>
+                {
+                    Success = false,
+                    Message = $"Error retrieving daily sales report: {ex.Message}"
+                });
+            }
+        }
+
+        /// <summary>
+        /// Get Inventory Report
+        /// </summary>
+        [HttpGet("inventory")]
+        public async Task<IActionResult> GetInventoryReport(
+            [FromQuery] DateTime? startDate = null,
+            [FromQuery] DateTime? endDate = null)
+        {
+            try
+            {
+                var companyId = _companyResolver.CurrentCompanyId;
+
+                if (companyId == 0)
+                {
+                    return Unauthorized(new ApiResponse<object>
+                    {
+                        Success = false,
+                        Message = "Company not found for this user"
+                    });
+                }
+
+                var report = await _reportRepository.GetInventoryReportAsync(startDate, endDate, companyId);
+
+                return Ok(new ApiResponse<object>
+                {
+                    Success = true,
+                    Message = "Inventory report retrieved successfully",
+                    Data = report
+                });
+            }
+            catch (Exception ex)
+            {
+                return StatusCode(500, new ApiResponse<object>
+                {
+                    Success = false,
+                    Message = $"Error retrieving inventory report: {ex.Message}"
+                });
+            }
+        }
     }
 }

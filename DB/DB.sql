@@ -94,6 +94,8 @@ CREATE TABLE [dbo].[InvoiceDetails](
 	[CreatedDate] [datetime] NOT NULL,
 	[CGSTAmount] [decimal](18, 2) NULL,
 	[SGSTAmount] [decimal](18, 2) NULL,
+	[IGSTAmount] [decimal](18, 2) NOT NULL CONSTRAINT DF_InvoiceDetails_IGSTAmount DEFAULT ((0)),
+	[IsDeleted] [bit] NOT NULL CONSTRAINT DF_InvoiceDetails_IsDeleted DEFAULT ((0)),
 PRIMARY KEY CLUSTERED 
 (
 	[Id] ASC
@@ -743,51 +745,50 @@ BEGIN
     -- =============================================
     -- RESULT SET 1: Invoice-wise GST Details
     -- =============================================
-    SELECT 
-        i.InvoiceId AS InvoiceId,
-        i.InvoiceNumber AS InvoiceNumber,
+    SELECT
+        i.Id AS InvoiceId,
+        i.InvoiceNo AS InvoiceNumber,
         i.InvoiceDate AS InvoiceDate,
-        i.InvoiceType AS InvoiceType,
-        p.PartyName AS PartyName,
-        p.GSTIN AS PartyGstin,
-        p.StateCode AS PartyStateCode,
-        s.StateName AS PartyState,
-        i.TaxableAmount AS TaxableAmount,
-        i.CGSTAmount AS CGSTAmount,
-        i.SGSTAmount AS SGSTAmount,
-        i.IGSTAmount AS IGSTAmount,
-        (i.CGSTAmount + i.SGSTAmount + i.IGSTAmount) AS TotalGST,
-        i.TotalAmount AS TotalAmount,
+        CASE WHEN ISNULL(p.GSTIN, '') = '' THEN 'B2C' ELSE 'B2B' END AS InvoiceType,
+        ISNULL(p.PartyName, i.PartyName) AS PartyName,
+        ISNULL(p.GSTIN, i.PartyGSTIN) AS PartyGstin,
+        ISNULL(p.State, i.PartyState) AS PartyStateCode,
+        ISNULL(p.State, i.PartyState) AS PartyState,
+        i.Subtotal AS TaxableAmount,
+        COALESCE(i.TotalGST, 0) / 2 AS CGSTAmount,
+        COALESCE(i.TotalGST, 0) / 2 AS SGSTAmount,
+        0 AS IGSTAmount,
+        i.TotalGST AS TotalGST,
+        i.GrandTotal AS TotalAmount,
         i.PaymentStatus AS PaymentStatus,
-        i.PlaceOfSupply AS PlaceOfSupply,
-        i.ReverseCharge AS ReverseCharge,
-        i.EInvoiceStatus AS EInvoiceStatus,
-        i.IRN AS IRN,
-        i.AckNo AS AckNo,
-        i.AckDate AS AckDate
-    FROM Invoices i
-    INNER JOIN Parties p ON i.PartyId = p.PartyId
-    LEFT JOIN States s ON p.StateCode = s.StateCode
+        i.PartyState AS PlaceOfSupply,
+        0 AS ReverseCharge,
+        '' AS EInvoiceStatus,
+        '' AS IRN,
+        '' AS AckNo,
+        NULL AS AckDate
+    FROM InvoiceMaster i
+    LEFT JOIN Party p ON i.PartyId = p.Id
     WHERE i.InvoiceDate BETWEEN @StartDate AND @EndDate
         AND i.IsDeleted = 0
         AND (@CompanyId IS NULL OR i.CompanyId = @CompanyId)
-    ORDER BY i.InvoiceDate DESC, i.InvoiceNumber;
+    ORDER BY i.InvoiceDate DESC, i.InvoiceNo;
 
     -- =============================================
     -- RESULT SET 2: GST Summary (Totals)
     -- =============================================
-    SELECT 
-        COUNT(i.InvoiceId) AS TotalInvoices,
-        SUM(i.TaxableAmount) AS TotalTaxableAmount,
-        SUM(i.CGSTAmount) AS TotalCGST,
-        SUM(i.SGSTAmount) AS TotalSGST,
-        SUM(i.IGSTAmount) AS TotalIGST,
-        SUM(i.CGSTAmount + i.SGSTAmount + i.IGSTAmount) AS TotalGST,
-        SUM(i.TotalAmount) AS GrandTotal,
+    SELECT
+        COUNT(i.Id) AS TotalInvoices,
+        SUM(i.Subtotal) AS TotalTaxableAmount,
+        SUM(COALESCE(i.TotalGST, 0) / 2) AS TotalCGST,
+        SUM(COALESCE(i.TotalGST, 0) / 2) AS TotalSGST,
+        0 AS TotalIGST,
+        SUM(COALESCE(i.TotalGST, 0)) AS TotalGST,
+        SUM(COALESCE(i.GrandTotal, 0)) AS GrandTotal,
         SUM(CASE WHEN i.PaymentStatus = 1 THEN 1 ELSE 0 END) AS PaidInvoices,
         SUM(CASE WHEN i.PaymentStatus = 2 THEN 1 ELSE 0 END) AS PartialInvoices,
         SUM(CASE WHEN i.PaymentStatus = 0 THEN 1 ELSE 0 END) AS UnpaidInvoices
-    FROM Invoices i
+    FROM InvoiceMaster i
     WHERE i.InvoiceDate BETWEEN @StartDate AND @EndDate
         AND i.IsDeleted = 0
         AND (@CompanyId IS NULL OR i.CompanyId = @CompanyId);
@@ -795,54 +796,79 @@ BEGIN
     -- =============================================
     -- RESULT SET 3: HSN-wise Summary
     -- =============================================
-    SELECT 
-        id.HSNCode AS HSNCode,
-        id.Description AS Description,
-        SUM(id.TaxableAmount) AS TaxableAmount,
-        SUM(id.CGSTAmount) AS CGSTAmount,
-        SUM(id.SGSTAmount) AS SGSTAmount,
-        SUM(id.IGSTAmount) AS IGSTAmount,
-        SUM(id.CGSTAmount + id.SGSTAmount + id.IGSTAmount) AS TotalGST,
+    SELECT
+        id.HsnCode AS HSNCode,
+        id.ItemName AS Description,
+        SUM(id.Amount) AS TaxableAmount,
+        SUM(ISNULL(id.GSTAmount, 0) / 2) AS CGSTAmount,
+        SUM(ISNULL(id.GSTAmount, 0) / 2) AS SGSTAmount,
+        0 AS IGSTAmount,
+        SUM(ISNULL(id.GSTAmount, 0)) AS TotalGST,
         SUM(id.Quantity) AS TotalQuantity,
         AVG(id.Rate) AS AverageRate,
-        COUNT(DISTINCT i.InvoiceId) AS InvoiceCount
+        COUNT(DISTINCT id.InvoiceId) AS InvoiceCount
     FROM InvoiceDetails id
-    INNER JOIN Invoices i ON id.InvoiceId = i.InvoiceId
+    INNER JOIN InvoiceMaster i ON id.InvoiceId = i.Id
     WHERE i.InvoiceDate BETWEEN @StartDate AND @EndDate
         AND i.IsDeleted = 0
-        AND id.IsDeleted = 0
         AND (@CompanyId IS NULL OR i.CompanyId = @CompanyId)
-    GROUP BY id.HSNCode, id.Description
+    GROUP BY id.HsnCode, id.ItemName
     ORDER BY TotalGST DESC;
 
     -- =============================================
     -- RESULT SET 4: Party-wise GST Summary
     -- =============================================
-    SELECT 
-        p.PartyId AS PartyId,
-        p.PartyName AS PartyName,
-        p.GSTIN AS PartyGstin,
-        p.StateCode AS PartyStateCode,
-        s.StateName AS PartyState,
-        COUNT(i.InvoiceId) AS InvoiceCount,
-        SUM(i.TaxableAmount) AS TaxableAmount,
-        SUM(i.CGSTAmount) AS CGSTAmount,
-        SUM(i.SGSTAmount) AS SGSTAmount,
-        SUM(i.IGSTAmount) AS IGSTAmount,
-        SUM(i.CGSTAmount + i.SGSTAmount + i.IGSTAmount) AS TotalGST,
-        SUM(i.TotalAmount) AS TotalAmount,
-        SUM(CASE WHEN i.PaymentStatus = 1 THEN i.TotalAmount ELSE 0 END) AS PaidAmount,
-        SUM(CASE WHEN i.PaymentStatus = 2 THEN i.TotalAmount ELSE 0 END) AS PartialAmount,
-        SUM(CASE WHEN i.PaymentStatus = 0 THEN i.TotalAmount ELSE 0 END) AS UnpaidAmount
-    FROM Invoices i
-    INNER JOIN Parties p ON i.PartyId = p.PartyId
-    LEFT JOIN States s ON p.StateCode = s.StateCode
+    SELECT
+        ISNULL(p.Id, 0) AS PartyId,
+        ISNULL(p.PartyName, i.PartyName) AS PartyName,
+        ISNULL(p.GSTIN, i.PartyGSTIN) AS PartyGstin,
+        ISNULL(p.State, i.PartyState) AS PartyStateCode,
+        ISNULL(p.State, i.PartyState) AS PartyState,
+        COUNT(i.Id) AS InvoiceCount,
+        SUM(i.Subtotal) AS TaxableAmount,
+        SUM(COALESCE(i.TotalGST, 0) / 2) AS CGSTAmount,
+        SUM(COALESCE(i.TotalGST, 0) / 2) AS SGSTAmount,
+        0 AS IGSTAmount,
+        SUM(COALESCE(i.TotalGST, 0)) AS TotalGST,
+        SUM(COALESCE(i.GrandTotal, 0)) AS TotalAmount,
+        SUM(CASE WHEN i.PaymentStatus = 1 THEN COALESCE(i.GrandTotal, 0) ELSE 0 END) AS PaidAmount,
+        SUM(CASE WHEN i.PaymentStatus = 2 THEN COALESCE(i.GrandTotal, 0) ELSE 0 END) AS PartialAmount,
+        SUM(CASE WHEN i.PaymentStatus = 0 THEN COALESCE(i.GrandTotal, 0) ELSE 0 END) AS UnpaidAmount
+    FROM InvoiceMaster i
+    LEFT JOIN Party p ON i.PartyId = p.Id
     WHERE i.InvoiceDate BETWEEN @StartDate AND @EndDate
         AND i.IsDeleted = 0
         AND (@CompanyId IS NULL OR i.CompanyId = @CompanyId)
-    GROUP BY p.PartyId, p.PartyName, p.GSTIN, p.StateCode, s.StateName
+    GROUP BY ISNULL(p.Id, 0), ISNULL(p.PartyName, i.PartyName), ISNULL(p.GSTIN, i.PartyGSTIN), ISNULL(p.State, i.PartyState)
     ORDER BY TotalGST DESC;
 
+END
+GO
+/****** Object:  StoredProcedure [dbo].[sp_GetCompanyDetails]    Script Date: 10-07-2026 11.17.58 PM ******/
+SET ANSI_NULLS ON
+GO
+SET QUOTED_IDENTIFIER ON
+GO
+CREATE PROCEDURE [dbo].[sp_GetCompanyDetails]
+    @CompanyId INT = NULL
+AS
+BEGIN
+    SET NOCOUNT ON;
+
+    SELECT TOP 1
+        CompanyName,
+        GSTIN,
+        State AS CompanyState,
+        Address AS CompanyAddress,
+        City AS CompanyCity,
+        PinCode AS CompanyPinCode,
+        Country AS CompanyCountry,
+        MobileNumber AS CompanyPhone,
+        UPI AS CompanyUPI,
+        '' AS CompanyPAN,
+        '' AS CompanyStateCode
+    FROM BillingSettings
+    ORDER BY Id;
 END
 GO
 /****** Object:  StoredProcedure [dbo].[sp_GetInventoryReport]    Script Date: 10-07-2026 11.17.58 PM ******/
@@ -1428,12 +1454,12 @@ BEGIN
     INSERT INTO InvoiceDetails
     (
         InvoiceId, ItemId, ItemName, HsnCode, Quantity,
-        Rate, Amount, GSTPercent, GSTAmount,CGSTAmount,SGSTAmount , CreatedDate
+        Rate, Amount, GSTPercent, GSTAmount, CGSTAmount, SGSTAmount, IGSTAmount, CreatedDate
     )
     VALUES
     (
         @InvoiceId, @ItemId, @ItemName, @HsnCode, @Quantity,
-        @Rate, @Amount, @GSTPercent, @GSTAmount,(@GSTAmount/2),(@GSTAmount/2), GETDATE()
+        @Rate, @Amount, @GSTPercent, @GSTAmount, (@GSTAmount / 2), (@GSTAmount / 2), 0, GETDATE()
     );
     
     SELECT CAST(SCOPE_IDENTITY() AS BIGINT) AS Id;

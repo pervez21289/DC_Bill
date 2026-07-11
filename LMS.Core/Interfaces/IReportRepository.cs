@@ -33,11 +33,11 @@ namespace LMS.Core.Interfaces
         Task<(DashboardStatsDto Stats, DateRangeDto DateRange, IEnumerable<RevenueTrendDto> Trends)> GetCompleteDashboardDataAsync(
             string filterType, DateTime? startDate, DateTime? endDate, int? companyId);
 
-        //// Additional Report Methods (Optional - for extra SPs)
-        //Task<IEnumerable<SalesByPaymentModeDto>> GetSalesByPaymentModeAsync(DateTime? startDate, DateTime? endDate, int? companyId);
-        //Task<IEnumerable<CustomerPurchaseHistoryDto>> GetCustomerPurchaseHistoryAsync(int customerId, int? companyId);
-        //Task<IEnumerable<DailySalesReportDto>> GetDailySalesReportAsync(DateTime? reportDate, int? companyId);
-        //Task<IEnumerable<GSTReportDto>> GetGSTReportAsync(DateTime startDate, DateTime endDate, int? companyId);
-        //Task<IEnumerable<InventoryReportDto>> GetInventoryReportAsync(DateTime? startDate, DateTime? endDate, int? companyId);
+        //// Additional Report Methods
+        Task<GSTReportResponseDto> GetGSTReportAsync(DateTime startDate, DateTime endDate, int? companyId);
+        Task<IEnumerable<SalesByPaymentModeDto>> GetSalesByPaymentModeAsync(DateTime? startDate, DateTime? endDate, int? companyId);
+        Task<IEnumerable<CustomerPurchaseHistoryDto>> GetCustomerPurchaseHistoryAsync(int customerId, int? companyId);
+        Task<IEnumerable<DailySalesReportDto>> GetDailySalesReportAsync(DateTime? reportDate, int? companyId);
+        Task<IEnumerable<InventoryReportDto>> GetInventoryReportAsync(DateTime? startDate, DateTime? endDate, int? companyId);
     }
 }

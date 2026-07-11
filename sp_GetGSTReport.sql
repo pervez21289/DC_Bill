@@ -1,19 +1,3 @@
-USE [DCBill_Dev]
-GO
-
-/****** Object:  StoredProcedure [dbo].[sp_GetGSTReport]    Script Date: 10-07-2026 11.17.58 PM ******/
-SET ANSI_NULLS ON
-GO
-SET QUOTED_IDENTIFIER ON
-GO
--- =============================================
--- Stored Procedure: sp_GetGSTReport
--- Description: Generates GST report with 4 result sets:
---   1. Invoice-wise GST details
---   2. GST Summary (totals)
---   3. HSN-wise summary
---   4. Party-wise GST summary
--- =============================================
 CREATE PROCEDURE [dbo].[sp_GetGSTReport]
     @StartDate DATE,
     @EndDate DATE,
@@ -122,4 +106,3 @@ BEGIN
     GROUP BY ISNULL(p.Id, 0), ISNULL(p.PartyName, i.PartyName), ISNULL(p.GSTIN, i.PartyGSTIN), ISNULL(p.State, i.PartyState)
     ORDER BY TotalGST DESC;
 END
-GO

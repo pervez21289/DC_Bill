@@ -95,6 +95,24 @@ namespace LMS.Repo.Repository
             }
         }
 
+        public async Task<(List<T1> First, List<T2> Second, List<T3> Third, List<T4> Fourth)> QueryMultipleAsync<T1, T2, T3, T4>(string sql, object param = null, CommandType commandType = CommandType.StoredProcedure)
+        {
+            using (var conn = new SqlConnection(ConnectionString))
+            {
+                await conn.OpenAsync();
+
+                using (var reader = await conn.QueryMultipleAsync(sql, param, commandType: commandType))
+                {
+                    var first = (await reader.ReadAsync<T1>()).ToList();
+                    var second = (await reader.ReadAsync<T2>()).ToList();
+                    var third = (await reader.ReadAsync<T3>()).ToList();
+                    var fourth = (await reader.ReadAsync<T4>()).ToList();
+
+                    return (first, second, third, fourth);
+                }
+            }
+        }
+
         public async Task<(T1 First, T2 Second)> QueryMultipleStringAsync<T1, T2>(string sql, object param = null, CommandType commandType = CommandType.StoredProcedure)
         {
             using (var conn = new SqlConnection(ConnectionString))

@@ -123,6 +123,18 @@ export const fetchSalesAnalytics = createAsyncThunk(
     }
 );
 
+export const fetchGSTReport = createAsyncThunk(
+    'report/fetchGSTReport',
+    async ({ startDate, endDate }) => {
+        const response = await reportService.getGSTReport(startDate, endDate);
+        if (response.success) {
+            return response.data;
+        } else {
+            throw new Error(response.message);
+        }
+    }
+);
+
 // Initial State
 const initialState = {
     dashboardStats: {
@@ -143,6 +155,7 @@ const initialState = {
     totalRevenue: 0,
     dateRange: { startDate: null, endDate: null },
     salesAnalytics: null,
+    gstReport: null,
     loading: false,
     error: null
 };
@@ -317,6 +330,20 @@ const reportSlice = createSlice({
             .addCase(fetchSalesAnalytics.rejected, (state, action) => {
                 state.loading = false;
                 state.error = action.error.message || 'Failed to fetch sales analytics';
+            })
+
+            // GST Report
+            .addCase(fetchGSTReport.pending, (state) => {
+                state.loading = true;
+                state.error = null;
+            })
+            .addCase(fetchGSTReport.fulfilled, (state, action) => {
+                state.loading = false;
+                state.gstReport = action.payload;
+            })
+            .addCase(fetchGSTReport.rejected, (state, action) => {
+                state.loading = false;
+                state.error = action.error.message || 'Failed to fetch GST report';
             });
     }
 });
@@ -332,6 +359,7 @@ export const selectMonthlySalesSummary = (state) => state.report.monthlySalesSum
 export const selectTotalRevenue = (state) => state.report.totalRevenue;
 export const selectDateRange = (state) => state.report.dateRange;
 export const selectSalesAnalytics = (state) => state.report.salesAnalytics;
+export const selectGSTReport = (state) => state.report.gstReport;
 export const selectReportLoading = (state) => state.report.loading;
 export const selectReportError = (state) => state.report.error;
 

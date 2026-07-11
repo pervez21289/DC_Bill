@@ -1,12 +1,13 @@
 // assets
 import { DashboardOutlined } from '@ant-design/icons';
-import { LoginOutlined, ProfileOutlined, AppstoreAddOutlined, OrderedListOutlined } from '@ant-design/icons';
+import { LoginOutlined, ProfileOutlined, AppstoreAddOutlined, OrderedListOutlined, FileTextOutlined } from '@ant-design/icons';
 // icons
 const icons = {
     DashboardOutlined,
     ProfileOutlined,
     AppstoreAddOutlined,
-    OrderedListOutlined
+    OrderedListOutlined,
+    FileTextOutlined
 };
 
 
@@ -40,6 +41,15 @@ const dashboard = {
           type: 'item',
           url: '/invoices',
           icon: icons.OrderedListOutlined,
+          breadcrumbs: false,
+          external: true,
+      },
+      {
+          id: 'gst-report',
+          title: 'GST Report',
+          type: 'item',
+          url: '/gst-report',
+          icon: icons.FileTextOutlined,
           breadcrumbs: false,
           external: true,
       }

@@ -102,7 +102,8 @@ api.interceptors.response.use(
             tokenService.removeToken();
             localStorage.removeItem('refreshToken');
             localStorage.removeItem('user');
-            //window.location.href = '/login';
+            localStorage.removeItem('auth_user');
+            window.location.href = '/login';
 
             return Promise.reject(refreshError);
         } finally {

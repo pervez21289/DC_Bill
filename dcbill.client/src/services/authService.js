@@ -19,6 +19,7 @@ export const authService = {
                 }
                 if (response.data.data.user) {
                     localStorage.setItem('user', JSON.stringify(response.data.data.user));
+                    localStorage.setItem('auth_user', JSON.stringify(response.data.data.user));
                 }
 
                 return response.data;
@@ -69,6 +70,7 @@ export const authService = {
         tokenService.removeToken();
         localStorage.removeItem('refreshToken');
         localStorage.removeItem('user');
+        localStorage.removeItem('auth_user');
         window.location.href = "/login";
     },
 

@@ -20,6 +20,8 @@ CREATE TABLE [dbo].[InvoiceDetails](
 	[CreatedDate] [datetime] NOT NULL,
 	[CGSTAmount] [decimal](18, 2) NULL,
 	[SGSTAmount] [decimal](18, 2) NULL,
+	[IGSTAmount] [decimal](18, 2) NOT NULL CONSTRAINT DF_InvoiceDetails_IGSTAmount DEFAULT ((0)),
+	[IsDeleted] [bit] NOT NULL CONSTRAINT DF_InvoiceDetails_IsDeleted DEFAULT ((0)),
 PRIMARY KEY CLUSTERED 
 (
 	[Id] ASC

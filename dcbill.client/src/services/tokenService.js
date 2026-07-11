@@ -1,5 +1,5 @@
 // services/tokenService.js
-const TOKEN_KEY = 'accessToken';
+const TOKEN_KEY = 'auth_token';
 
 export const tokenService = {
     getToken() {

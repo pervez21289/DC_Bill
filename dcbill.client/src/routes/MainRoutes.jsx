@@ -19,6 +19,7 @@ import InvoiceView from '../pages/invoice/InvoiceView';
 import BillingSettings from '../pages/billingsettings/BillingSettings';
 import InvoiceGrid from '../pages/invoice/InvoiceGrid';
 import ActivityLogReport from '../pages/activityLog/ActivityLogReport';
+import GSTReportPage from '../pages/reports/GSTReportPage';
 // ==============================|| MAIN ROUTING ||============================== //
 
 const MainRoutes = {
@@ -59,6 +60,10 @@ const MainRoutes = {
                 {
                     path: 'history',
                     element: <ActivityLogReport />
+                },
+                {
+                    path: 'gst-report',
+                    element: <GSTReportPage />
                 },
                 {
                     path: 'shadow',

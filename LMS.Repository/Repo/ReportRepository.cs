@@ -240,5 +240,143 @@ namespace LMS.Repo.Repository
                 throw new Exception($"Error getting complete dashboard data: {ex.Message}", ex);
             }
         }
+
+        // GST Report
+        public async Task<GSTReportResponseDto> GetGSTReportAsync(DateTime startDate, DateTime endDate, int? companyId)
+        {
+            try
+            {
+                var parameters = new DynamicParameters();
+                parameters.Add("@StartDate", startDate);
+                parameters.Add("@EndDate", endDate);
+                parameters.Add("@CompanyId", companyId);
+
+                var multi = await QueryMultipleAsync<GSTReportDto, GSTSummaryDto, HSNWiseSummaryDto, PartyWiseGSTSummaryDto>(
+                    "sp_GetGSTReport",
+                    parameters,
+                    commandType: CommandType.StoredProcedure);
+
+                var invoices = multi.First.ToList() ?? new List<GSTReportDto>();
+                var summary = multi.Second.FirstOrDefault() ?? new GSTSummaryDto();
+                var hsnSummary = multi.Third.ToList() ?? new List<HSNWiseSummaryDto>();
+                var partySummary = multi.Fourth.ToList() ?? new List<PartyWiseGSTSummaryDto>();
+
+                // Get company details for the report header
+                var companyParams = new DynamicParameters();
+                companyParams.Add("@CompanyId", companyId);
+                var company = await QueryFirstOrDefaultAsync<dynamic>(
+                    "sp_GetCompanyDetails",
+                    companyParams,
+                    commandType: CommandType.StoredProcedure);
+
+                summary.HSNWiseSummary = hsnSummary;
+                summary.PartyWiseSummary = partySummary;
+
+                return new GSTReportResponseDto
+                {
+                    Invoices = invoices,
+                    Summary = summary,
+                    FromDate = startDate,
+                    ToDate = endDate,
+                    CompanyName = company?.CompanyName ?? "",
+                    CompanyGSTIN = company?.GSTIN ?? "",
+                    CompanyState = company?.State ?? ""
+                };
+            }
+            catch (Exception ex)
+            {
+                throw new Exception($"Error getting GST report: {ex.Message}", ex);
+            }
+        }
+
+        // Sales by Payment Mode
+        public async Task<IEnumerable<SalesByPaymentModeDto>> GetSalesByPaymentModeAsync(DateTime? startDate, DateTime? endDate, int? companyId)
+        {
+            try
+            {
+                var parameters = new DynamicParameters();
+                parameters.Add("@StartDate", startDate);
+                parameters.Add("@EndDate", endDate);
+                parameters.Add("@CompanyId", companyId);
+
+                var result = await QueryAsync<SalesByPaymentModeDto>(
+                    "sp_GetSalesByPaymentMode",
+                    parameters,
+                    commandType: CommandType.StoredProcedure);
+
+                return result ?? new List<SalesByPaymentModeDto>();
+            }
+            catch (Exception ex)
+            {
+                throw new Exception($"Error getting sales by payment mode: {ex.Message}", ex);
+            }
+        }
+
+        // Customer Purchase History
+        public async Task<IEnumerable<CustomerPurchaseHistoryDto>> GetCustomerPurchaseHistoryAsync(int customerId, int? companyId)
+        {
+            try
+            {
+                var parameters = new DynamicParameters();
+                parameters.Add("@CustomerId", customerId);
+                parameters.Add("@CompanyId", companyId);
+
+                var result = await QueryAsync<CustomerPurchaseHistoryDto>(
+                    "sp_GetCustomerPurchaseHistory",
+                    parameters,
+                    commandType: CommandType.StoredProcedure);
+
+                return result ?? new List<CustomerPurchaseHistoryDto>();
+            }
+            catch (Exception ex)
+            {
+                throw new Exception($"Error getting customer purchase history: {ex.Message}", ex);
+            }
+        }
+
+        // Daily Sales Report
+        public async Task<IEnumerable<DailySalesReportDto>> GetDailySalesReportAsync(DateTime? reportDate, int? companyId)
+        {
+            try
+            {
+                var parameters = new DynamicParameters();
+                parameters.Add("@ReportDate", reportDate ?? DateTime.Now.Date);
+                parameters.Add("@CompanyId", companyId);
+
+                var result = await QueryAsync<DailySalesReportDto>(
+                    "sp_GetDailySalesReport",
+                    parameters,
+                    commandType: CommandType.StoredProcedure);
+
+                return result ?? new List<DailySalesReportDto>();
+            }
+            catch (Exception ex)
+            {
+                throw new Exception($"Error getting daily sales report: {ex.Message}", ex);
+            }
+        }
+
+        // Inventory Report
+        public async Task<IEnumerable<InventoryReportDto>> GetInventoryReportAsync(DateTime? startDate, DateTime? endDate, int? companyId)
+        {
+            try
+            {
+                var parameters = new DynamicParameters();
+                parameters.Add("@StartDate", startDate);
+                parameters.Add("@EndDate", endDate);
+                parameters.Add("@CompanyId", companyId);
+
+                var result = await QueryAsync<InventoryReportDto>(
+                    "sp_GetInventoryReport",
+                    parameters,
+                    commandType: CommandType.StoredProcedure);
+
+                return result ?? new List<InventoryReportDto>();
+            }
+            catch (Exception ex)
+            {
+                throw new Exception($"Error getting inventory report: {ex.Message}", ex);
+            }
+        }
     }
 }
