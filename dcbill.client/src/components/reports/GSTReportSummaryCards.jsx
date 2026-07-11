@@ -240,49 +240,7 @@ const GSTReportSummaryCards = ({ summary, company }) => {
                 </Grid>
             </Box>
 
-            {/* Company Information */}
-            {company && (
-                <Paper
-                    key={`company-${company.gstin}`}
-                    sx={{
-                        mt: 3,
-                        p: 3,
-                        borderRadius: 2,
-                        bgcolor: theme.palette.grey[50],
-                        border: `1px solid ${theme.palette.divider}`,
-                    }}
-                >
-                    <Typography variant="subtitle2" sx={{ fontWeight: 600, mb: 2 }}>
-                        Company Details
-                    </Typography>
-                    <Grid container spacing={2}>
-                        <Grid item xs={12} md={4}>
-                            <Typography variant="caption" color="text.secondary">
-                                Company Name
-                            </Typography>
-                            <Typography variant="body2" sx={{ fontWeight: 500 }}>
-                                {company.companyName}
-                            </Typography>
-                        </Grid>
-                        <Grid item xs={12} md={4}>
-                            <Typography variant="caption" color="text.secondary">
-                                GSTIN
-                            </Typography>
-                            <Typography variant="body2" sx={{ fontWeight: 500, fontFamily: 'monospace' }}>
-                                {company.gstin}
-                            </Typography>
-                        </Grid>
-                        <Grid item xs={12} md={4}>
-                            <Typography variant="caption" color="text.secondary">
-                                State
-                            </Typography>
-                            <Typography variant="body2" sx={{ fontWeight: 500 }}>
-                                {company.state} ({company.stateCode})
-                            </Typography>
-                        </Grid>
-                    </Grid>
-                </Paper>
-            )}
+           
         </Box>
     );
 };

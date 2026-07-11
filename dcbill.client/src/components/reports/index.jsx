@@ -9,6 +9,7 @@ import {
 } from '@mui/material';
 import { format } from 'date-fns';
 import { fetchGSTReport, selectGSTReport, selectReportLoading, selectReportError, clearReportError } from '../../store/reportSlice';
+import { fetchBillingSettings } from '../../store/billingSettingsSlice';
 import GSTReportCompanyInfo from './GSTReportCompanyInfo';
 import GSTReportFilters from './GSTReportFilters';
 import GSTReportSummaryCards from './GSTReportSummaryCards';
@@ -22,6 +23,11 @@ const GSTReportContainer = ({ onExportExcel, onExportPDF, onPrint }) => {
     const gstReport = useSelector(selectGSTReport);
     const loading = useSelector(selectReportLoading);
     const error = useSelector(selectReportError);
+
+    // Get billing settings from Redux store
+    const billingSettings = useSelector((state) => state.billingSettings?.data);
+    const billingLoading = useSelector((state) => state.billingSettings?.loading);
+    const billingError = useSelector((state) => state.billingSettings?.error);
 
     const [dateRange, setDateRange] = useState({
         startDate: new Date(new Date().getFullYear(), new Date().getMonth(), 1),
@@ -41,6 +47,13 @@ const GSTReportContainer = ({ onExportExcel, onExportPDF, onPrint }) => {
     const initialFetchDone = useRef(false);
     const isFetchingRef = useRef(false);
 
+    // Fetch billing settings on mount
+    useEffect(() => {
+        if (!billingSettings && !billingLoading) {
+            dispatch(fetchBillingSettings());
+        }
+    }, [dispatch, billingSettings, billingLoading]);
+
     // Calculate payment status counts from invoices
     const calculatePaymentStatus = useCallback((invoices) => {
         if (!invoices || !invoices.length) {
@@ -52,28 +65,14 @@ const GSTReportContainer = ({ onExportExcel, onExportPDF, onPrint }) => {
         let unpaid = 0;
 
         invoices.forEach(invoice => {
-            // Safely get payment status as string
-            let status = '';
-            if (invoice.paymentStatus) {
-                status = String(invoice.paymentStatus).toLowerCase();
-            }
+            const status = invoice.paymentStatus;
 
-            // Check if it's a string before using toLowerCase
-            if (typeof invoice.paymentStatus === 'string') {
-                status = invoice.paymentStatus.toLowerCase();
-            } else if (invoice.paymentStatus && typeof invoice.paymentStatus === 'object') {
-                // If it's an object, try to get a string representation
-                status = String(invoice.paymentStatus).toLowerCase();
-            } else {
-                status = String(invoice.paymentStatus || '').toLowerCase();
-            }
-
-            // Now check the status
-            if (status === 'paid' || status === 'completed' || status === 'fully paid' || status === 'full') {
+            // Payment status: 1 = Paid, 2 = Partial Paid, 3 = Unpaid
+            if (status === 1 || status === '1' || status === 'paid' || status === 'Paid' || status === 'PAID') {
                 paid++;
-            } else if (status === 'partial' || status === 'partially paid' || status === 'partial paid') {
+            } else if (status === 2 || status === '2' || status === 'partial' || status === 'Partial' || status === 'PARTIAL' || status === 'partially paid' || status === 'Partial Paid') {
                 partial++;
-            } else if (status === 'unpaid' || status === 'pending' || status === 'overdue' || status === '') {
+            } else if (status === 3 || status === '3' || status === 'unpaid' || status === 'Unpaid' || status === 'UNPAID' || status === 'pending' || status === 'Pending') {
                 unpaid++;
             } else {
                 // Default to unpaid if status is unknown
@@ -262,11 +261,33 @@ const GSTReportContainer = ({ onExportExcel, onExportPDF, onPrint }) => {
         }, 50);
     }, []);
 
+    // Build company object from billing settings
+    const companyInfo = useMemo(() => {
+        if (!billingSettings) return null;
+
+        return {
+            companyName: billingSettings.companyName || billingSettings.businessName || 'N/A',
+            gstin: billingSettings.gstin || billingSettings.GSTIN || 'N/A',
+            pan: billingSettings.pan || billingSettings.PAN || 'N/A',
+            state: billingSettings.state || 'N/A',
+            stateCode: billingSettings.stateCode || billingSettings.state_code || 'N/A',
+            address: billingSettings.address || billingSettings.businessAddress || 'N/A',
+            email: billingSettings.upi || 'N/A',
+            phone: billingSettings.mobileNumber || billingSettings.mobileNumber || 'N/A',
+        };
+    }, [billingSettings]);
+
     return (
         <Container maxWidth="xl" sx={{ py: 4 }}>
             {error && (
                 <Alert severity="error" onClose={() => dispatch(clearReportError())} sx={{ mb: 3, borderRadius: 2 }}>
                     {error}
+                </Alert>
+            )}
+
+            {billingError && (
+                <Alert severity="warning" sx={{ mb: 3, borderRadius: 2 }}>
+                    Could not load company information: {billingError}
                 </Alert>
             )}
 
@@ -290,89 +311,97 @@ const GSTReportContainer = ({ onExportExcel, onExportPDF, onPrint }) => {
                 </Box>
             )}
 
-            {!loading && displayData && (
+            {!loading && (
                 <>
-                    <Box sx={{ mt: 4, mb: 4 }}>
-                        <GSTReportCompanyInfo
-                            key={`company-${fetchKey}`}
-                            company={displayData}
-                        />
-                    </Box>
-
-                    {displayData?.summary && (
+                    {/* Company Info Section - Always show if billing settings available */}
+                    {companyInfo && (
                         <Box sx={{ mt: 4, mb: 4 }}>
-                            <GSTReportSummaryCards
-                                key={`summary-${fetchKey}`}
-                                summary={displayData.summary}
-                                company={displayData.companyName}
+                            <GSTReportCompanyInfo
+                                key={`company-${fetchKey}`}
+                                company={companyInfo}
                             />
                         </Box>
                     )}
 
-                    <Box sx={{ mt: 4 }}>
-                        <Box sx={{ mb: 3 }}>
-                            <GSTReportExportActions
-                                key={`export-${fetchKey}`}
-                                gstReport={displayData}
-                                activeTab={activeTab}
-                                onExportExcel={onExportExcel}
-                                onExportPDF={onExportPDF}
-                                onPrint={onPrint}
-                                onClearFilters={handleClearFilters}
-                                loading={loading}
-                            />
-                        </Box>
-
-                        <Grid container spacing={4}>
-                            <Grid item xs={12}>
-                                <GSTReportInvoiceTable
-                                    key={`invoice-${fetchKey}`}
-                                    invoices={paginatedInvoices}
-                                    sortConfig={sortConfig}
-                                    handleSort={handleSort}
-                                    page={page}
-                                    rowsPerPage={rowsPerPage}
-                                    handleChangePage={handleChangePage}
-                                    handleChangeRowsPerPage={handleChangeRowsPerPage}
-                                    expandedRows={expandedRows}
-                                    handleRowToggle={handleRowToggle}
-                                    loading={loading}
-                                />
-                            </Grid>
-
-                            {showHSN && displayData?.hsnWiseData && (
-                                <Grid item xs={12}>
-                                    <GSTReportHSNTable
-                                        key={`hsn-${fetchKey}`}
-                                        hsnWiseSummary={displayData.hsnWiseData}
-                                        sortConfig={sortConfig}
-                                        handleSort={handleSort}
-                                        page={page}
-                                        rowsPerPage={rowsPerPage}
-                                        handleChangePage={handleChangePage}
-                                        handleChangeRowsPerPage={handleChangeRowsPerPage}
-                                        loading={loading}
+                    {/* Report Data Section */}
+                    {displayData && (
+                        <>
+                            {displayData?.summary && (
+                                <Box sx={{ mt: 4, mb: 4 }}>
+                                    <GSTReportSummaryCards
+                                        key={`summary-${fetchKey}`}
+                                        summary={displayData.summary}
+                                        company={companyInfo}
                                     />
-                                </Grid>
+                                </Box>
                             )}
 
-                            {showParty && displayData?.partyWiseData && (
-                                <Grid item xs={12}>
-                                    <GSTReportPartyTable
-                                        key={`party-${fetchKey}`}
-                                        partyWiseSummary={displayData.partyWiseData}
-                                        sortConfig={sortConfig}
-                                        handleSort={handleSort}
-                                        page={page}
-                                        rowsPerPage={rowsPerPage}
-                                        handleChangePage={handleChangePage}
-                                        handleChangeRowsPerPage={handleChangeRowsPerPage}
+                            <Box sx={{ mt: 4 }}>
+                                <Box sx={{ mb: 3 }}>
+                                    <GSTReportExportActions
+                                        key={`export-${fetchKey}`}
+                                        gstReport={displayData}
+                                        activeTab={activeTab}
+                                        onExportExcel={onExportExcel}
+                                        onExportPDF={onExportPDF}
+                                        onPrint={onPrint}
+                                        onClearFilters={handleClearFilters}
                                         loading={loading}
                                     />
+                                </Box>
+
+                                <Grid container spacing={4}>
+                                    <Grid item xs={12}>
+                                        <GSTReportInvoiceTable
+                                            key={`invoice-${fetchKey}`}
+                                            invoices={paginatedInvoices}
+                                            sortConfig={sortConfig}
+                                            handleSort={handleSort}
+                                            page={page}
+                                            rowsPerPage={rowsPerPage}
+                                            handleChangePage={handleChangePage}
+                                            handleChangeRowsPerPage={handleChangeRowsPerPage}
+                                            expandedRows={expandedRows}
+                                            handleRowToggle={handleRowToggle}
+                                            loading={loading}
+                                        />
+                                    </Grid>
+
+                                    {showHSN && displayData?.hsnWiseData && (
+                                        <Grid item xs={12}>
+                                            <GSTReportHSNTable
+                                                key={`hsn-${fetchKey}`}
+                                                hsnWiseSummary={displayData.hsnWiseData}
+                                                sortConfig={sortConfig}
+                                                handleSort={handleSort}
+                                                page={page}
+                                                rowsPerPage={rowsPerPage}
+                                                handleChangePage={handleChangePage}
+                                                handleChangeRowsPerPage={handleChangeRowsPerPage}
+                                                loading={loading}
+                                            />
+                                        </Grid>
+                                    )}
+
+                                    {showParty && displayData?.partyWiseData && (
+                                        <Grid item xs={12}>
+                                            <GSTReportPartyTable
+                                                key={`party-${fetchKey}`}
+                                                partyWiseSummary={displayData.partyWiseData}
+                                                sortConfig={sortConfig}
+                                                handleSort={handleSort}
+                                                page={page}
+                                                rowsPerPage={rowsPerPage}
+                                                handleChangePage={handleChangePage}
+                                                handleChangeRowsPerPage={handleChangeRowsPerPage}
+                                                loading={loading}
+                                            />
+                                        </Grid>
+                                    )}
                                 </Grid>
-                            )}
-                        </Grid>
-                    </Box>
+                            </Box>
+                        </>
+                    )}
                 </>
             )}
         </Container>

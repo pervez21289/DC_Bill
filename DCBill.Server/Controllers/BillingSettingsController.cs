@@ -12,17 +12,19 @@ namespace DCBill.Server.Controllers
     public class BillingSettingsController : ControllerBase
     {
         private readonly IBillingSettingsRepository _repository;
+        private readonly CompanyResolver _companyResolver;
 
         public BillingSettingsController(
-            IBillingSettingsRepository repository)
+            IBillingSettingsRepository repository, CompanyResolver companyResolver  )
         {
             _repository = repository;
+            _companyResolver = companyResolver;
         }
 
         [HttpGet]
         public async Task<IActionResult> Get()
         {
-            var data = await _repository.GetAsync();
+            var data = await _repository.GetAsync(_companyResolver.CurrentUserId);
 
             return Ok(data);
         }

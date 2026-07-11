@@ -9,7 +9,7 @@ namespace LMS.Core.Interfaces
 {
     public interface IBillingSettingsRepository
     {
-        Task<BillingSettings?> GetAsync();
+        Task<BillingSettings?> GetAsync(int UserId);
 
         Task<int> CreateAsync(BillingSettings model);
 

@@ -11,10 +11,14 @@ namespace LMS.Repository.Repo
     public class BillingSettingsRepository : BaseRepository, IBillingSettingsRepository
     {
 
-        public async Task<BillingSettings?> GetAsync()
+        public async Task<BillingSettings?> GetAsync(int UserId)
         {
+            var parameters = new
+            {
+                UserId
+            };
             var sql = "USP_GetBillingSettings";
-            return await QueryFirstOrDefaultAsync<BillingSettings>(sql, null, CommandType.StoredProcedure);
+            return await QueryFirstOrDefaultAsync<BillingSettings>(sql, parameters, CommandType.StoredProcedure);
         }
 
         public async Task<int> CreateAsync(BillingSettings model)

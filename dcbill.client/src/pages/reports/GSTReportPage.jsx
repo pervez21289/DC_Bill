@@ -120,6 +120,7 @@ export default function GSTReportPage() {
                 onExportPDF={handleExportPDF}
                 onPrint={handlePrint}
             />
+
         </Box>
     );
 }
