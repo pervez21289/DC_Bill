@@ -17,6 +17,7 @@ import GSTReportInvoiceTable from './GSTReportInvoiceTable';
 import GSTReportHSNTable from './GSTReportHSNTable';
 import GSTReportPartyTable from './GSTReportPartyTable';
 import GSTReportExportActions from './GSTReportExportActions';
+import GSTReportPrintView from './GSTReportPrintView';
 
 const GSTReportContainer = ({ onExportExcel, onExportPDF, onPrint }) => {
     const dispatch = useDispatch();
@@ -251,6 +252,42 @@ const GSTReportContainer = ({ onExportExcel, onExportPDF, onPrint }) => {
         return sortedInvoices.slice(page * rowsPerPage, page * rowsPerPage + rowsPerPage);
     }, [sortedInvoices, page, rowsPerPage]);
 
+    // Print / PDF handling — renders GSTReportPrintView off-screen, then
+    // clones its markup into a new window and triggers the native print dialog.
+    const printRef = useRef(null);
+
+    const handlePrint = useCallback(() => {
+        if (!printRef.current) return;
+
+        const printContents = printRef.current.innerHTML;
+        const printWindow = window.open('', '_blank', 'width=1200,height=800');
+
+        if (!printWindow) {
+            // Popup blocked
+            alert('Please allow pop-ups for this site to print the report.');
+            return;
+        }
+
+        printWindow.document.write(`
+            <!DOCTYPE html>
+            <html>
+                <head>
+                    <title>GST Report</title>
+                    <meta charset="utf-8" />
+                </head>
+                <body>${printContents}</body>
+            </html>
+        `);
+        printWindow.document.close();
+
+        // Wait for content (and any fonts) to be ready before printing
+        printWindow.onload = () => {
+            printWindow.focus();
+            printWindow.print();
+            printWindow.close();
+        };
+    }, []);
+
     const handleClearFilters = useCallback(() => {
         const today = new Date();
         const firstDay = new Date(today.getFullYear(), today.getMonth(), 1);
@@ -344,7 +381,7 @@ const GSTReportContainer = ({ onExportExcel, onExportPDF, onPrint }) => {
                                         activeTab={activeTab}
                                         onExportExcel={onExportExcel}
                                         onExportPDF={onExportPDF}
-                                        onPrint={onPrint}
+                                        onPrint={handlePrint}
                                         onClearFilters={handleClearFilters}
                                         loading={loading}
                                     />
@@ -403,6 +440,24 @@ const GSTReportContainer = ({ onExportExcel, onExportPDF, onPrint }) => {
                         </>
                     )}
                 </>
+            )}
+
+            {/* Off-screen print view — source markup for handlePrint. Uses the
+                full sorted invoice list (not the paginated slice) so the
+                printed/PDF report always contains every row. */}
+            {displayData && (
+                <div style={{ position: 'absolute', left: -9999, top: 0, width: 0, height: 0, overflow: 'hidden' }}>
+                    <div ref={printRef}>
+                        <GSTReportPrintView
+                            company={companyInfo}
+                            summary={displayData?.summary}
+                            invoices={sortedInvoices}
+                            hsnWiseSummary={displayData?.hsnWiseData}
+                            partyWiseSummary={displayData?.partyWiseData}
+                            dateRange={dateRange}
+                        />
+                    </div>
+                </div>
             )}
         </Container>
     );
