@@ -15,6 +15,7 @@ namespace LMS.Core.Interfaces
         Task SentOTPMobileSync(string mobile, string OTP);
         Task<Result> SendResetPasswordEmail(string email, string resetToken);
         Task<Result> SentInvoiceDetails(int CustomerId);
+        Task<Result> SendPaymentReminderAsync(int invoiceId, string customMessage = null);
     }
 
 }

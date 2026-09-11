@@ -53,14 +53,14 @@ export default function SettingTab() {
     return (
         <>
             <List component="nav" sx={{ p: 0, '& .MuiListItemIcon-root': { minWidth: 32 } }}>
-                <Link underline="none" sx={{ color: 'inherit' }} target="_blank" href="https://nexbillpos.com/support/">
-                    <ListItemButton>
+            
+                <ListItemButton onClick={(event) => navigate('/support')}>
                         <ListItemIcon>
                             <QuestionCircleOutlined />
                         </ListItemIcon>
                         <ListItemText primary="Support" />
                     </ListItemButton>
-                </Link>
+               
                 <ListItemButton onClick={() => navigate('/profile')}>
                     <ListItemIcon>
                         <UserOutlined />

@@ -1,0 +1,128 @@
+﻿<!doctype html>
+<html lang="en" xmlns="http://www.w3.org/1999/xhtml">
+<head>
+    <meta charset="utf-8">
+    <meta name="viewport" content="width=device-width">
+    <meta http-equiv="x-ua-compatible" content="ie=edge">
+    <title>NexbillPOS OTP</title>
+    <style>
+        /* Dark mode hint */
+        @media (prefers-color-scheme: dark) {
+            .bg {
+                background-color: #0b0f14 !important;
+            }
+
+            .card {
+                background-color: #111926 !important;
+                color: #e6edf3 !important;
+            }
+
+            .muted {
+                color: #9fb3c8 !important;
+            }
+
+            .btn {
+                background: #3b82f6 !important;
+                color: #ffffff !important;
+            }
+
+            .brand {
+                color: #94c7ff !important;
+            }
+
+            .otp {
+                background: #0b1220 !important;
+                color: #e6edf3 !important;
+                border-color: #1f2a44 !important;
+            }
+        }
+        /* iOS blue links fix */
+        a[x-apple-data-detectors] {
+            color: inherit !important;
+            text-decoration: none !important;
+        }
+    </style>
+</head>
+<body style="margin:0; padding:0; background:#f4f6f8;" class="bg">
+    <!-- Preheader (hidden preview text) -->
+    <div style="display:none; max-height:0; overflow:hidden; opacity:0;">
+        Your One-Time Password for NexbillPOS sign-in. It expires in 10 minutes.
+    </div>
+
+    <table role="presentation" cellpadding="0" cellspacing="0" width="100%" style="background:#f4f6f8;" class="bg">
+        <tr>
+            <td align="center" style="padding:24px;">
+                <!--[if (mso)|(IE)]>
+                <table role="presentation" width="600" cellpadding="0" cellspacing="0"><tr><td>
+                <![endif]-->
+                <table role="presentation" cellpadding="0" cellspacing="0" width="100%" style="max-width:600px;">
+                    <tr>
+                        <td align="left" style="padding:24px 0; font-family:Arial,Helvetica,sans-serif;">
+                            <span class="brand" style="font-size:20px; font-weight:700; color:#0f172a; letter-spacing:.3px;">
+                                NexbillPOS
+                            </span>
+                        </td>
+                    </tr>
+
+                    <tr>
+                        <td class="card" style="background:#ffffff; border-radius:14px; padding:32px; box-shadow:0 4px 14px rgba(15,23,42,0.08); font-family:Arial,Helvetica,sans-serif; color:#0f172a;">
+                            <h1 style="margin:0 0 8px; font-size:22px; line-height:1.35;">Your verification code</h1>
+                            <p class="muted" style="margin:0 0 20px; font-size:14px; line-height:1.6; color:#55607a;">
+                                Hi {{Name}}, use the code below to complete your sign-in to <strong>NexbillPOS</strong>.
+                            </p>
+
+                            <!-- OTP block -->
+                            <table role="presentation" cellpadding="0" cellspacing="0" width="100%" style="margin:0 0 20px;">
+                                <tr>
+                                    <td align="center" class="otp" style="font-family:'Courier New',Courier,monospace; font-weight:600; font-size:28px; letter-spacing:6px; background:#f1f5ff; color:#0b1220; border:1px solid #dbe7ff; border-radius:12px; padding:16px 12px;">
+                                        {{OTP}}
+                                    </td>
+                                </tr>
+                            </table>
+
+                            <p class="muted" style="margin:0 0 20px; font-size:13px; color:#55607a;">
+                                This code will expire in <strong>10 minutes</strong>. For your security, don’t share it with anyone.
+                            </p>
+
+                            <!-- Button (optional deep link) -->
+                            <table role="presentation" cellpadding="0" cellspacing="0" style="margin:12px 0 24px;">
+                                <tr>
+                                    <td align="center" bgcolor="#2563eb" class="btn" style="border-radius:10px;">
+                                        <a href="{{VerifyUrl}}" target="_blank"
+                                           style="display:inline-block; padding:12px 22px; font-size:14px; font-weight:600; text-decoration:none; color:#ffffff;">
+                                            Continue
+                                        </a>
+                                    </td>
+                                </tr>
+                            </table>
+
+                            <!-- Help / note -->
+                            <p class="muted" style="margin:0 0 10px; font-size:12px; color:#6b7280;">
+                                Didn’t request this code? You can safely ignore this email or
+                                <a href="{{SupportUrl}}" style="color:#2563eb; text-decoration:none;">contact support</a>.
+                            </p>
+
+                            <!-- Divider -->
+                            <hr style="border:none; border-top:1px solid #e6eaf2; margin:22px 0;">
+
+                            <!-- Footer -->
+                            <p class="muted" style="margin:0; font-size:12px; color:#6b7280;">
+                                Sent by <strong>NexbillPOS</strong> 
+                            </p>
+                        </td>
+                    </tr>
+
+                    <tr>
+                        <td align="center" style="padding:18px 6px; font-family:Arial,Helvetica,sans-serif;">
+                            <p class="muted" style="margin:0; font-size:12px; color:#6b7280;">
+                                If the button doesn’t work, enter the code manually in the app.
+                            </p>
+                        </td>
+                    </tr>
+                </table>
+                <!--[if (mso)|(IE)]></td></tr></table><![endif]-->
+            </td>
+        </tr>
+    </table>
+</body>
+</html>

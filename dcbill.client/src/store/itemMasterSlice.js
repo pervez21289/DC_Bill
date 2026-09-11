@@ -56,7 +56,7 @@ export const updateItemInMaster = createAsyncThunk(
     "itemMaster/update",
     async (itemData , { rejectWithValue }) => {
         try {
-            debugger;
+          
             const response = await itemMasterService.update(itemData);
             return response;
 

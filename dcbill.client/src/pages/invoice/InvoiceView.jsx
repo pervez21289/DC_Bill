@@ -5,7 +5,8 @@ import { useParams, useNavigate } from 'react-router-dom';
 import {
     Box, Button, Paper, Typography, CircularProgress,
     Table, TableBody, TableCell, TableContainer,
-    TableHead, TableRow, Tooltip, Menu, MenuItem, Snackbar, Alert
+    TableHead, TableRow, Tooltip, Menu, MenuItem, Snackbar, Alert,
+    Dialog, DialogTitle, DialogContent, DialogActions, TextField
 } from '@mui/material';
 import {
     ArrowBack as ArrowBackIcon,
@@ -20,10 +21,17 @@ import {
     Cancel as UnpaidIcon,
     ArrowDropDown as ArrowDropDownIcon,
     EditNote as EditNoteIcon,
+    Email as EmailIcon,
+    Send as SendIcon,
 } from '@mui/icons-material';
 import { pdf } from '@react-pdf/renderer';
 
-import { fetchInvoiceById, clearCurrentInvoice, updateInvoicePaymentStatus } from '../../store/invoiceSlice';
+import {
+    fetchInvoiceById,
+    clearCurrentInvoice,
+    updateInvoicePaymentStatus,
+    sendPaymentReminder
+} from '../../store/invoiceSlice';
 import { fetchBillingSettings } from '../../store/billingSettingsSlice';
 import { InvoicePDF } from './Pdf/InvoicePDF';
 import InvoicePDFViewer from './Pdf/InvoicePDFViewer';
@@ -177,7 +185,6 @@ function PaymentStatusCard({ currentStatus, onStatusChange, updating }) {
                         },
                     }}
                 >
-                    {/* Label row */}
                     <Box sx={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between' }}>
                         <Typography sx={{
                             fontSize: '0.67rem', fontWeight: 700, color: T.faint,
@@ -188,7 +195,6 @@ function PaymentStatusCard({ currentStatus, onStatusChange, updating }) {
                         <EditNoteIcon sx={{ fontSize: '0.95rem', color: T.faint }} />
                     </Box>
 
-                    {/* Status + dropdown arrow */}
                     <Box sx={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', mt: 0.5 }}>
                         <Box sx={{ display: 'flex', alignItems: 'center', gap: 0.8 }}>
                             {updating ? (
@@ -205,14 +211,12 @@ function PaymentStatusCard({ currentStatus, onStatusChange, updating }) {
                         <ArrowDropDownIcon sx={{ fontSize: '1.1rem', color: s.color, opacity: 0.7 }} />
                     </Box>
 
-                    {/* Hint text */}
                     <Typography sx={{ fontSize: '0.67rem', color: T.faint, mt: 0.3 }}>
                         Tap to update
                     </Typography>
                 </Box>
             </Tooltip>
 
-            {/* Dropdown menu */}
             <Menu
                 anchorEl={anchor}
                 open={Boolean(anchor)}
@@ -230,7 +234,6 @@ function PaymentStatusCard({ currentStatus, onStatusChange, updating }) {
                     },
                 }}
             >
-                {/* Menu header */}
                 <Box sx={{ px: 2, pt: 1.5, pb: 1, borderBottom: `1px solid ${T.border}` }}>
                     <Typography sx={{ fontSize: '0.7rem', fontWeight: 700, color: T.faint, textTransform: 'uppercase', letterSpacing: '0.07em' }}>
                         Change Status
@@ -238,7 +241,6 @@ function PaymentStatusCard({ currentStatus, onStatusChange, updating }) {
                 </Box>
 
                 {Object.values(PAYMENT_STATUS).map(({ label, color, bg, border, Icon, value: _ }, idx) => {
-                    // derive value from key since PAYMENT_STATUS keys are 1/2/3
                     const val = parseInt(Object.keys(PAYMENT_STATUS)[idx]);
                     const isCurrent = val === currentStatus;
                     return (
@@ -281,20 +283,25 @@ export default function InvoiceView() {
     const navigate = useNavigate();
     const { id } = useParams();
 
-    const { currentInvoice, loading } = useSelector(s => s.invoice);
+    // ── Redux state ────────────────────────────────────────────────────────────
+    const { currentInvoice, loading, statusUpdating, reminderSending } = useSelector(s => s.invoice);
     const { data: billingData, loading: billingLoading } = useSelector(s => s.billingSettings);
 
+    // ── Local state ────────────────────────────────────────────────────────────
     const [fetchInitiated, setFetchInitiated] = useState(false);
-    const [updatingStatus, setUpdatingStatus] = useState(false);
     const [snackbar, setSnackbar] = useState({ open: false, message: '', severity: 'success' });
+    const [reminderDialogOpen, setReminderDialogOpen] = useState(false);
+    const [reminderMessage, setReminderMessage] = useState('');
 
-    useEffect(() => {
-        if (!billingData && !billingLoading) dispatch(fetchBillingSettings());
-    }, [dispatch, billingData, billingLoading]);
-
+    // ── PDF state ──────────────────────────────────────────────────────────────
     const { pdfData, getPdfData, isLoading: pdfLoading } = useInvoicePdf(billingData);
     const [pdfOpen, setPdfOpen] = useState(false);
     const [printLoading, setPrintLoading] = useState(false);
+
+    // ── Effects ────────────────────────────────────────────────────────────────
+    useEffect(() => {
+        if (!billingData && !billingLoading) dispatch(fetchBillingSettings());
+    }, [dispatch, billingData, billingLoading]);
 
     useEffect(() => {
         if (!id) return;
@@ -304,6 +311,7 @@ export default function InvoiceView() {
         return () => { dispatch(clearCurrentInvoice()); };
     }, [dispatch, id]);
 
+    // ── Invoice summary ──────────────────────────────────────────────────────
     const invoiceItems = currentInvoice?.details?.map(item => ({
         amount: item.amount, quantity: item.quantity,
         rate: item.rate, itemName: item.itemName, hsnCode: item.hsnCode,
@@ -313,6 +321,7 @@ export default function InvoiceView() {
     const { subtotal, totalGST, grandTotal, cgstAmount, sgstAmount, cgstPercent, sgstPercent } =
         useInvoiceSummaryHook(invoiceItems, gstPercent);
 
+    // ── PDF data preparation ──────────────────────────────────────────────────
     const preparePdfData = async () => {
         if (!currentInvoice) return null;
         return {
@@ -329,13 +338,12 @@ export default function InvoiceView() {
         };
     };
 
+    // ── PDF handlers ───────────────────────────────────────────────────────────
     const handlePrintPDF = async () => {
-        debugger;
         if (!currentInvoice) return;
         setPrintLoading(true);
         try {
             const invoiceData = await preparePdfData();
-            debugger;
             if (!invoiceData) return;
             const blob = await pdf(<InvoicePDF invoiceData={invoiceData} />).toBlob();
             const url = URL.createObjectURL(blob);
@@ -354,10 +362,9 @@ export default function InvoiceView() {
         if (currentInvoice) { await getPdfData(currentInvoice); setPdfOpen(true); }
     };
 
-    // ── Update payment status ─────────────────────────────────────────────────
+    // ── Payment status update ──────────────────────────────────────────────────
     const handleStatusChange = async (newStatus) => {
         if (!newStatus || newStatus === currentInvoice?.paymentStatus) return;
-        setUpdatingStatus(true);
         try {
             const result = await dispatch(
                 updateInvoicePaymentStatus({ invoiceId: id, paymentStatus: newStatus })
@@ -369,8 +376,31 @@ export default function InvoiceView() {
             }
         } catch (err) {
             setSnackbar({ open: true, message: err?.message || 'Error updating status', severity: 'error' });
-        } finally {
-            setUpdatingStatus(false);
+        }
+    };
+
+    // ── Send Reminder via Redux ───────────────────────────────────────────────
+    const handleSendReminder = async () => {
+        if (!id) return;
+        try {
+            const result = await dispatch(sendPaymentReminder({
+                invoiceId: id,
+                customMessage: reminderMessage.trim()
+            })).unwrap();
+
+            setSnackbar({
+                open: true,
+                message: result.message || 'Reminder sent successfully!',
+                severity: 'success'
+            });
+            setReminderDialogOpen(false);
+            setReminderMessage('');
+        } catch (error) {
+            setSnackbar({
+                open: true,
+                message: error?.message || 'Failed to send reminder',
+                severity: 'error'
+            });
         }
     };
 
@@ -413,10 +443,11 @@ export default function InvoiceView() {
                     >
                         Invoices
                     </Button>
-                    <Box sx={{ display: 'flex', gap: 1.2, alignItems: 'center' }}>
+                    <Box sx={{ display: 'flex', gap: 1.2, alignItems: 'center', flexWrap: 'wrap' }}>
                         <Tooltip title="Preview as PDF">
                             <Button
-                                variant="outlined" onClick={handlePreviewPDF}
+                                variant="outlined"
+                                onClick={handlePreviewPDF}
                                 startIcon={pdfLoading ? <CircularProgress size={14} /> : <PdfIcon sx={{ fontSize: '1rem' }} />}
                                 disabled={pdfLoading}
                                 sx={{ ...btnBase, color: T.blue, borderColor: T.blueBorder, '&:hover': { bgcolor: T.blueSoft } }}
@@ -429,10 +460,28 @@ export default function InvoiceView() {
                             <Button
                                 variant="contained"
                                 startIcon={printLoading ? <CircularProgress size={14} sx={{ color: '#fff' }} /> : <PrintIcon sx={{ fontSize: '1rem' }} />}
-                                onClick={handlePrintPDF} disabled={printLoading}
+                                onClick={handlePrintPDF}
+                                disabled={printLoading}
                                 sx={{ ...btnBase, bgcolor: T.navy, '&:hover': { bgcolor: '#243260' }, boxShadow: 'none' }}
                             >
                                 Print
+                            </Button>
+                        </Tooltip>
+                        {/* ── Send Reminder Button ── */}
+                        <Tooltip title="Send Payment Reminder">
+                            <Button
+                                variant="outlined"
+                                onClick={() => setReminderDialogOpen(true)}
+                                disabled={currentInvoice?.paymentStatus === 1 || reminderSending}
+                                startIcon={<EmailIcon sx={{ fontSize: '1rem' }} />}
+                                sx={{
+                                    ...btnBase,
+                                    color: '#d97706',
+                                    borderColor: '#fcd34d',
+                                    '&:hover': { bgcolor: '#fef3c7' }
+                                }}
+                            >
+                                {reminderSending ? 'Sending...' : 'Remind'}
                             </Button>
                         </Tooltip>
                     </Box>
@@ -490,7 +539,6 @@ export default function InvoiceView() {
                                     GSTIN: {billingData.gstin}
                                 </Typography>
                             )}
-                            {/* Payment status badge in header (read-only, visual only) */}
                             <PaymentStatusBadge status={currentInvoice.paymentStatus} />
                         </Box>
                     </Box>
@@ -599,7 +647,7 @@ export default function InvoiceView() {
                             <PaymentStatusCard
                                 currentStatus={currentInvoice.paymentStatus}
                                 onStatusChange={handleStatusChange}
-                                updating={updatingStatus}
+                                updating={statusUpdating}
                             />
 
                             {/* ── Financial Summary ── */}
@@ -657,6 +705,68 @@ export default function InvoiceView() {
 
             {/* PDF Viewer */}
             <InvoicePDFViewer open={pdfOpen} onClose={() => setPdfOpen(false)} invoiceData={pdfData} />
+
+            {/* ── Reminder Dialog ── */}
+            <Dialog
+                open={reminderDialogOpen}
+                onClose={() => {
+                    if (!reminderSending) setReminderDialogOpen(false);
+                }}
+                maxWidth="sm"
+                fullWidth
+                PaperProps={{
+                    sx: {
+                        borderRadius: '12px',
+                        p: 1,
+                    }
+                }}
+            >
+                <DialogTitle sx={{ fontWeight: 600, fontSize: '1.1rem', pb: 1 }}>
+                    Send Payment Reminder
+                </DialogTitle>
+                <DialogContent>
+                    <Typography variant="body2" color="text.secondary" sx={{ mb: 2 }}>
+                        This will send an email reminder to the customer for invoice <strong>{currentInvoice?.invoiceNo}</strong>.
+                        {currentInvoice?.dueDate && (
+                            <> Due date was <strong>{fmtDate(currentInvoice.dueDate)}</strong>.</>
+                        )}
+                    </Typography>
+                    <TextField
+                        autoFocus
+                        multiline
+                        rows={3}
+                        fullWidth
+                        label="Custom Message (Optional)"
+                        placeholder="Add any additional note for the customer..."
+                        value={reminderMessage}
+                        onChange={(e) => setReminderMessage(e.target.value)}
+                        variant="outlined"
+                        sx={{ mt: 1 }}
+                        disabled={reminderSending}
+                    />
+                </DialogContent>
+                <DialogActions sx={{ px: 3, pb: 2 }}>
+                    <Button onClick={() => setReminderDialogOpen(false)} disabled={reminderSending}>
+                        Cancel
+                    </Button>
+                    <Button
+                        onClick={handleSendReminder}
+                        variant="contained"
+                        disabled={reminderSending}
+                        startIcon={reminderSending ? <CircularProgress size={18} /> : <SendIcon />}
+                        sx={{
+                            bgcolor: T.blue,
+                            '&:hover': { bgcolor: '#1d4ed8' },
+                            textTransform: 'none',
+                            fontWeight: 600,
+                            borderRadius: '8px',
+                            px: 3,
+                        }}
+                    >
+                        {reminderSending ? 'Sending...' : 'Send Reminder'}
+                    </Button>
+                </DialogActions>
+            </Dialog>
 
             {/* Snackbar feedback */}
             <Snackbar

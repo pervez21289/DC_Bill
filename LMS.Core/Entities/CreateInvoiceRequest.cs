@@ -70,6 +70,10 @@ namespace LMS.Core.Entities
         public DateTime? UpdatedDate { get; set; }
         public bool IsDeleted { get; set; }
         public int PaymentStatus { get; set; } = 3;
+        public string PartyEmail { get; set; }
+        public string Mobile { get; set; }
+        public string SupportEmail { get; set; }
+        public string PaymentLink { get; set; }
 
         // Calculated properties (not stored in DB, calculated on the fly)
         public decimal CGSTPercent { get; set; }

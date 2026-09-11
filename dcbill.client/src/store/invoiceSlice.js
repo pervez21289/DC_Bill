@@ -42,9 +42,22 @@ export const updateInvoicePaymentStatus = createAsyncThunk(
     "invoice/updatePaymentStatus",
     async ({ invoiceId, paymentStatus }, { rejectWithValue }) => {
         try {
-            debugger;
+           
             const response = await invoiceService.update(invoiceId, { paymentStatus: paymentStatus });
             return response;
+        } catch (error) {
+            return rejectWithValue(error.response?.data || error.message);
+        }
+    }
+);
+
+// ── NEW: Send Payment Reminder ──────────────────────────────────────────────
+export const sendPaymentReminder = createAsyncThunk(
+    "invoice/sendReminder",
+    async ({ invoiceId, customMessage }, { rejectWithValue }) => {
+        try {
+            const response = await invoiceService.sendReminder(invoiceId, customMessage);
+            return response; // expects { isSuccess: true, message: '...' }
         } catch (error) {
             return rejectWithValue(error.response?.data || error.message);
         }
@@ -62,6 +75,7 @@ const initialState = {
     pdfLoading: false,
     pdfData: null,
     statusUpdating: false,   // tracks payment status update in progress
+    reminderSending: false,   // track reminder sending state
 };
 
 const invoiceSlice = createSlice({
@@ -172,6 +186,18 @@ const invoiceSlice = createSlice({
             })
             .addCase(updateInvoicePaymentStatus.rejected, (state, action) => {
                 state.statusUpdating = false;
+                state.error = action.payload;
+            })   
+            .addCase(sendPaymentReminder.pending, (state) => {
+                state.reminderSending = true;
+                state.error = null;
+            })
+            .addCase(sendPaymentReminder.fulfilled, (state) => {
+                state.reminderSending = false;
+                // Optionally set a flag like 'lastReminderSent' if needed
+            })
+            .addCase(sendPaymentReminder.rejected, (state, action) => {
+                state.reminderSending = false;
                 state.error = action.payload;
             });
     }

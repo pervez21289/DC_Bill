@@ -1,4 +1,5 @@
-﻿using LMS.Core.Entities;
+﻿using LMS.API.Repositories.Interfaces;
+using LMS.Core.Entities;
 using LMS.Core.Interfaces;
 using LMS.Repo.Repository;
 using Microsoft.Extensions.Logging;
@@ -19,12 +20,14 @@ namespace LMS.Repository.Repo
         private readonly ILogger<SmtpEmailSender> _logger;
         public readonly AppSettings _appSettings;
         public readonly ISubscriptionRepository _subscriptionRepository;
+        public readonly IInvoiceRepository _invoiceRepository;
         private readonly RazorpayOptions _razorpay;
-        public SmtpEmailSender(ILogger<SmtpEmailSender> logger, AppSettings appSettings, RazorpayOptions razorpay)
+        public SmtpEmailSender(ILogger<SmtpEmailSender> logger, AppSettings appSettings, RazorpayOptions razorpay, IInvoiceRepository invoiceRepository)
         {
             _logger = logger;
             _appSettings = appSettings;
             _razorpay = razorpay;
+            _invoiceRepository = invoiceRepository;
         }
 
         public async Task SendEmailAsync(string toEmail, string otp)
@@ -262,6 +265,84 @@ namespace LMS.Repository.Repo
             byte[] pdfBytes = await response.Content.ReadAsByteArrayAsync();
 
             return pdfBytes;
+        }
+
+        public async Task<Result> SendPaymentReminderAsync(int invoiceId, string customMessage = null)
+        {
+            try
+            {
+                // 1. Fetch invoice using your SP – result maps to InvoiceMaster
+                var invoice = await QueryFirstOrDefaultAsync<InvoiceMaster>(
+                    "USP_GetInvoiceById",
+                    new { Id = invoiceId },
+                    commandType: CommandType.StoredProcedure);
+
+                if (invoice == null)
+                    return new Result { IsSuccess = false, Message = "Invoice not found." };
+
+                // 2. Skip if already paid (PaymentStatus = 1)
+                if (invoice.PaymentStatus == 1)
+                    return new Result { IsSuccess = false, Message = "Invoice already paid." };
+
+                // 3. Validate email
+                if (string.IsNullOrEmpty(invoice.PartyEmail))
+                    return new Result { IsSuccess = false, Message = "Customer email not found." };
+
+                // 4. Calculate overdue days and due amount
+                var dueDate = DateTime.UtcNow.Date;
+                var daysOverdue = (DateTime.Now - dueDate).Days;
+                var dueAmount = invoice.GrandTotal; // assuming no partial payments in this system
+
+                // 5. Load template
+                var templatePath = Path.Combine(Directory.GetCurrentDirectory(), "Files", "ReminderTemplate.html");
+                if (!File.Exists(templatePath))
+                    return new Result { IsSuccess = false, Message = "Email template not found." };
+
+                string htmlBody = await File.ReadAllTextAsync(templatePath);
+
+                // 6. Replace placeholders
+                htmlBody = htmlBody
+                    .Replace("{{CustomerName}}", invoice.PartyName)
+                    .Replace("{{InvoiceNumber}}", invoice.InvoiceNo)
+                    .Replace("{{InvoiceDate}}", invoice.InvoiceDate.ToString("dd MMM yyyy"))
+                    .Replace("{{DueDate}}", dueDate.ToString("dd MMM yyyy"))
+                    .Replace("{{TotalAmount}}", invoice.GrandTotal.ToString("C"))
+                    .Replace("{{PaidAmount}}", "")   // no partial payment tracking in this system
+                    .Replace("{{DueAmount}}", dueAmount.ToString("C"))
+                    .Replace("{{DaysOverdue}}", daysOverdue.ToString())
+                    .Replace("{{CompanyName}}", invoice.PartyName ?? "Your Company")
+                    .Replace("{{GSTIN}}", invoice.PartyGSTIN ?? "N/A")
+                    .Replace("{{CompanyPhone}}", invoice.Mobile ?? "")
+                    .Replace("{{CompanyEmail}}", invoice.PartyEmail ?? "")
+                    .Replace("{{SupportEmail}}", invoice.SupportEmail ?? "support@yourcompany.com")
+                    .Replace("{{PaymentLink}}", invoice.PaymentLink)
+                    .Replace("{{CustomMessage}}", string.IsNullOrEmpty(customMessage) ? "" : $"<p class='custom-message'>{customMessage}</p>");
+
+                // 7. Send email
+                using var mail = new MailMessage
+                {
+                    From = new MailAddress(_appSettings.Email, "NexbillPOS"),
+                    Subject = $"Payment Reminder: Invoice {invoice.InvoiceNo}",
+                    IsBodyHtml = true,
+                    Body = htmlBody
+                };
+                mail.To.Add(invoice.PartyEmail);
+
+                using var smtp = new SmtpClient("smtp.gmail.com", 587)
+                {
+                    Credentials = new NetworkCredential(_appSettings.Email, _appSettings.Secret),
+                    EnableSsl = true
+                };
+                await smtp.SendMailAsync(mail);
+
+                _logger.LogInformation("Payment reminder sent for Invoice {InvoiceNo}", invoice.InvoiceNo);
+                return new Result { IsSuccess = true, Message = "Reminder sent successfully." };
+            }
+            catch (Exception ex)
+            {
+                _logger.LogError(ex, "Error sending reminder for Invoice {InvoiceId}", invoiceId);
+                return new Result { IsSuccess = false, Message = "Failed to send reminder." };
+            }
         }
     }
 }

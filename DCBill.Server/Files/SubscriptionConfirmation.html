@@ -1,0 +1,167 @@
+﻿<!doctype html>
+<html lang="en">
+<head>
+    <meta charset="utf-8">
+    <meta name="viewport" content="width=device-width">
+    <title>Subscription Confirmation - nexbillpos</title>
+    <style>
+        /* Mobile friendly */
+        @media only screen and (max-width: 600px) {
+            .container {
+                width: 100% !important;
+            }
+
+            .column {
+                display: block !important;
+                width: 100% !important;
+            }
+
+            .hero {
+                font-size: 20px !important;
+            }
+
+            .btn {
+                width: 100% !important;
+            }
+        }
+    </style>
+</head>
+<body style="margin:0; padding:0; background-color:#f3f5f7; font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, 'Helvetica Neue', Arial, sans-serif;">
+
+    <!-- outer wrapper -->
+    <table role="presentation" cellpadding="0" cellspacing="0" width="100%" style="background-color:#f3f5f7; padding:24px 0;">
+        <tr>
+            <td align="center">
+
+                <!-- container -->
+                <table role="presentation" cellpadding="0" cellspacing="0" width="600" class="container" style="width:600px; max-width:600px; background-color: #ffffff; border-radius:8px; overflow:hidden; box-shadow: 0 6px 18px rgba(16,24,40,0.08);">
+
+                    <!-- Header -->
+                    <tr>
+                        <td style="padding:20px 24px; background: linear-gradient(90deg,#0ea5a3, #2563eb); color:#fff;">
+                            <table role="presentation" width="100%" cellpadding="0" cellspacing="0">
+                                <tr>
+                                    <td style="vertical-align:middle;">
+                                        <!-- logo area -->
+                                        <div style="display:flex; align-items:center; gap:12px;">
+                                            <div style="font-size: 25px; width: 48px; height: 48px; border-radius: 8px; background-color: rgba(255,255,255,0.12); display: flex; align-items: center; justify-content: center; font-weight: 700;">
+                                                NB
+                                            </div>
+                                            <div>
+                                                <div style="font-size:18px; font-weight:700; line-height:1;">nexbillpos</div>
+                                                <div style="font-size:12px; opacity:0.95;">Subscription Confirmation</div>
+                                            </div>
+                                        </div>
+                                    </td>
+                                    <td align="right" style="vertical-align:middle; font-size:12px; opacity:0.95;">
+                                        <!-- optional small note -->
+                                        Receipt: <strong style="color:#fff;">{{invoiceNumber}}</strong>
+                                    </td>
+                                </tr>
+                            </table>
+                        </td>
+                    </tr>
+
+                    <!-- Body -->
+                    <tr>
+                        <td style="padding:28px 28px 12px 28px;">
+                            <h1 class="hero" style="margin:0 0 12px 0; font-size:24px; line-height:1.2; color:#0f172a;">Thanks for subscribing, {{customerName}}!</h1>
+                            <p style="margin:0 0 18px 0; color:#475569; font-size:15px; line-height:1.5;">
+                                Welcome to <strong>nexbillpos</strong>. Your subscription to the <strong>{{planName}}</strong> plan is now active. We’ve received your payment and attached the invoice for your records.
+                            </p>
+
+                            <!-- Card with summary -->
+                            <table role="presentation" cellpadding="0" cellspacing="0" width="100%" style="border-radius:8px; border:1px solid #e6eef8; padding:14px; margin:16px 0; background-color:#fbfdff;">
+                                <tr>
+                                    <td style="padding:6px 0; font-size:14px; color:#334155;">
+                                        <strong>Subscription</strong>
+                                        <div style="color:#64748b; font-size:13px; margin-top:6px;">Plan: {{planName}}</div>
+                                    </td>
+                                    <td align="right" style="padding:6px 0; font-size:14px; color:#334155;">
+                                        <strong>{{amount}}</strong>
+                                        <div style="color:#64748b; font-size:13px; margin-top:6px;">Billing date: {{billingDate}}</div>
+                                    </td>
+                                </tr>
+                            </table>
+
+                            <!-- Call to action -->
+                            <!--<p style="margin:0 0 18px 0;">
+                                <a href="{{invoiceUrl}}" class="btn" style="display:inline-block; text-decoration:none; padding:12px 18px; border-radius:8px; background-color:#2563eb; color:#fff; font-weight:600;">
+                                    View / Download Invoice
+                                </a>
+                            </p>-->
+
+                            <!-- Notes / details table -->
+                            <table role="presentation" cellpadding="0" cellspacing="0" width="100%" style="margin-top:8px;">
+                                <tr>
+                                    <td style="vertical-align:top; padding:8px 0;">
+                                        <table role="presentation" cellpadding="0" cellspacing="0" style="width:100%;">
+                                            <tr>
+                                                <td style="font-size:13px; color:#64748b; width:140px; padding:6px 0;">Customer</td>
+                                                <td style="font-size:13px; color:#0f172a; padding:6px 0;">{{customerName}}</td>
+                                            </tr>
+                                            <tr>
+                                                <td style="font-size:13px; color:#64748b; padding:6px 0;">Invoice #</td>
+                                                <td style="font-size:13px; color:#0f172a; padding:6px 0;">{{invoiceNumber}}</td>
+                                            </tr>
+                                            <tr>
+                                                <td style="font-size:13px; color:#64748b; padding:6px 0;">Payment Method</td>
+                                                <td style="font-size:13px; color:#0f172a; padding:6px 0;">{{paymentMethod}}</td>
+                                            </tr>
+                                        </table>
+                                    </td>
+                                </tr>
+                            </table>
+
+                            <hr style="border:none; border-top:1px solid #eef2f7; margin:20px 0;">
+
+                            <p style="margin:0 0 6px 0; color:#475569; font-size:13px; line-height:1.5;">
+                                If you have any questions or need help, reply to this email or contact our support at
+                                <a href="mailto:{{supportEmail}}" style="color:#2563eb; text-decoration:none;">{{supportEmail}}</a>.
+                            </p>
+
+                            <p style="margin:12px 0 0 0; color:#94a3b8; font-size:12px;">
+                                Thank you for choosing <strong>nexbillpos</strong>. We’re excited to have you onboard.
+                            </p>
+                        </td>
+                    </tr>
+
+                    <!-- Footer -->
+                    <tr>
+                        <td style="padding:18px 24px; background-color:#0f172a; color:#e6eef8; font-size:13px;">
+                            <table role="presentation" width="100%" cellpadding="0" cellspacing="0">
+                                <tr>
+                                    <td style="vertical-align:middle;">
+                                        <div style="font-weight:700; font-size:14px;">nexbillpos</div>
+                                        <div style="opacity:0.85; font-size:12px; margin-top:6px;">Invoice #{{invoiceNumber}}</div>
+                                    </td>
+                                    <td align="right" style="vertical-align:middle;">
+                                        <a href="{{manageSubscriptionUrl}}" style="color:#a7b7ff; text-decoration:none; font-size:13px;">Manage Subscription</a>
+                                    </td>
+                                </tr>
+                            </table>
+                        </td>
+                    </tr>
+
+                    <!-- Small fine print -->
+                    <tr>
+                        <td style="padding:12px 20px; font-size:11px; color:#94a3b8; background-color:#ffffff;">
+                            <div style="max-width:560px; margin:0 auto;">
+                                This is an automated receipt for your payment. If you think there is an error, contact support at
+                                <a href="mailto:{{supportEmail}}" style="color:#2563eb; text-decoration:none;">{{supportEmail}}</a>.
+                                <br><br>
+                                <span style="color:#94a3b8;">nexbillpos</span>
+                                <br><br>
+                                <a href="{{unsubscribeUrl}}" style="color:#94a3b8; text-decoration:underline;">Unsubscribe</a>
+                            </div>
+                        </td>
+                    </tr>
+
+                </table>
+                <!-- /container -->
+
+            </td>
+        </tr>
+    </table>
+</body>
+</html>

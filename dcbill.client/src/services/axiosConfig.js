@@ -47,7 +47,7 @@ api.interceptors.response.use(
     (response) => response,
     async (error) => {
         const originalRequest = error.config;
-        debugger;
+       
         // If not 401 or already retried, reject immediately
         if (!error.response || error.response.status !== 401 || originalRequest._retry) {
             return Promise.reject(error);
@@ -75,7 +75,7 @@ api.interceptors.response.use(
             if (!refreshToken) {
                 throw new Error('No refresh token available');
             }
-            debugger;
+          
             // ✅ Use dedicated refreshApi — NOT the main api instance
             const response = await refreshApi.post('/Auth/refresh-token', { refreshToken });
 
@@ -97,7 +97,7 @@ api.interceptors.response.use(
             }
         } catch (refreshError) {
             processQueue(refreshError, null);
-            debugger;
+           
             // ✅ Single logout point — only here, not in authService.refreshToken()
             tokenService.removeToken();
             localStorage.removeItem('refreshToken');

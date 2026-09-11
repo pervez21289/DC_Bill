@@ -20,6 +20,8 @@ import BillingSettings from '../pages/billingsettings/BillingSettings';
 import InvoiceGrid from '../pages/invoice/InvoiceGrid';
 import ActivityLogReport from '../pages/activityLog/ActivityLogReport';
 import GSTReportPage from '../pages/reports/GSTReportPage';
+import Support from '../pages/support';
+
 // ==============================|| MAIN ROUTING ||============================== //
 
 const MainRoutes = {
@@ -57,6 +59,12 @@ const MainRoutes = {
                     path: 'profile',
                     element: <BillingSettings />
                 },
+                {
+                    path: 'support',
+                    element: <Support />
+                }
+                ,
+
                 {
                     path: 'history',
                     element: <ActivityLogReport />

@@ -2,6 +2,7 @@ using LMS.API.Filters;
 using LMS.API.Repositories;
 using LMS.API.Repositories.Interfaces;
 using LMS.API.Services;
+using LMS.Core.Entities;
 using LMS.Core.Interfaces;
 using LMS.Repo.Repository;
 using LMS.Repository.Repo;
@@ -33,6 +34,13 @@ builder.Services.AddSingleton<BaseRepository>();
 builder.Services.AddScoped<IPasswordService, PasswordService>();
 builder.Services.AddScoped<IReportRepository, ReportRepository>();
 builder.Services.AddScoped<IActivityLogRepository, ActivityLogRepository>();
+builder.Services.AddScoped<IEmailSender, SmtpEmailSender>();
+var appSettingsSection = builder.Configuration.GetSection("AppSettings");
+AppSettings appSettings = appSettingsSection.Get<AppSettings>();
+builder.Services.AddSingleton(appSettings);
+
+var razorpayOptions = RazorpayConfigLoader.Load(appSettings);
+builder.Services.AddSingleton(razorpayOptions);
 
 builder.Services.AddHttpContextAccessor();
 builder.Services.AddScoped<CompanyResolver>();

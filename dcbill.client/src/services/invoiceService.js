@@ -25,5 +25,10 @@ export const invoiceService = {
     async getById(id) {
         const response = await api.get(`/Invoice/${id}`);
         return response.data;
+    },
+
+    async sendReminder(invoiceId, customMessage) {
+        const response = await api.post(`/Notification/send-reminder/${invoiceId}`, customMessage || '');
+        return response.data;
     }
 };
