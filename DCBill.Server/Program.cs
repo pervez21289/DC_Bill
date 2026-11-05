@@ -35,6 +35,7 @@ builder.Services.AddScoped<IPasswordService, PasswordService>();
 builder.Services.AddScoped<IReportRepository, ReportRepository>();
 builder.Services.AddScoped<IActivityLogRepository, ActivityLogRepository>();
 builder.Services.AddScoped<IEmailSender, SmtpEmailSender>();
+builder.Services.AddScoped<ITicketRepository, TicketRepository>();
 var appSettingsSection = builder.Configuration.GetSection("AppSettings");
 AppSettings appSettings = appSettingsSection.Get<AppSettings>();
 builder.Services.AddSingleton(appSettings);

@@ -1,12 +1,13 @@
 ﻿import { createApi, fetchBaseQuery } from '@reduxjs/toolkit/query/react';
 import api from './axiosConfig';
+import { tokenService } from './tokenService';
 
 export const ticketApi = createApi({
     reducerPath: 'ticketApi',
     baseQuery: fetchBaseQuery({
         baseUrl: api.defaults.baseURL,
         prepareHeaders: (headers, { getState }) => {
-            const token = getState()?.users?.userDetails?.token;
+            const token = tokenService.getToken();
             if (token) {
                 headers.set('Authorization', `Bearer ${token}`);
             }

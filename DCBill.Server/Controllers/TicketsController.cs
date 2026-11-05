@@ -15,21 +15,22 @@ namespace LMS.Controllers
     {
         private readonly ITicketRepository _tciketRepo;
         private readonly IUserContext _useContext;
+        private readonly CompanyResolver _companyResolver;
 
-        public TicketsController(ITicketRepository ticketRepository, IUserContext useContext)
+        public TicketsController(ITicketRepository ticketRepository, CompanyResolver companyResolver)
         {
             _tciketRepo = ticketRepository;
-            _useContext = useContext;
+            _companyResolver = companyResolver;
         }
 
         [HttpGet]
         public async Task<IActionResult> Get() =>
-            Ok(await _tciketRepo.GetTicketsAsync(_useContext.CompanyID));
+            Ok(await _tciketRepo.GetTicketsAsync(_companyResolver.CurrentUserId));
 
         [HttpPost]
         public async Task<IActionResult> Post([FromBody] Ticket ticket)
         {
-            ticket.CompanyId = _useContext.CompanyID;
+            ticket.CompanyId = _companyResolver.CurrentUserId;
             var (id, ticketNumber) = await _tciketRepo.CreateTicketAsync(ticket);
 
             // Set the returned values back to the object
