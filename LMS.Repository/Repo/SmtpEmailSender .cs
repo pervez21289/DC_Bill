@@ -68,8 +68,8 @@ namespace LMS.Repository.Repo
                 // Replace placeholders
                 htmlBody = htmlBody.Replace("{{Name}}", Name)
                                    .Replace("{{OTP}}", OTP)
-                                   .Replace("{{VerifyUrl}}", "https://nexbillpos.com/") // optional
-                                   .Replace("{{SupportUrl}}", "https://nexbillpos.com/");
+                                   .Replace("{{VerifyUrl}}", "https://invoice.nexbillpos.com/") // optional
+                                   .Replace("{{SupportUrl}}", "https://invoice.nexbillpos.com/");
                                    
         
 

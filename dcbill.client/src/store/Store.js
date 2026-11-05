@@ -10,6 +10,7 @@ import partyReducer from './partySlice';
 import authReducer from './authSlice'; // Add this
 import reportReducer from './reportSlice'; // Add this
 import activityLogReducer from './activityLogSlice';
+import { ticketApi } from './../services/ticketApi';
 
 export const store = configureStore({
     reducer: {
@@ -22,6 +23,11 @@ export const store = configureStore({
         invoiceItems: invoiceItemsReducer,
         parties: partyReducer,
         activityLog: activityLogReducer,
-        report: reportReducer
-    }
+        report: reportReducer,
+        [ticketApi.reducerPath]: ticketApi.reducer
+    },
+    middleware: (getDefaultMiddleware) =>
+        getDefaultMiddleware().concat(
+            ticketApi.middleware
+        )
 });

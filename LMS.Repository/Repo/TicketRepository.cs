@@ -15,12 +15,14 @@ namespace LMS.Repository.Repo
 {
     public class TicketRepository :BaseRepository, ITicketRepository
     {
-      
 
-        public async Task<IEnumerable<Ticket>> GetTicketsAsync()
+        public async Task<IEnumerable<Ticket>> GetTicketsAsync(long CompanyId)
         {
-            
-            return await QueryAsync<Ticket>("sp_GetAllTickets", commandType: CommandType.StoredProcedure);
+            var parameters = new
+            {
+                CompanyId
+            };
+            return await QueryAsync<Ticket>("sp_GetAllTickets", parameters, commandType: CommandType.StoredProcedure);
         }
 
         public async Task<(int Id, string TicketNumber)> CreateTicketAsync(Ticket ticket)

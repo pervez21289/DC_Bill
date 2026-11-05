@@ -12,7 +12,7 @@ namespace LMS.Core.Interfaces
 {
     public interface ITicketRepository
     {
-        Task<IEnumerable<Ticket>> GetTicketsAsync();
+        Task<IEnumerable<Ticket>> GetTicketsAsync(long CompanyId);
         Task<(int Id, string TicketNumber)> CreateTicketAsync(Ticket ticket);
     }
 }
