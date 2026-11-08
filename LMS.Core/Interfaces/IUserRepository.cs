@@ -22,7 +22,7 @@ namespace LMS.Core.Interfaces
         Task<bool> EmailExistsAsync(string email, int? excludeUserId = null);
         Task<bool> UsernameExistsAsync(string username, int? excludeUserId = null);
         Task<(int UserId, string Message)> RegisterUserAsync(AppUser user, string passwordHash);
-        Task<(AppUser User, string PasswordHash, bool IsActive, string Message)> ValidateUserForLoginAsync(string emailOrUsername);
+        Task<(AppUser User, string PasswordHash, bool IsActive, bool IsEmailVerified,string Message)> ValidateUserForLoginAsync(string emailOrUsername);
 
         // Search and filtering
         Task<IEnumerable<AppUser>> SearchAsync(string keyword);
@@ -38,5 +38,7 @@ namespace LMS.Core.Interfaces
         Task UpdateRefreshTokenAsync(string oldRefreshToken, string newRefreshToken, DateTime expiryDate);
         Task RemoveRefreshTokenAsync(string refreshToken);
         Task RevokeAllRefreshTokensAsync(int userId);
+
+        Task<VerifyEmailResult> VerifyEmailAsync(string email, string tokenHash);
     }
 }

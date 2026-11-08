@@ -11,3 +11,6 @@
 /.vs
 /dcbill.client/obj/Debug
 /DCBill.Server/bin
+/DCBill.Server/appsettings.Development.json
+/DCBill.Server/appsettings.json
+/DCBill.Server/appsettings.Production.json

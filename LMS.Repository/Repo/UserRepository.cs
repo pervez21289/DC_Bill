@@ -2,7 +2,9 @@
 using LMS.Core.Entities;
 using LMS.Core.Interfaces;
 using LMS.Repo.Repository;
+using Microsoft.Data.SqlClient;
 using Microsoft.Extensions.Configuration;
+using Razorpay.Api;
 using System.Collections.Generic;
 using System.Data;
 using System.Threading.Tasks;
@@ -135,7 +137,10 @@ namespace LMS.API.Repositories
                 PasswordHash = passwordHash,
                 user.FullName,
                 user.Company,
-                user.Role
+                user.Role,
+                user.IsEmailVerified,
+                user.EmailVerificationTokenHash,
+                user.EmailVerificationTokenExpiry
             };
 
             var sql = "USP_RegisterUser";
@@ -149,7 +154,7 @@ namespace LMS.API.Repositories
             return (0, "Registration failed");
         }
 
-        public async Task<(AppUser User, string PasswordHash, bool IsActive, string Message)> ValidateUserForLoginAsync(string emailOrUsername)
+        public async Task<(AppUser User, string PasswordHash, bool IsActive, bool IsEmailVerified, string Message)> ValidateUserForLoginAsync(string emailOrUsername)
         {
             var parameters = new { EmailOrUsername = emailOrUsername };
             var sql = "USP_ValidateUserLogin";
@@ -157,7 +162,7 @@ namespace LMS.API.Repositories
 
             if (result == null || result.UserId == null)
             {
-                return (null, null, false, "User not found");
+                return (null, null, false,false, "User not found");
             }
 
             var user = new AppUser
@@ -172,7 +177,7 @@ namespace LMS.API.Repositories
                 CompanyId=result.CompanyId
             };
 
-            return (user, result.PasswordHash, result.IsActive, result.Message);
+            return (user, result.PasswordHash, result.IsActive,result.IsEmailVerified, result.Message);
         }
 
         public async Task<IEnumerable<AppUser>> SearchAsync(string keyword)
@@ -262,6 +267,22 @@ namespace LMS.API.Repositories
                 WHERE UserId = @UserId AND IsRevoked = 0";
 
             await ExecuteAsync(sql, new { UserId = userId, RevokedAt = DateTime.UtcNow });
+        }
+
+
+        public async Task<VerifyEmailResult> VerifyEmailAsync(string email, string token)
+        {
+            var tokenHash = TokenHelper.Hash(token.Trim());
+            var result = await QueryFirstOrDefaultAsync<VerifyEmailResult>(
+                "dbo.USP_VerifyEmail",
+                new { Email = email, TokenHash = tokenHash },
+                commandType: CommandType.StoredProcedure);
+
+            return result ?? new VerifyEmailResult
+            {
+                Success = false,
+                Message = "Verification failed"
+            };
         }
 
     }

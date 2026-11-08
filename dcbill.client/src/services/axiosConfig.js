@@ -2,11 +2,13 @@
 import axios from 'axios';
 import { tokenService } from './tokenService';
 
+const BASE_URL = import.meta.env.VITE_BASE_URL || 'http://localhost:5000/api';
+
 let isRefreshing = false;
 let failedQueue = [];
 
 const processQueue = (error, token = null) => {
-    failedQueue.forEach(prom => {
+    failedQueue.forEach((prom) => {
         if (error) {
             prom.reject(error);
         } else {
@@ -16,16 +18,43 @@ const processQueue = (error, token = null) => {
     failedQueue = [];
 };
 
+// Endpoints where a 401 means "bad credentials / invalid token",
+// NOT "session expired". These must never trigger refresh or redirect.
+// Adjust the paths to match your real endpoints.
+const AUTH_ENDPOINTS = [
+    '/auth/login',
+    '/auth/refresh-token',
+    '/auth/forgot-password',
+    '/auth/reset-password'
+];
+
+const isAuthEndpoint = (url = '') => {
+    const lower = url.toLowerCase();
+    return AUTH_ENDPOINTS.some((path) => lower.includes(path));
+};
+
+// Single logout point: clear storage and go to /login (only if not already there)
+const forceLogout = () => {
+    tokenService.removeToken();
+    localStorage.removeItem('refreshToken');
+    localStorage.removeItem('user');
+    localStorage.removeItem('auth_user');
+
+    if (window.location.pathname !== '/login') {
+        window.location.href = '/login';
+    }
+};
+
 // Dedicated axios instance ONLY for refresh token (bypasses interceptor)
 const refreshApi = axios.create({
-    baseURL: import.meta.env.VITE_BASE_URL || 'http://localhost:5000/api',
+    baseURL: BASE_URL,
     timeout: 30000,
     headers: { 'Content-Type': 'application/json' }
 });
 
-// Create main axios instance
+// Main axios instance
 const api = axios.create({
-    baseURL: import.meta.env.VITE_BASE_URL || 'http://localhost:5000/api',
+    baseURL: BASE_URL,
     timeout: 30000,
     headers: { 'Content-Type': 'application/json' }
 });
@@ -47,9 +76,26 @@ api.interceptors.response.use(
     (response) => response,
     async (error) => {
         const originalRequest = error.config;
-       
-        // If not 401 or already retried, reject immediately
-        if (!error.response || error.response.status !== 401 || originalRequest._retry) {
+
+        // Reject immediately if:
+        // - network error / no response
+        // - not a 401
+        // - already retried
+        // - the request was to an auth endpoint (e.g. wrong password on login)
+        if (
+            !error.response ||
+            error.response.status !== 401 ||
+            !originalRequest ||
+            originalRequest._retry ||
+            isAuthEndpoint(originalRequest.url)
+        ) {
+            return Promise.reject(error);
+        }
+
+        // No refresh token: the session is simply gone
+        const refreshToken = localStorage.getItem('refreshToken');
+        if (!refreshToken) {
+            forceLogout();
             return Promise.reject(error);
         }
 
@@ -60,23 +106,17 @@ api.interceptors.response.use(
             return new Promise((resolve, reject) => {
                 failedQueue.push({ resolve, reject });
             })
-                .then(token => {
+                .then((token) => {
                     originalRequest.headers.Authorization = `Bearer ${token}`;
                     return api(originalRequest);
                 })
-                .catch(err => Promise.reject(err));
+                .catch((err) => Promise.reject(err));
         }
 
         isRefreshing = true;
 
         try {
-            const refreshToken = localStorage.getItem('refreshToken');
-
-            if (!refreshToken) {
-                throw new Error('No refresh token available');
-            }
-          
-            // ✅ Use dedicated refreshApi — NOT the main api instance
+            // Use dedicated refreshApi, NOT the main api instance
             const response = await refreshApi.post('/Auth/refresh-token', { refreshToken });
 
             if (response.data?.success && response.data?.data?.token) {
@@ -92,19 +132,12 @@ api.interceptors.response.use(
 
                 originalRequest.headers.Authorization = `Bearer ${newToken}`;
                 return api(originalRequest);
-            } else {
-                throw new Error('Refresh token response invalid');
             }
+
+            throw new Error('Refresh token response invalid');
         } catch (refreshError) {
             processQueue(refreshError, null);
-           
-            // ✅ Single logout point — only here, not in authService.refreshToken()
-            tokenService.removeToken();
-            localStorage.removeItem('refreshToken');
-            localStorage.removeItem('user');
-            localStorage.removeItem('auth_user');
-            window.location.href = '/login';
-
+            forceLogout();
             return Promise.reject(refreshError);
         } finally {
             isRefreshing = false;

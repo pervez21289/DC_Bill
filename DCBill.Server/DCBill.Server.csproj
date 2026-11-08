@@ -24,4 +24,10 @@
     <ProjectReference Include="..\LMS.Repository\LMS.Repository.csproj" />
   </ItemGroup>
 
+  <ItemGroup>
+    <None Update="Files\VerifyEmail.html">
+      <CopyToOutputDirectory>Always</CopyToOutputDirectory>
+    </None>
+  </ItemGroup>
+
 </Project>

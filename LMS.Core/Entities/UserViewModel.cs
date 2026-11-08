@@ -1,5 +1,6 @@
 ﻿using System;
 using System.Collections.Generic;
+using System.ComponentModel.DataAnnotations;
 using System.Linq;
 using System.Text;
 using System.Threading.Tasks;
@@ -27,5 +28,20 @@ namespace LMS.Core.Entities
         public long UserId { get; set;}
         public string Message { get; set;}
         public long SentTo { get; set; }
+    }
+
+    public class VerifyEmailRequest
+    {
+        [Required, EmailAddress, MaxLength(255)]
+        public string Email { get; set; } = string.Empty;
+
+        [Required, MaxLength(200)]
+        public string Token { get; set; } = string.Empty;
+    }
+
+    public class VerifyEmailResult
+    {
+        public bool Success { get; set; }
+        public string Message { get; set; } = string.Empty;
     }
 }

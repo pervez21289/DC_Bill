@@ -114,7 +114,16 @@ export const authService = {
         } catch (error) {
             throw error.response?.data || error.message;
         }
-    }
+    } ,
+
+    async verifyEmail(email, token) {
+        const response = await api.post('/Auth/verify-email', { email, token });
+        return response.data;
+    },
+    async resendVerification(email) {
+        const response = await api.post('/Auth/resend-verification', { email });
+        return response.data;
+    },
 };
 
 export default authService;

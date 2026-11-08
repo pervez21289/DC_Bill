@@ -2,10 +2,12 @@
 using LMS.Core.Entities;
 using LMS.Core.Interfaces;
 using LMS.Core.Models;
+using LMS.Repository.Repo;
 using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.IdentityModel.Tokens;
 using System.IdentityModel.Tokens.Jwt;
+using System.Net;
 using System.Security.Claims;
 using System.Security.Cryptography;
 using System.Text;
@@ -17,12 +19,14 @@ namespace LMS.API.Controllers
     public class AuthController : ControllerBase
     {
         private readonly IUserRepository _userRepository;
-        private readonly IConfiguration _configuration;
+        private readonly IConfiguration _configuration;        
+        private readonly IEmailService _emailService;   
 
-        public AuthController(IUserRepository userRepository, IConfiguration configuration)
+        public AuthController(IUserRepository userRepository, IConfiguration configuration, IEmailService emailService)
         {
             _userRepository = userRepository;
             _configuration = configuration;
+            _emailService = emailService;
         }
 
         [HttpPost("login")]
@@ -41,7 +45,7 @@ namespace LMS.API.Controllers
                 }
 
                 // Validate user credentials
-                var (user, storedHash, isActive, message) = await _userRepository.ValidateUserForLoginAsync(request.EmailOrUsername);
+                var (user, storedHash, isActive,isEmailVerified, message) = await _userRepository.ValidateUserForLoginAsync(request.EmailOrUsername);
 
                 if (user == null || !isActive)
                 {
@@ -49,6 +53,15 @@ namespace LMS.API.Controllers
                     {
                         Success = false,
                         Message = message ?? "Invalid email/username or password"
+                    });
+                }
+
+                if(!isEmailVerified)
+                {
+                    return Unauthorized(new ApiResponse<object>
+                    {
+                        Success = false,
+                        Message = "Email not verified."
                     });
                 }
 
@@ -145,7 +158,7 @@ namespace LMS.API.Controllers
 
                 // Hash password
                 var passwordHash = BCrypt.Net.BCrypt.HashPassword(request.Password);
-
+                var token = TokenHelper.GenerateToken();
                 // Create user object
                 var user = new AppUser
                 {
@@ -156,7 +169,10 @@ namespace LMS.API.Controllers
                     Role = "User",
                     IsActive = true,
                     CreatedAt = DateTime.UtcNow,
-                    UpdatedAt = DateTime.UtcNow
+                    UpdatedAt = DateTime.UtcNow,
+                    IsEmailVerified = false,
+                    EmailVerificationTokenHash = TokenHelper.Hash(token),
+                    EmailVerificationTokenExpiry = DateTime.UtcNow.AddHours(24)
                 };
 
                 // Register user
@@ -170,6 +186,10 @@ namespace LMS.API.Controllers
                         Message = message ?? "Registration failed"
                     });
                 }
+
+
+
+                await _emailService.SendVerificationEmailAsync(user.Email, user.FullName, token);
 
                 return Ok(new ApiResponse<object>
                 {
@@ -186,6 +206,17 @@ namespace LMS.API.Controllers
                     Message = $"Registration failed: {ex.Message}"
                 });
             }
+        }
+
+        [AllowAnonymous]
+        [HttpPost("verify-email")]
+        public async Task<IActionResult> VerifyEmail([FromBody] VerifyEmailRequest request)
+        {
+            var result = await _userRepository.VerifyEmailAsync(request.Email, request.Token);
+
+            return result.Success
+                ? Ok(result)
+                : BadRequest(result);
         }
 
         [HttpPost("refresh-token")]

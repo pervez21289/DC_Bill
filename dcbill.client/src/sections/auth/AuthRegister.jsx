@@ -63,7 +63,7 @@ export default function AuthRegister() {
 
             if (response.success) {
                 // Navigate to login page with success message
-                navigate('/login', { state: { message: 'Registration successful! Please login.' } });
+                navigate('/login', { state: { message: 'Registration successful! Please check your email to verify your account before logging in.' } });
             } else {
                 setServerError(response.message || 'Registration failed');
                 if (response.errors) {

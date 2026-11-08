@@ -7,6 +7,7 @@ import { selectIsAuthenticated } from 'store/authSlice';
 
 const LoginPage = Loadable(lazy(() => import('pages/auth/Login')));
 const RegisterPage = Loadable(lazy(() => import('pages/auth/Register')));
+const VerifyEmail = Loadable(lazy(() => import('pages/auth/VerifyEmail')));
 
 function GuestRoute() {
     const isAuthenticated = useSelector(selectIsAuthenticated);
@@ -18,7 +19,8 @@ const LoginRoutes = {
     element: <GuestRoute />,
     children: [
         { path: '/login', element: <LoginPage /> },
-        { path: '/register', element: <RegisterPage /> }
+        { path: '/register', element: <RegisterPage /> },
+        { path: '/verify-email', element: <VerifyEmail /> }
     ]
 };
 

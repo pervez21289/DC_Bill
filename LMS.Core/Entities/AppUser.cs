@@ -17,6 +17,9 @@ namespace LMS.Core.Entities
         public DateTime CreatedAt { get; set; }
         public DateTime UpdatedAt { get; set; }
         public int CompanyId { get; set; }
+        public bool IsEmailVerified { get; set; }
+        public string EmailVerificationTokenHash { get; set; }
+        public DateTime EmailVerificationTokenExpiry { get; set; }
     }
 
     public class RefreshToken
